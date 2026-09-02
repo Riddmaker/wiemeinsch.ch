@@ -1,0 +1,271 @@
+# CI/CD-Pipeline für wiemeinsch.ch.
+#
+# Kette: Qualität → E2E → Image bauen & signieren → Redeploy-Webhook.
+# Schlägt eine Stufe fehl, wird KEIN Image publiziert und nichts deployed.
+#
+# Action-Versionen sind exakt gepinnt und am 02.09.2026 gegen die jeweils
+# aktuellen Releases der Hersteller geprüft (HABIT 4). Nächste Härtungsstufe
+# wäre das Pinnen auf Commit-SHAs; siehe README → Deployment → Wartung.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  # Erlaubt einen Redeploy des unveränderten Standes ohne Leer-Commit.
+  workflow_dispatch:
+
+# Zwei gleichzeitige Deployments derselben Umgebung wären ein Rennen um den
+# Webhook — der zweite Lauf wartet, statt den ersten zu überholen.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+# Default: nur lesen. Jeder Job erweitert genau um das, was er braucht.
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  # Kleingeschrieben, weil OCI-Referenzen keine Grossbuchstaben zulassen —
+  # `github.repository` wäre "Riddmaker/wiemeinsch.ch".
+  IMAGE: ghcr.io/riddmaker/wiemeinsch.ch
+  NODE_VERSION: "24"
+
+jobs:
+  quality:
+    name: Lint, Typecheck, Unit-Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Prisma-Client generieren
+        # src/generated/ ist gitignored — ohne diesen Schritt findet tsc die
+        # Typen des Clients nicht.
+        run: npx prisma generate
+
+      - name: Secret-Scan des Arbeitsbaums
+        # Zweite Verteidigungslinie zum lokalen Pre-Push-Scan: was hier
+        # anschlägt, darf nicht in ein Image wandern (HABIT 1).
+        run: npm run scan:secrets
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: TypeScript
+        run: npx tsc --noEmit
+
+      - name: Prettier
+        run: npm run format:check
+
+      - name: Unit-Tests
+        # Die DB-gebundenen Fälle überspringen sich ohne DATABASE_URL selbst
+        # (scoring-recompute.test.ts) — sie laufen im E2E-Job gegen die echte
+        # Compose-Datenbank.
+        run: npx vitest run
+
+  e2e:
+    name: E2E gegen das Prod-Image
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Prisma-Client generieren
+        run: npx prisma generate
+
+      - name: Ephemere Zugangsdaten für die Testumgebung erzeugen
+        # Keine Passwörter im Repo (HABIT 1): DB-Passwort und NextAuth-Secret
+        # entstehen pro Lauf zufällig und sterben mit dem Runner. Sie werden
+        # nie ausgegeben — die Zuweisung geht ohne Echo nach $GITHUB_ENV.
+        run: |
+          {
+            echo "POSTGRES_USER=wiemeinsch"
+            echo "POSTGRES_DB=wiemeinsch"
+            echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)"
+            echo "NEXTAUTH_SECRET=$(openssl rand -base64 32)"
+          } >> "$GITHUB_ENV"
+
+      - name: Datenbank und Mail-Fänger starten
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml \
+            --profile prod up -d db mailpit
+
+      - name: Auf die Datenbank warten
+        run: |
+          # shellcheck disable=SC2016  # Absicht: die Variablen sollen erst in
+          # der inneren Shell expandieren, die sie aus der Job-Umgebung erbt.
+          timeout 120 bash -c 'until docker compose exec -T db pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do sleep 2; done'
+
+      - name: Schema migrieren und Stammdaten einspielen
+        env:
+          DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+        run: |
+          npx prisma migrate deploy
+          npx prisma db seed
+
+      - name: App-Image bauen und starten
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml \
+            --profile prod up -d --build app-prod
+
+      - name: Auf den Healthcheck warten
+        run: |
+          timeout 180 bash -c 'until curl -fsS http://localhost:3000/api/health > /dev/null; do sleep 2; done'
+          timeout 60 bash -c 'until curl -fsS http://localhost:8025/api/v1/messages > /dev/null; do sleep 2; done'
+
+      - name: Playwright-Browser installieren
+        # Beide Projekte (chromium, mobile) sind Chromium-basiert.
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E-Suite ohne AI-Specs
+        # `@ai` markiert die Tests, die echte Mistral-Calls auslösen. Sie
+        # kosten API-Budget und würden jeden Merge von der Verfügbarkeit einer
+        # externen API abhängig machen; abgenommen werden sie lokal vor dem
+        # Push gegen dasselbe Prod-Profil.
+        # DATABASE_URL setzt zugleich den direkten Weg im Global-Setup
+        # (Score-Recompute, Entscheid E9).
+        env:
+          DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+        run: npx playwright test --grep-invert "@ai"
+
+      - name: Container-Logs bei Fehlschlag
+        if: failure()
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml logs --tail 200
+
+      - name: Testartefakte sichern
+        if: failure()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: playwright-artefakte
+          path: test-results/
+          retention-days: 7
+
+  build-push:
+    name: Image bauen, publizieren, signieren
+    needs: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write # GHCR-Push
+      id-token: write # OIDC-Token für cosign (keyless) und die Attestation
+      attestations: write # Build-Provenance
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: docker/setup-buildx-action@v4.3.0
+
+      - name: An der GitHub Container Registry anmelden
+        uses: docker/login-action@v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tags und Labels bestimmen
+        id: meta
+        uses: docker/metadata-action@v6.2.0
+        with:
+          images: ${{ env.IMAGE }}
+          # Commit-SHA ist der unveränderliche Tag, `latest` der bewegliche
+          # Zeiger für die Zielumgebung (Punkt 2).
+          tags: |
+            type=sha,format=long,prefix=
+            type=raw,value=latest
+
+      - name: Bauen und pushen
+        id: push
+        uses: docker/build-push-action@v7.3.0
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: cosign installieren
+        uses: sigstore/cosign-installer@v4.1.2
+        with:
+          # Gepinnt: cosign 3 hat die Signatur-Defaults geändert (neues
+          # Protobuf-Bundle, OCI-1.1-Referrer). Eine unbemerkt wechselnde
+          # Version würde die Verifikation in der Zielumgebung brechen.
+          cosign-release: v3.0.6
+
+      - name: Image signieren (keyless, GitHub-OIDC)
+        # Signiert wird der Digest, nicht ein Tag: Tags sind beweglich, der
+        # Digest ist der Inhalt.
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: cosign sign --yes "${IMAGE}@${DIGEST}"
+
+      - name: Signatur sofort gegenprüfen
+        # Selbstkontrolle mit exakt dem Befehl, den auch die Zielumgebung vor
+        # dem Redeploy fährt (README → Deployment). Bricht sie, läuft der Deploy-Job
+        # nicht an — besser ein roter Lauf als ein unverifizierbares Image in
+        # der Registry.
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+          IDENTITY: ${{ github.server_url }}/${{ github.repository }}/.github/workflows/deploy.yml@${{ github.ref }}
+        run: |
+          cosign verify "${IMAGE}@${DIGEST}" \
+            --certificate-identity "${IDENTITY}" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            > /dev/null
+          echo "Signatur gültig für ${IDENTITY}"
+
+      - name: Build-Provenance attestieren
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+          # Speicher-Datensätze gibt es nur für Organisations-Repos; dieses
+          # hier gehört einem Benutzerkonto.
+          create-storage-record: false
+
+  deploy:
+    name: Redeploy der Zielumgebung anstossen
+    needs: build-push
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Redeploy-Webhook aufrufen
+        env:
+          WEBHOOK_URL: ${{ secrets.JELASTIC_REDEPLOY_WEBHOOK }}
+          DIGEST: ${{ needs.build-push.outputs.digest }}
+        run: |
+          if [ -z "${WEBHOOK_URL}" ]; then
+            echo "::error::Secret JELASTIC_REDEPLOY_WEBHOOK fehlt — siehe README → Deployment."
+            exit 1
+          fi
+          echo "Stosse Redeploy an für Digest ${DIGEST}"
+          # Die URL selbst wird nie ausgegeben (HABIT 1) — nur der Statuscode.
+          status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 60 \
+            -X POST -H 'Content-Type: application/json' \
+            -d "{\"digest\":\"${DIGEST}\"}" "${WEBHOOK_URL}")
+          echo "Webhook-Antwort: HTTP ${status}"
+          case "${status}" in
+            2*) echo "Redeploy angestossen." ;;
+            *) echo "::error::Redeploy-Webhook antwortete mit HTTP ${status}."; exit 1 ;;
+          esac

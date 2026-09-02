@@ -1,0 +1,398 @@
+{
+  "app": {
+    "name": "wiemeinsch.ch",
+    "logoAria": "Logo wiemeinsch.ch: Schweizer Kreuz im Kreis"
+  },
+  "header": {
+    "board": "Board",
+    "submit": "Einreichen",
+    "login": "Anmelden",
+    "profile": "Profil",
+    "logout": "Abmelden",
+    "admin": "Admin"
+  },
+  "localeSwitcher": {
+    "label": "Sprache wählen",
+    "de": "Deutsch",
+    "fr": "Französisch",
+    "it": "Italienisch"
+  },
+  "footer": {
+    "impressum": "Impressum",
+    "license": "Quelloffen unter PolyForm Noncommercial 1.0.0"
+  },
+  "home": {
+    "title": "Das politische Backlog der Schweiz",
+    "intro": "Probleme einreichen, Lösungen verbessern, Konsens sichtbar machen — strukturiert statt polarisiert."
+  },
+  "board": {
+    "tabsAria": "Board-Sortierung",
+    "tabs": {
+      "trending": "Trending",
+      "consensus": "Consensus",
+      "controversial": "Kontrovers"
+    },
+    "tooFewVotes": "Zu wenig Stimmen",
+    "upvotesAria": "Zustimmungen",
+    "downvotesAria": "Ablehnungen",
+    "statements": "{count, plural, one {# Statement} other {# Statements}}",
+    "changeRequests": "{count, plural, one {# Änderungsantrag} other {# Änderungsanträge}}",
+    "empty": "Noch keine Tickets veröffentlicht."
+  },
+  "impressum": {
+    "title": "Impressum",
+    "responsible": "Verantwortlich für den Inhalt dieser Website:",
+    "emailLabel": "E-Mail"
+  },
+  "login": {
+    "title": "Anmelden",
+    "intro": "Melde dich mit deiner E-Mail-Adresse an. Du erhältst einen Anmelde-Link — ganz ohne Passwort.",
+    "emailLabel": "E-Mail-Adresse",
+    "submit": "Anmelde-Link senden",
+    "google": "Mit Google anmelden",
+    "or": "oder",
+    "checkEmailTitle": "E-Mail prüfen",
+    "checkEmailText": "Falls ein Konto mit dieser Adresse möglich ist, haben wir dir soeben einen Anmelde-Link geschickt. Der Link ist eine Stunde gültig.",
+    "errorTitle": "Anmeldung nicht möglich",
+    "errors": {
+      "Turnstile": "Die Sicherheitsprüfung ist fehlgeschlagen. Bitte lade die Seite neu und versuche es noch einmal.",
+      "RateLimit": "Zu viele Versuche in kurzer Zeit. Bitte warte einige Minuten und versuche es dann erneut.",
+      "Verification": "Dieser Anmelde-Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.",
+      "Default": "Die Anmeldung hat nicht geklappt. Bitte versuche es erneut."
+    },
+    "backToLogin": "Zurück zur Anmeldung"
+  },
+  "editor": {
+    "bold": "Fett",
+    "italic": "Kursiv",
+    "bulletList": "Aufzählung",
+    "counter": "{count} / {max} Zeichen"
+  },
+  "levels": {
+    "FEDERAL": "Schweizweit",
+    "CANTONAL": "Kantonal",
+    "MUNICIPAL": "Regional"
+  },
+  "ticketNew": {
+    "title": "Ticket einreichen",
+    "intro": "Beschreibe ein politisches Problem und deinen Lösungsvorschlag. Der Civic-Linter prüft den Text auf Sachlichkeit; danach entsteht automatisch eine Fassung in allen drei Landessprachen.",
+    "levelLabel": "Politische Ebene",
+    "cantonLabel": "Kanton",
+    "municipalityLabel": "Gemeinde",
+    "noResults": "Keine Treffer",
+    "titleLabel": "Titel — Der Pitch",
+    "counter": "{count} / {max} Zeichen",
+    "hashtagsLabel": "Hashtags (optional)",
+    "hashtagPlaceholder": "#Hashtag hinzufügen",
+    "hashtagRemove": "Hashtag #{tag} entfernen",
+    "problemLabel": "Problem — Ist-Zustand",
+    "solutionLabel": "Lösung — Soll-Zustand",
+    "fundingLabel": "Finanzierung / Trade-off (optional)",
+    "duplicateHint": "Ähnliche Tickets existieren — stattdessen upvoten?",
+    "toPreview": "Prüfen und übersetzen",
+    "checking": "Civic-Linter prüft…",
+    "previewIntro": "So erscheint dein Ticket in den zwei anderen Landessprachen. Du kannst beide Fassungen anpassen — auch sie durchlaufen beim Publizieren den Civic-Linter.",
+    "backToForm": "Zurück zum Original",
+    "publish": "Publizieren",
+    "publishing": "Wird publiziert…",
+    "linterBlocked": "Der Civic-Linter hat Formulierungen beanstandet. Überarbeite die markierten Stellen, um weiterzufahren.",
+    "linterBlockedTranslation": "Der Civic-Linter hat Formulierungen in einer Übersetzung beanstandet. Überarbeite die markierten Stellen, um zu publizieren.",
+    "errors": {
+      "unauthorized": "Deine Sitzung ist abgelaufen. Melde dich neu an — dein Entwurf bleibt gespeichert.",
+      "rate_limited": "Zu viele Versuche in kurzer Zeit. Bitte warte einige Minuten und versuche es dann erneut.",
+      "invalid_input": "Die Eingaben sind unvollständig oder ungültig. Bitte prüfe das Formular.",
+      "ai_unavailable": "Die KI-Prüfung ist im Moment nicht erreichbar. Dein Entwurf bleibt gespeichert — bitte versuche es später erneut.",
+      "min_1": "Pflichtfeld",
+      "max_80": "Maximal 80 Zeichen",
+      "min_200": "Mindestens 200 Zeichen",
+      "max_3000": "Maximal 3'000 Zeichen",
+      "max_1500": "Maximal 1'500 Zeichen",
+      "max_5": "Maximal 5 Hashtags",
+      "max_30": "Maximal 30 Zeichen pro Hashtag",
+      "invalid_chars": "Nur Buchstaben, Ziffern, «_» und «-»",
+      "duplicates": "Hashtags dürfen sich nicht wiederholen",
+      "canton_required": "Bitte einen Kanton wählen",
+      "municipality_required": "Bitte eine Gemeinde wählen",
+      "federal_no_region": "Bei «Schweizweit» ist keine Region nötig"
+    }
+  },
+  "linter": {
+    "chip": "CIVIC-LINTER · {reason}",
+    "appeal": "Entscheid anfechten",
+    "reasons": {
+      "RAGEBAIT": "Ragebait",
+      "BELEIDIGUNG": "Beleidigung",
+      "POLEMIK": "Polemik",
+      "DISKRIMINIERUNG": "Diskriminierung",
+      "DROHUNG": "Drohung",
+      "INJECTION": "Manipulationsversuch",
+      "UNSACHLICH": "Unsachlich"
+    },
+    "appealPending": "wird geprüft …",
+    "appealSent": "Angefochten — die Moderation schaut sich den Text an.",
+    "appealNotBlocked": "Der Text wird jetzt nicht mehr beanstandet. Bitte reiche ihn erneut ein.",
+    "appealRateLimited": "Zu viele Anfechtungen. Bitte versuche es später erneut.",
+    "appealUnavailable": "Die Prüfung ist gerade nicht erreichbar. Bitte später erneut.",
+    "appealError": "Die Anfechtung konnte nicht erfasst werden."
+  },
+  "ticketDetail": {
+    "vote": {
+      "up": "Zustimmen",
+      "down": "Ablehnen",
+      "loginHint": "Zum Abstimmen brauchst du ein Login.",
+      "loginLink": "Anmelden",
+      "errors": {
+        "rate_limited": "Zu viele Aktionen — bitte warte einen Moment.",
+        "invalid_input": "Diese Abstimmung ist zurzeit nicht möglich."
+      }
+    },
+    "created": "Erstellt {date}",
+    "by": "Von @{handle}",
+    "original": "Original: {language}",
+    "aiTranslated": "AI-übersetzt",
+    "showOriginal": "Im Original anzeigen",
+    "showTranslation": "Übersetzung anzeigen",
+    "problem": "Problem",
+    "solution": "Lösung",
+    "funding": "Finanzierung / Trade-off",
+    "coAuthor": "Co-Autor: @{handle} (Änderungsantrag #{number}, gemergt {date})"
+  },
+  "statements": {
+    "heading": "{count, plural, =0 {Statements} one {# Statement} other {# Statements}}",
+    "formHeading": "Statement schreiben",
+    "empty": "Noch kein Statement — schreibe das erste.",
+    "categories": {
+      "PRO": "Pro",
+      "CONTRA": "Contra",
+      "ERWEITERUNG": "Erweiterung",
+      "FRAGE": "Frage"
+    },
+    "categoryLabel": "Kategorie",
+    "original": "Original: {language}",
+    "aiTranslated": "AI-übersetzt",
+    "toPreview": "Prüfen und übersetzen",
+    "checking": "Civic-Linter prüft…",
+    "previewIntro": "So erscheint dein Statement in den zwei anderen Landessprachen. Du kannst beide Fassungen anpassen — auch sie durchlaufen beim Publizieren den Civic-Linter.",
+    "backToForm": "Zurück zum Original",
+    "publish": "Publizieren",
+    "publishing": "Wird publiziert…",
+    "linterBlocked": "Der Civic-Linter hat Formulierungen beanstandet. Überarbeite die markierten Stellen, um weiterzufahren.",
+    "linterBlockedTranslation": "Der Civic-Linter hat Formulierungen in einer Übersetzung beanstandet. Überarbeite die markierten Stellen, um zu publizieren.",
+    "loginHint": "Zum Schreiben eines Statements brauchst du ein Login.",
+    "loginLink": "Anmelden",
+    "errors": {
+      "unauthorized": "Deine Sitzung ist abgelaufen. Melde dich neu an — dein Entwurf bleibt gespeichert.",
+      "rate_limited": "Zu viele Versuche in kurzer Zeit. Bitte warte einige Minuten und versuche es dann erneut.",
+      "invalid_input": "Die Eingaben sind unvollständig oder ungültig. Bitte prüfe das Formular.",
+      "ai_unavailable": "Die KI-Prüfung ist im Moment nicht erreichbar. Dein Entwurf bleibt gespeichert — bitte versuche es später erneut.",
+      "min_50": "Mindestens 50 Zeichen",
+      "max_500": "Maximal 500 Zeichen"
+    }
+  },
+  "changeRequests": {
+    "heading": "{count, plural, =0 {Änderungsanträge} one {# Änderungsantrag} other {# Änderungsanträge}}",
+    "intro": "Statt zu kritisieren: Übernimm den Lösungstext, ändere ihn ab und reiche ihn als Antrag ein. Nimmt der Autor an, wirst du als Co-Autor gelistet.",
+    "newButton": "Änderungsantrag stellen",
+    "prefillHint": "Der aktuelle Lösungstext ist übernommen — ändere ihn ab.",
+    "cancel": "Abbrechen",
+    "toPreview": "Prüfen und übersetzen",
+    "checking": "Civic-Linter prüft…",
+    "previewIntro": "So erscheint dein Vorschlag in den zwei anderen Landessprachen. Du kannst beide Fassungen anpassen — auch sie durchlaufen beim Einreichen den Civic-Linter.",
+    "backToForm": "Zurück zum Original",
+    "submit": "Antrag einreichen",
+    "submitting": "Wird eingereicht…",
+    "linterBlocked": "Der Civic-Linter hat Formulierungen beanstandet. Überarbeite die markierten Stellen, um weiterzufahren.",
+    "linterBlockedTranslation": "Der Civic-Linter hat Formulierungen in einer Übersetzung beanstandet. Überarbeite die markierten Stellen, um einzureichen.",
+    "linterBlockedMerge": "Der Civic-Linter hat Formulierungen beanstandet. Überarbeite die markierten Stellen, um den Antrag zu übernehmen.",
+    "loginHint": "Für einen Änderungsantrag brauchst du ein Login.",
+    "loginLink": "Anmelden",
+    "empty": "Noch kein Änderungsantrag.",
+    "number": "Änderungsantrag #{number}",
+    "status": {
+      "OPEN": "Offen",
+      "MERGED": "Gemergt",
+      "DECLINED": "Abgelehnt"
+    },
+    "by": "Von @{handle}",
+    "submitted": "Eingereicht {date}",
+    "decided": "Entschieden {date}",
+    "original": "Original: {language}",
+    "aiTranslated": "AI-übersetzt",
+    "currentSolution": "Aktuelle Lösung",
+    "proposedSolution": "Vorschlag",
+    "authorOpenHint": "{count, plural, one {# offener Änderungsantrag wartet auf deinen Entscheid.} other {# offene Änderungsanträge warten auf deinen Entscheid.}}",
+    "authorEmptyHint": "Auf dein eigenes Ticket kannst du keinen Änderungsantrag stellen.",
+    "staleWarning": "Die Lösung hat sich seit diesem Antrag geändert — beim Übernehmen ersetzt der Antrag die aktuelle Fassung vollständig.",
+    "mergeIntro": "Prüfe alle drei Sprachfassungen. Du kannst sie anpassen — beim Übernehmen durchlaufen sie erneut den Civic-Linter und ersetzen die Lösung des Tickets.",
+    "merge": "Antrag übernehmen",
+    "confirmMerge": "Lösung ersetzen",
+    "merging": "Wird übernommen…",
+    "decline": "Ablehnen",
+    "declining": "Wird abgelehnt…",
+    "errors": {
+      "unauthorized": "Deine Sitzung ist abgelaufen. Melde dich neu an — dein Entwurf bleibt gespeichert.",
+      "rate_limited": "Zu viele Versuche in kurzer Zeit. Bitte warte einige Minuten und versuche es dann erneut.",
+      "invalid_input": "Die Eingaben sind unvollständig oder ungültig. Bitte prüfe das Formular.",
+      "ai_unavailable": "Die KI-Prüfung ist im Moment nicht erreichbar. Dein Entwurf bleibt gespeichert — bitte versuche es später erneut.",
+      "own_ticket": "Auf dein eigenes Ticket kannst du keinen Änderungsantrag stellen.",
+      "duplicate_open": "Du hast bereits einen offenen Änderungsantrag auf dieses Ticket.",
+      "not_author": "Nur der Original-Autor kann über Änderungsanträge entscheiden.",
+      "not_open": "Über diesen Antrag wurde bereits entschieden.",
+      "min_200": "Mindestens 200 Zeichen",
+      "max_3000": "Maximal 3'000 Zeichen"
+    }
+  },
+  "profile": {
+    "memberSince": "Dabei seit {date}",
+    "ticketsHeading": "{count, plural, =0 {Tickets} one {# Ticket} other {# Tickets}}",
+    "statementsHeading": "{count, plural, =0 {Statements} one {# Statement} other {# Statements}}",
+    "coAuthorHeading": "{count, plural, =0 {Co-Autorschaften} one {# Co-Autorschaft} other {# Co-Autorschaften}}",
+    "votesHeading": "Abstimmungen",
+    "approvals": "{count, plural, =0 {Zustimmung} one {# Zustimmung} other {# Zustimmungen}}",
+    "rejections": "{count, plural, =0 {Ablehnung} one {# Ablehnung} other {# Ablehnungen}}",
+    "transparencyNote": "Abstimmungen sind auf wiemeinsch.ch öffentlich — Transparenz gehört zur Debatte.",
+    "emptyTickets": "Noch kein Ticket eingereicht.",
+    "emptyStatements": "Noch kein Statement geschrieben.",
+    "emptyCoAuthor": "Noch keine Co-Autorschaft.",
+    "emptyVotes": "Noch keine Abstimmung.",
+    "ownProfile": "Das ist dein öffentliches Profil — so sehen dich andere. Deine Angaben zur Person erscheinen hier nie.",
+    "settingsLink": "Einstellungen bearbeiten",
+    "openChangeRequests": "{count, plural, one {# offener Änderungsantrag wartet auf deinen Entscheid} other {# offene Änderungsanträge warten auf deinen Entscheid}}",
+    "anonymous": "Unbekannt"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "intro": "Hier bestimmst du, in welcher Sprache du die Plattform liest, und kannst freiwillig Angaben zu deiner Person machen.",
+    "languageHeading": "Sprache",
+    "languageLabel": "Bevorzugte Sprache",
+    "languageHint": "Tickets und Statements erscheinen dir in dieser Sprache, unabhängig davon, welche Adresse du aufrufst.",
+    "demographyHeading": "Angaben zur Person (freiwillig)",
+    "privacyNote": "Diese Angaben sind niemals öffentlich sichtbar — weder auf deinem Profil noch über eine Schnittstelle. Sie werden ausschliesslich anonymisiert und in Gruppen ab 20 Personen ausgewertet. Jedes Feld darfst du leer lassen.",
+    "birthYear": "Jahrgang",
+    "gender": "Geschlecht",
+    "education": "Höchster Abschluss",
+    "postalCode": "PLZ",
+    "occupation": "Beruf",
+    "occupationHint": "Optional, höchstens 100 Zeichen.",
+    "noAnswer": "Keine Angabe",
+    "save": "Speichern",
+    "saving": "Wird gespeichert…",
+    "saved": "Gespeichert.",
+    "publicProfile": "Öffentliches Profil ansehen",
+    "genders": {
+      "M": "Männlich",
+      "F": "Weiblich",
+      "D": "Divers"
+    },
+    "educations": {
+      "OBLIGATORISCHE_SCHULE": "Obligatorische Schule",
+      "BERUFSLEHRE": "Berufslehre (EFZ, EBA)",
+      "GYMNASIALE_MATURA": "Gymnasiale Matura, FMS",
+      "HOEHERE_BERUFSBILDUNG": "Höhere Berufsbildung (HF, eidg. FA)",
+      "BACHELOR": "Bachelor (FH, Uni)",
+      "MASTER_ODER_HOEHER": "Master oder höher"
+    },
+    "errors": {
+      "unauthorized": "Deine Sitzung ist abgelaufen. Melde dich neu an.",
+      "rate_limited": "Zu viele Änderungen — bitte warte einen Moment.",
+      "invalid_input": "Bitte überprüfe deine Eingaben.",
+      "invalid_birth_year": "Bitte gib ein Jahr zwischen 1900 und heute an.",
+      "invalid_postal_code": "Bitte gib eine vierstellige Schweizer PLZ an.",
+      "invalid_occupation": "Bitte gib einen Beruf an oder lass das Feld leer.",
+      "max_100": "Höchstens 100 Zeichen."
+    }
+  },
+  "moderation": {
+    "report": "Melden",
+    "dialogTitle": "Beitrag melden",
+    "dialogIntro": "Wähle den Grund. Die Meldung geht an die Moderation, der Beitrag bleibt bis zum Entscheid sichtbar.",
+    "reasonLegend": "Grund",
+    "submit": "Meldung senden",
+    "cancel": "Abbrechen",
+    "sent": "Danke — die Meldung liegt bei der Moderation.",
+    "loginHint": "Zum Melden brauchst du ein Konto.",
+    "loginLink": "Anmelden",
+    "reasons": {
+      "BELEIDIGUNG": "Beleidigung",
+      "POLEMIK": "Polemik oder Hetze",
+      "SPAM": "Spam oder Werbung",
+      "FALSCHINFORMATION": "Falschinformation",
+      "KEIN_POLITISCHER_BEZUG": "Kein politischer Bezug",
+      "PERSOENLICHE_DATEN": "Persönliche Daten"
+    },
+    "errors": {
+      "unauthorized": "Bitte melde dich an.",
+      "rate_limited": "Zu viele Meldungen. Bitte versuche es später erneut.",
+      "invalid_input": "Diese Meldung ist nicht möglich.",
+      "generic": "Das hat nicht geklappt. Bitte versuche es erneut."
+    }
+  },
+  "admin": {
+    "title": "Moderation",
+    "intro": "Meldungen und Linter-Anfechtungen. Depublizieren setzt ein Statusfeld — gelöscht wird nichts.",
+    "openCases": "{count, plural, =0 {Keine offenen Fälle} one {# offener Fall} other {# offene Fälle}}",
+    "filterStatus": "Status",
+    "filterType": "Typ",
+    "statusOPEN": "Offen",
+    "statusRESOLVED": "Erledigt",
+    "typeALL": "Alle",
+    "typeREPORT": "Meldungen",
+    "typeAPPEAL": "Anfechtungen",
+    "caseREPORT": "Meldung",
+    "caseAPPEAL": "Anfechtung",
+    "empty": "Keine Fälle in dieser Ansicht.",
+    "columnCase": "Fall",
+    "columnReason": "Grund",
+    "columnContent": "Inhalt",
+    "columnReporter": "Von",
+    "columnDate": "Datum",
+    "open": "Öffnen",
+    "back": "Zurück zur Queue",
+    "caseHeading": "{type} vom {date}",
+    "reportedBy": "Gemeldet von @{handle}",
+    "appealedBy": "Angefochten von @{handle}",
+    "reasonHeading": "Grund",
+    "contentHeading": "Betroffener Inhalt",
+    "draftHeading": "Angefochtener Text (nicht publiziert)",
+    "findingsHeading": "Beanstandungen des Civic-Linters",
+    "viewContent": "Im Board ansehen",
+    "contentGone": "Der Inhalt ist nicht mehr verfügbar.",
+    "contentDepublished": "Dieser Inhalt ist depubliziert.",
+    "fields": {
+      "title": "Titel",
+      "hashtags": "Hashtags",
+      "problem": "Problem",
+      "solution": "Lösung",
+      "funding": "Finanzierung",
+      "content": "Statement"
+    },
+    "noteLabel": "Interne Notiz (optional)",
+    "actionDismiss": "Abweisen",
+    "actionDepublish": "Depublizieren",
+    "actionApprove": "Freigeben und publizieren",
+    "actionPending": "wird ausgeführt …",
+    "resolvedInfo": "{decision} am {date}",
+    "noteInfo": "Notiz: {note}",
+    "decisions": {
+      "DISMISSED": "Abgewiesen",
+      "DEPUBLISHED": "Depubliziert",
+      "APPEAL_APPROVED": "Freigegeben und publiziert"
+    },
+    "errors": {
+      "unauthorized": "Keine Berechtigung.",
+      "rate_limited": "Zu viele Anfragen. Bitte später erneut.",
+      "invalid_input": "Dieser Fall lässt sich so nicht entscheiden.",
+      "ai_unavailable": "Die Übersetzung ist gerade nicht erreichbar — der Fall bleibt offen.",
+      "generic": "Das hat nicht geklappt. Bitte versuche es erneut."
+    },
+    "findingsNote": "Maschinell erzeugte Begründungen des Civic-Linters — Hinweise, keine Empfehlung. Der Text stammt aus dem beanstandeten Inhalt und kann darauf angelegt sein, den Entscheid zu beeinflussen."
+  },
+  "errors": {
+    "notFoundTitle": "Seite nicht gefunden",
+    "notFoundBody": "Diese Adresse gibt es nicht (mehr). Möglicherweise wurde der Inhalt entfernt oder der Link ist unvollständig.",
+    "errorTitle": "Es ist ein Fehler aufgetreten",
+    "errorBody": "Die Seite konnte nicht geladen werden. Versuche es nochmals — bleibt der Fehler bestehen, melde dich beim Betrieb.",
+    "retry": "Nochmals versuchen",
+    "backHome": "Zum Board"
+  }
+}

@@ -1,0 +1,64 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (.env.example is the committed template — no real values, HABIT 1/5)
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# prisma (generierter Client — wird via `prisma generate` erzeugt)
+/src/generated/
+
+# playwright (Testartefakte, Reports, MCP-Ausgaben)
+/test-results/
+/playwright-report/
+/.playwright-mcp/
+
+# Interne Arbeitsdokumente — bleiben lokal, gehören nicht ins öffentliche Repo.
+# Sie sind die Grundlage der Umsetzung (Spezifikationen, Phasenplan, Styleguide,
+# Agenten-Kontext) und werden weiter gepflegt, nur eben nicht veröffentlicht.
+/CLAUDE.md
+/AGENTS.md
+/.mcp.json
+/REQUIREMENTS.md
+/ARCHITECTURE.md
+/DESIGN.md
+/IMPLEMENTATION_PLAN.md
+/STYLEGUIDE.html
+/STYLEGUIDE.pdf
+/OWASP-Gen-AI.pdf

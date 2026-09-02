@@ -1,0 +1,184 @@
+[
+  {
+    "bfsCode": 1,
+    "abbr": "ZH",
+    "nameDe": "Zürich",
+    "nameFr": "Zurich",
+    "nameIt": "Zurigo"
+  },
+  {
+    "bfsCode": 2,
+    "abbr": "BE",
+    "nameDe": "Bern",
+    "nameFr": "Berne",
+    "nameIt": "Berna"
+  },
+  {
+    "bfsCode": 3,
+    "abbr": "LU",
+    "nameDe": "Luzern",
+    "nameFr": "Lucerne",
+    "nameIt": "Lucerna"
+  },
+  {
+    "bfsCode": 4,
+    "abbr": "UR",
+    "nameDe": "Uri",
+    "nameFr": "Uri",
+    "nameIt": "Uri"
+  },
+  {
+    "bfsCode": 5,
+    "abbr": "SZ",
+    "nameDe": "Schwyz",
+    "nameFr": "Schwytz",
+    "nameIt": "Svitto"
+  },
+  {
+    "bfsCode": 6,
+    "abbr": "OW",
+    "nameDe": "Obwalden",
+    "nameFr": "Obwald",
+    "nameIt": "Obvaldo"
+  },
+  {
+    "bfsCode": 7,
+    "abbr": "NW",
+    "nameDe": "Nidwalden",
+    "nameFr": "Nidwald",
+    "nameIt": "Nidvaldo"
+  },
+  {
+    "bfsCode": 8,
+    "abbr": "GL",
+    "nameDe": "Glarus",
+    "nameFr": "Glaris",
+    "nameIt": "Glarona"
+  },
+  {
+    "bfsCode": 9,
+    "abbr": "ZG",
+    "nameDe": "Zug",
+    "nameFr": "Zoug",
+    "nameIt": "Zugo"
+  },
+  {
+    "bfsCode": 10,
+    "abbr": "FR",
+    "nameDe": "Freiburg",
+    "nameFr": "Fribourg",
+    "nameIt": "Friburgo"
+  },
+  {
+    "bfsCode": 11,
+    "abbr": "SO",
+    "nameDe": "Solothurn",
+    "nameFr": "Soleure",
+    "nameIt": "Soletta"
+  },
+  {
+    "bfsCode": 12,
+    "abbr": "BS",
+    "nameDe": "Basel-Stadt",
+    "nameFr": "Bâle-Ville",
+    "nameIt": "Basilea Città"
+  },
+  {
+    "bfsCode": 13,
+    "abbr": "BL",
+    "nameDe": "Basel-Landschaft",
+    "nameFr": "Bâle-Campagne",
+    "nameIt": "Basilea Campagna"
+  },
+  {
+    "bfsCode": 14,
+    "abbr": "SH",
+    "nameDe": "Schaffhausen",
+    "nameFr": "Schaffhouse",
+    "nameIt": "Sciaffusa"
+  },
+  {
+    "bfsCode": 15,
+    "abbr": "AR",
+    "nameDe": "Appenzell Ausserrhoden",
+    "nameFr": "Appenzell Rhodes-Extérieures",
+    "nameIt": "Appenzello Esterno"
+  },
+  {
+    "bfsCode": 16,
+    "abbr": "AI",
+    "nameDe": "Appenzell Innerrhoden",
+    "nameFr": "Appenzell Rhodes-Intérieures",
+    "nameIt": "Appenzello Interno"
+  },
+  {
+    "bfsCode": 17,
+    "abbr": "SG",
+    "nameDe": "St. Gallen",
+    "nameFr": "Saint-Gall",
+    "nameIt": "San Gallo"
+  },
+  {
+    "bfsCode": 18,
+    "abbr": "GR",
+    "nameDe": "Graubünden",
+    "nameFr": "Grisons",
+    "nameIt": "Grigioni"
+  },
+  {
+    "bfsCode": 19,
+    "abbr": "AG",
+    "nameDe": "Aargau",
+    "nameFr": "Argovie",
+    "nameIt": "Argovia"
+  },
+  {
+    "bfsCode": 20,
+    "abbr": "TG",
+    "nameDe": "Thurgau",
+    "nameFr": "Thurgovie",
+    "nameIt": "Turgovia"
+  },
+  {
+    "bfsCode": 21,
+    "abbr": "TI",
+    "nameDe": "Tessin",
+    "nameFr": "Tessin",
+    "nameIt": "Ticino"
+  },
+  {
+    "bfsCode": 22,
+    "abbr": "VD",
+    "nameDe": "Waadt",
+    "nameFr": "Vaud",
+    "nameIt": "Vaud"
+  },
+  {
+    "bfsCode": 23,
+    "abbr": "VS",
+    "nameDe": "Wallis",
+    "nameFr": "Valais",
+    "nameIt": "Vallese"
+  },
+  {
+    "bfsCode": 24,
+    "abbr": "NE",
+    "nameDe": "Neuenburg",
+    "nameFr": "Neuchâtel",
+    "nameIt": "Neuchâtel"
+  },
+  {
+    "bfsCode": 25,
+    "abbr": "GE",
+    "nameDe": "Genf",
+    "nameFr": "Genève",
+    "nameIt": "Ginevra"
+  },
+  {
+    "bfsCode": 26,
+    "abbr": "JU",
+    "nameDe": "Jura",
+    "nameFr": "Jura",
+    "nameIt": "Giura"
+  }
+]

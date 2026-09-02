@@ -1,0 +1,412 @@
+// Datenmodell wiemeinsch.ch.
+// Übersetzungen sind eigene Tabellen (eine Zeile pro Sprache, eine davon Original) —
+// der Linter-/Editier-Flow braucht sie einzeln (P7).
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [pg_trgm] // Trigram-Similarity für den Duplikat-Check (P7)
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Locale {
+  DE
+  FR
+  IT
+}
+
+enum PoliticalLevel {
+  FEDERAL // "Schweizweit"
+  CANTONAL
+  MUNICIPAL // "Regional"
+}
+
+// Depublizieren = Statusfeld, kein Löschen (P12: Nachvollziehbarkeit).
+enum ContentStatus {
+  PUBLISHED
+  DEPUBLISHED
+}
+
+enum StatementCategory {
+  PRO
+  CONTRA
+  ERWEITERUNG
+  FRAGE
+}
+
+enum VoteValue {
+  UP
+  DOWN
+}
+
+enum Gender {
+  M
+  F
+  D
+}
+
+// Bildungsstufen exakt
+enum EducationLevel {
+  OBLIGATORISCHE_SCHULE
+  BERUFSLEHRE // EFZ, EBA
+  GYMNASIALE_MATURA // inkl. FMS
+  HOEHERE_BERUFSBILDUNG // HF, eidg. FA
+  BACHELOR // FH, Uni
+  MASTER_ODER_HOEHER
+}
+
+enum ChangeRequestStatus {
+  OPEN
+  MERGED
+  DECLINED
+}
+
+enum ModerationCaseType {
+  APPEAL // User ficht Civic-Linter-Entscheid an
+  REPORT // User meldet publizierten Content
+}
+
+enum ModerationCaseStatus {
+  OPEN
+  RESOLVED
+}
+
+// ---------------------------------------------------------------------------
+// User & Auth (Auth.js-Modelle gemäss @auth/prisma-adapter 2.11.3)
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+
+  handle          String? @unique // öffentlicher @handle (wird bei Registrierung gesetzt, P4)
+  preferredLocale Locale  @default(DE)
+  isAdmin         Boolean @default(false)
+
+  // Demografie — serverseitig PRIVAT (nDSG).
+  // Verlässt den Server NIE pro User; einziger erlaubter Lesepfad nach aussen
+  // ist die öffentliche Projektion in src/lib/user-projection.ts (P2.5/P11).
+  birthYear  Int?
+  gender     Gender?
+  education  EducationLevel?
+  postalCode String?
+  occupation String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts          Account[]
+  sessions          Session[]
+  tickets           Ticket[]         @relation("TicketAuthor")
+  coAuthoredTickets Ticket[]         @relation("TicketCoAuthors")
+  statements        Statement[]
+  ticketVotes       TicketVote[]
+  statementVotes    StatementVote[]
+  changeRequests    ChangeRequest[]
+  moderationCases   ModerationCase[] @relation("CaseReporter")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Applikationsseitiges Rate-Limiting (Entscheid E2: PostgreSQL-Tabelle, kein Redis).
+// Fixed-Window-Zähler; alte Fenster werden opportunistisch gelöscht (lib/rate-limit.ts).
+model RateLimitBucket {
+  key         String // "<scope>:<identifier>", z.B. "auth-ip:1.2.3.4"
+  windowStart DateTime
+  count       Int      @default(1)
+
+  @@id([key, windowStart])
+  @@index([windowStart])
+}
+
+// ---------------------------------------------------------------------------
+// Stammdaten (BFS-Snapshot, Entscheid E7)
+// ---------------------------------------------------------------------------
+
+model Canton {
+  id     Int    @id // BFS-Kantonsnummer (1–26)
+  abbr   String @unique // ZH, BE, …
+  nameDe String
+  nameFr String
+  nameIt String
+
+  municipalities Municipality[]
+  tickets        Ticket[]
+}
+
+model Municipality {
+  id       Int    @id // BFS-Gemeindenummer
+  name     String // offizieller (sprachspezifischer) BFS-Name, z.B. "Genève"
+  cantonId Int
+
+  canton  Canton   @relation(fields: [cantonId], references: [id], onDelete: Restrict)
+  tickets Ticket[]
+
+  @@index([name])
+  @@index([cantonId])
+}
+
+// ---------------------------------------------------------------------------
+// Tickets
+// ---------------------------------------------------------------------------
+
+model Ticket {
+  id       String @id @default(cuid())
+  authorId String
+
+  level          PoliticalLevel
+  cantonId       Int? // gesetzt bei CANTONAL
+  municipalityId Int? // gesetzt bei MUNICIPAL
+
+  status         ContentStatus @default(PUBLISHED)
+  originalLocale Locale
+
+  // Denormalisierte Zähler & Scores (Berechnung).
+  upvotes          Int   @default(0)
+  downvotes        Int   @default(0)
+  statementCount   Int   @default(0)
+  changeRequestCount Int @default(0)
+  scoreConsensus   Float @default(0) @map("score_consensus")
+  scoreControversy Float @default(0) @map("score_controversy")
+  scoreTrending    Float @default(0) @map("score_trending")
+
+  // Erhöht sich bei jeder Lösungsänderung (PPR-Merge) — Stale-Erkennung (P10.4).
+  solutionRevision Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author         User                @relation("TicketAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  coAuthors      User[]              @relation("TicketCoAuthors")
+  canton         Canton?             @relation(fields: [cantonId], references: [id], onDelete: Restrict)
+  municipality   Municipality?       @relation(fields: [municipalityId], references: [id], onDelete: Restrict)
+  translations   TicketTranslation[]
+  hashtags       Hashtag[]
+  statements     Statement[]
+  votes          TicketVote[]
+  changeRequests ChangeRequest[]
+  moderationCases ModerationCase[]
+
+  // Board-Sortierung = indexierter ORDER BY auf den Score-Spalten (P8.4).
+  @@index([status, scoreConsensus(sort: Desc)])
+  @@index([status, scoreControversy(sort: Desc)])
+  @@index([status, scoreTrending(sort: Desc)])
+  @@index([authorId])
+}
+
+model TicketTranslation {
+  id         String  @id @default(cuid())
+  ticketId   String
+  locale     Locale
+  isOriginal Boolean @default(false)
+
+  title    String
+  problem  Json // TipTap-JSON — Rendering nur über sichere Serialisierung (P7/P13)
+  solution Json
+  funding  Json?
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@unique([ticketId, locale])
+  // GIN-Trigram-Index für den Duplikat-Check auf Titeln (pg_trgm, P7.2).
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin)
+}
+
+model Hashtag {
+  id  String @id @default(cuid())
+  tag String @unique // normalisiert: lowercase, ohne führendes #
+
+  tickets Ticket[]
+
+  // GIN-Trigram-Index für den Duplikat-Check auf Hashtags (pg_trgm, P7.2).
+  @@index([tag(ops: raw("gin_trgm_ops"))], type: Gin)
+}
+
+// ---------------------------------------------------------------------------
+// Statements (KEINE Reply-Struktur!)
+// ---------------------------------------------------------------------------
+
+model Statement {
+  id       String @id @default(cuid())
+  ticketId String
+  authorId String
+
+  category       StatementCategory
+  status         ContentStatus     @default(PUBLISHED)
+  originalLocale Locale
+
+  upvotes   Int @default(0)
+  downvotes Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ticket          Ticket                 @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author          User                   @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  translations    StatementTranslation[]
+  votes           StatementVote[]
+  moderationCases ModerationCase[]
+
+  @@index([ticketId, category])
+}
+
+model StatementTranslation {
+  id          String  @id @default(cuid())
+  statementId String
+  locale      Locale
+  isOriginal  Boolean @default(false)
+
+  content Json // TipTap-JSON
+
+  statement Statement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+
+  @@unique([statementId, locale])
+}
+
+// ---------------------------------------------------------------------------
+// Votes — Unique-Constraint User+Ziel (max. 1 Stimme, Umschalten via Upsert, E1/P8)
+// ---------------------------------------------------------------------------
+
+model TicketVote {
+  id       String    @id @default(cuid())
+  userId   String
+  ticketId String
+  value    VoteValue
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ticketId])
+  @@index([userId, createdAt(sort: Desc)]) // öffentliche Voting-Historie (P11)
+}
+
+model StatementVote {
+  id          String    @id @default(cuid())
+  userId      String
+  statementId String
+  value       VoteValue
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  statement Statement @relation(fields: [statementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, statementId])
+}
+
+// ---------------------------------------------------------------------------
+// Political Pull Request
+// ---------------------------------------------------------------------------
+
+model ChangeRequest {
+  id       String @id @default(cuid())
+  ticketId String
+  authorId String
+
+  status         ChangeRequestStatus @default(OPEN)
+  originalLocale Locale
+
+  // Wert von Ticket.solutionRevision bei Antragstellung — Stale-Warnung beim Merge (P10.4).
+  baseSolutionRevision Int
+
+  createdAt DateTime  @default(now())
+  decidedAt DateTime?
+
+  ticket          Ticket                     @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author          User                       @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  translations    ChangeRequestTranslation[]
+  moderationCases ModerationCase[]
+
+  @@index([ticketId, status])
+}
+
+model ChangeRequestTranslation {
+  id              String  @id @default(cuid())
+  changeRequestId String
+  locale          Locale
+  isOriginal      Boolean @default(false)
+
+  solution Json // vorgeschlagener Lösungstext (TipTap-JSON)
+
+  changeRequest ChangeRequest @relation(fields: [changeRequestId], references: [id], onDelete: Cascade)
+
+  @@unique([changeRequestId, locale])
+}
+
+// ---------------------------------------------------------------------------
+// Moderation
+// ---------------------------------------------------------------------------
+
+model ModerationCase {
+  id     String               @id @default(cuid())
+  type   ModerationCaseType
+  status ModerationCaseStatus @default(OPEN)
+
+  reporterId String
+  // Ziel: genau eines der drei (per Anwendungslogik/Action validiert, P12).
+  ticketId        String?
+  statementId     String?
+  changeRequestId String?
+
+  reason         String // Begründungs-Auswahl (REPORT) bzw. Linter-Grund (APPEAL)
+  blockedContent Json? // bei APPEAL: der blockierte Text (TipTap-JSON)
+  resolutionNote String?
+
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  reporter      User           @relation("CaseReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  ticket        Ticket?        @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  statement     Statement?     @relation(fields: [statementId], references: [id], onDelete: Cascade)
+  changeRequest ChangeRequest? @relation(fields: [changeRequestId], references: [id], onDelete: Cascade)
+
+  @@index([status, type, createdAt])
+}

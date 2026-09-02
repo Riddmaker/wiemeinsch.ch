@@ -1,0 +1,398 @@
+{
+  "app": {
+    "name": "wiemeinsch.ch",
+    "logoAria": "Logo wiemeinsch.ch: croce svizzera in un cerchio"
+  },
+  "header": {
+    "board": "Board",
+    "submit": "Inoltrare",
+    "login": "Accedi",
+    "profile": "Profilo",
+    "logout": "Esci",
+    "admin": "Admin"
+  },
+  "localeSwitcher": {
+    "label": "Scegliere la lingua",
+    "de": "Tedesco",
+    "fr": "Francese",
+    "it": "Italiano"
+  },
+  "footer": {
+    "impressum": "Impressum",
+    "license": "Open source con licenza PolyForm Noncommercial 1.0.0"
+  },
+  "home": {
+    "title": "Il backlog politico della Svizzera",
+    "intro": "Inoltrare problemi, migliorare soluzioni, rendere visibile il consenso — in modo strutturato invece che polarizzato."
+  },
+  "board": {
+    "tabsAria": "Ordinamento del board",
+    "tabs": {
+      "trending": "Trending",
+      "consensus": "Consensus",
+      "controversial": "Controverso"
+    },
+    "tooFewVotes": "Troppo pochi voti",
+    "upvotesAria": "Approvazioni",
+    "downvotesAria": "Rifiuti",
+    "statements": "{count, plural, one {# statement} other {# statements}}",
+    "changeRequests": "{count, plural, one {# proposta di modifica} other {# proposte di modifica}}",
+    "empty": "Nessun ticket pubblicato finora."
+  },
+  "impressum": {
+    "title": "Impressum",
+    "responsible": "Responsabile del contenuto di questo sito web:",
+    "emailLabel": "E-mail"
+  },
+  "login": {
+    "title": "Accedi",
+    "intro": "Accedi con il tuo indirizzo e-mail. Riceverai un link di accesso — senza password.",
+    "emailLabel": "Indirizzo e-mail",
+    "submit": "Invia il link di accesso",
+    "google": "Accedi con Google",
+    "or": "oppure",
+    "checkEmailTitle": "Controlla la tua e-mail",
+    "checkEmailText": "Se con questo indirizzo è possibile un account, ti abbiamo appena inviato un link di accesso. Il link è valido per un'ora.",
+    "errorTitle": "Accesso non riuscito",
+    "errors": {
+      "Turnstile": "La verifica di sicurezza non è riuscita. Ricarica la pagina e riprova.",
+      "RateLimit": "Troppi tentativi in poco tempo. Attendi qualche minuto e riprova.",
+      "Verification": "Questo link di accesso non è valido o è scaduto. Richiedi un nuovo link.",
+      "Default": "L'accesso non è riuscito. Riprova."
+    },
+    "backToLogin": "Torna all'accesso"
+  },
+  "editor": {
+    "bold": "Grassetto",
+    "italic": "Corsivo",
+    "bulletList": "Elenco puntato",
+    "counter": "{count} / {max} caratteri"
+  },
+  "levels": {
+    "FEDERAL": "Nazionale",
+    "CANTONAL": "Cantonale",
+    "MUNICIPAL": "Regionale"
+  },
+  "ticketNew": {
+    "title": "Inoltra un ticket",
+    "intro": "Descrivi un problema politico e la tua proposta di soluzione. Il Civic-Linter verifica l'oggettività del testo; poi viene creata automaticamente una versione nelle tre lingue nazionali.",
+    "levelLabel": "Livello politico",
+    "cantonLabel": "Cantone",
+    "municipalityLabel": "Comune",
+    "noResults": "Nessun risultato",
+    "titleLabel": "Titolo — il pitch",
+    "counter": "{count} / {max} caratteri",
+    "hashtagsLabel": "Hashtag (facoltativo)",
+    "hashtagPlaceholder": "Aggiungi un #hashtag",
+    "hashtagRemove": "Rimuovi l'hashtag #{tag}",
+    "problemLabel": "Problema — stato attuale",
+    "solutionLabel": "Soluzione — stato auspicato",
+    "fundingLabel": "Finanziamento / compromesso (facoltativo)",
+    "duplicateHint": "Esistono già ticket simili — votarli invece?",
+    "toPreview": "Verifica e traduci",
+    "checking": "Il Civic-Linter sta verificando…",
+    "previewIntro": "Ecco il tuo ticket nelle altre due lingue nazionali. Puoi adattare entrambe le versioni — anche loro passeranno dal Civic-Linter alla pubblicazione.",
+    "backToForm": "Torna all'originale",
+    "publish": "Pubblica",
+    "publishing": "Pubblicazione in corso…",
+    "linterBlocked": "Il Civic-Linter ha segnalato alcune formulazioni. Rielabora i passaggi contrassegnati per continuare.",
+    "linterBlockedTranslation": "Il Civic-Linter ha segnalato formulazioni in una traduzione. Rielabora i passaggi contrassegnati per pubblicare.",
+    "errors": {
+      "unauthorized": "La tua sessione è scaduta. Accedi di nuovo — la tua bozza resta salvata.",
+      "rate_limited": "Troppi tentativi in poco tempo. Attendi qualche minuto e riprova.",
+      "invalid_input": "I dati inseriti sono incompleti o non validi. Controlla il modulo.",
+      "ai_unavailable": "La verifica tramite IA non è al momento disponibile. La tua bozza resta salvata — riprova più tardi.",
+      "min_1": "Campo obbligatorio",
+      "max_80": "Massimo 80 caratteri",
+      "min_200": "Minimo 200 caratteri",
+      "max_3000": "Massimo 3'000 caratteri",
+      "max_1500": "Massimo 1'500 caratteri",
+      "max_5": "Massimo 5 hashtag",
+      "max_30": "Massimo 30 caratteri per hashtag",
+      "invalid_chars": "Solo lettere, cifre, «_» e «-»",
+      "duplicates": "Gli hashtag non devono ripetersi",
+      "canton_required": "Scegli un cantone",
+      "municipality_required": "Scegli un comune",
+      "federal_no_region": "Per «Nazionale» non serve una regione"
+    }
+  },
+  "linter": {
+    "chip": "CIVIC-LINTER · {reason}",
+    "appeal": "Contesta la decisione",
+    "reasons": {
+      "RAGEBAIT": "Ragebait",
+      "BELEIDIGUNG": "Insulto",
+      "POLEMIK": "Polemica",
+      "DISKRIMINIERUNG": "Discriminazione",
+      "DROHUNG": "Minaccia",
+      "INJECTION": "Tentativo di manipolazione",
+      "UNSACHLICH": "Non oggettivo"
+    },
+    "appealPending": "verifica in corso …",
+    "appealSent": "Contestato — la moderazione esamina il testo.",
+    "appealNotBlocked": "Il testo non viene più contestato. Invialo di nuovo.",
+    "appealRateLimited": "Troppe contestazioni. Riprova più tardi.",
+    "appealUnavailable": "La verifica non è raggiungibile al momento. Riprova più tardi.",
+    "appealError": "Non è stato possibile registrare la contestazione."
+  },
+  "ticketDetail": {
+    "vote": {
+      "up": "Approva",
+      "down": "Respingi",
+      "loginHint": "Per votare devi accedere.",
+      "loginLink": "Accedi",
+      "errors": {
+        "rate_limited": "Troppe azioni — attendi un momento.",
+        "invalid_input": "Questo voto non è possibile al momento."
+      }
+    },
+    "created": "Creato il {date}",
+    "by": "Di @{handle}",
+    "original": "Originale: {language}",
+    "aiTranslated": "Tradotto dall'IA",
+    "showOriginal": "Mostra l'originale",
+    "showTranslation": "Mostra la traduzione",
+    "problem": "Problema",
+    "solution": "Soluzione",
+    "funding": "Finanziamento / compromesso",
+    "coAuthor": "Co-autore: @{handle} (richiesta di modifica n. {number}, accettata il {date})"
+  },
+  "statements": {
+    "heading": "{count, plural, =0 {Statements} one {# statement} other {# statements}}",
+    "formHeading": "Scrivi uno statement",
+    "empty": "Ancora nessuno statement — scrivi il primo.",
+    "categories": {
+      "PRO": "Pro",
+      "CONTRA": "Contro",
+      "ERWEITERUNG": "Integrazione",
+      "FRAGE": "Domanda"
+    },
+    "categoryLabel": "Categoria",
+    "original": "Originale: {language}",
+    "aiTranslated": "Tradotto dall'IA",
+    "toPreview": "Verifica e traduci",
+    "checking": "Il civic linter verifica…",
+    "previewIntro": "Ecco come appare il tuo statement nelle altre due lingue nazionali. Puoi adattare entrambe le versioni — anche loro passano dal civic linter al momento della pubblicazione.",
+    "backToForm": "Torna all'originale",
+    "publish": "Pubblica",
+    "publishing": "Pubblicazione in corso…",
+    "linterBlocked": "Il civic linter ha segnalato alcune formulazioni. Rivedi i passaggi evidenziati per proseguire.",
+    "linterBlockedTranslation": "Il civic linter ha segnalato alcune formulazioni in una traduzione. Rivedi i passaggi evidenziati per pubblicare.",
+    "loginHint": "Per scrivere uno statement devi accedere.",
+    "loginLink": "Accedi",
+    "errors": {
+      "unauthorized": "La tua sessione è scaduta. Accedi di nuovo — la bozza resta salvata.",
+      "rate_limited": "Troppi tentativi in poco tempo. Attendi qualche minuto e riprova.",
+      "invalid_input": "I dati sono incompleti o non validi. Controlla il modulo.",
+      "ai_unavailable": "La verifica IA non è raggiungibile al momento. La bozza resta salvata — riprova più tardi.",
+      "min_50": "Almeno 50 caratteri",
+      "max_500": "Massimo 500 caratteri"
+    }
+  },
+  "changeRequests": {
+    "heading": "{count, plural, =0 {Richieste di modifica} one {# richiesta di modifica} other {# richieste di modifica}}",
+    "intro": "Invece di criticare: riprendi il testo della soluzione, modificalo e inoltralo come richiesta. Se l'autore l'accetta, verrai elencato come co-autore.",
+    "newButton": "Presenta una richiesta di modifica",
+    "prefillHint": "Il testo attuale della soluzione è ripreso — modificalo.",
+    "cancel": "Annulla",
+    "toPreview": "Verifica e traduci",
+    "checking": "Il civic linter verifica…",
+    "previewIntro": "Ecco come appare la tua proposta nelle altre due lingue nazionali. Puoi adattare entrambe le versioni — anche loro passano dal civic linter al momento dell'inoltro.",
+    "backToForm": "Torna all'originale",
+    "submit": "Inoltra la richiesta",
+    "submitting": "Inoltro in corso…",
+    "linterBlocked": "Il civic linter ha segnalato alcune formulazioni. Rivedi i passaggi evidenziati per proseguire.",
+    "linterBlockedTranslation": "Il civic linter ha segnalato alcune formulazioni in una traduzione. Rivedi i passaggi evidenziati per inoltrare la richiesta.",
+    "linterBlockedMerge": "Il civic linter ha segnalato alcune formulazioni. Rivedi i passaggi evidenziati per accettare la richiesta.",
+    "loginHint": "Per presentare una richiesta di modifica devi accedere.",
+    "loginLink": "Accedi",
+    "empty": "Ancora nessuna richiesta di modifica.",
+    "number": "Richiesta di modifica n. {number}",
+    "status": {
+      "OPEN": "Aperta",
+      "MERGED": "Accettata",
+      "DECLINED": "Respinta"
+    },
+    "by": "Di @{handle}",
+    "submitted": "Inoltrata il {date}",
+    "decided": "Decisa il {date}",
+    "original": "Originale: {language}",
+    "aiTranslated": "Tradotto dall'IA",
+    "currentSolution": "Soluzione attuale",
+    "proposedSolution": "Proposta",
+    "authorOpenHint": "{count, plural, one {# richiesta di modifica attende la tua decisione.} other {# richieste di modifica attendono la tua decisione.}}",
+    "authorEmptyHint": "Sul tuo stesso ticket non puoi presentare una richiesta di modifica.",
+    "staleWarning": "La soluzione è cambiata dopo questa richiesta — accettandola, sostituirà integralmente la versione attuale.",
+    "mergeIntro": "Controlla tutte e tre le versioni linguistiche. Puoi adattarle — al momento dell'accettazione passano di nuovo dal civic linter e sostituiscono la soluzione del ticket.",
+    "merge": "Accetta la richiesta",
+    "confirmMerge": "Sostituisci la soluzione",
+    "merging": "Accettazione in corso…",
+    "decline": "Respingi",
+    "declining": "Rifiuto in corso…",
+    "errors": {
+      "unauthorized": "La tua sessione è scaduta. Accedi di nuovo — la bozza resta salvata.",
+      "rate_limited": "Troppi tentativi in poco tempo. Attendi qualche minuto e riprova.",
+      "invalid_input": "I dati sono incompleti o non validi. Controlla il modulo.",
+      "ai_unavailable": "La verifica IA non è raggiungibile al momento. La bozza resta salvata — riprova più tardi.",
+      "own_ticket": "Sul tuo stesso ticket non puoi presentare una richiesta di modifica.",
+      "duplicate_open": "Hai già una richiesta di modifica aperta su questo ticket.",
+      "not_author": "Solo l'autore originale può decidere sulle richieste di modifica.",
+      "not_open": "Su questa richiesta è già stata presa una decisione.",
+      "min_200": "Minimo 200 caratteri",
+      "max_3000": "Massimo 3'000 caratteri"
+    }
+  },
+  "profile": {
+    "memberSince": "Iscritto dal {date}",
+    "ticketsHeading": "{count, plural, =0 {Ticket} one {# ticket} other {# ticket}}",
+    "statementsHeading": "{count, plural, =0 {Statements} one {# statement} other {# statement}}",
+    "coAuthorHeading": "{count, plural, =0 {Co-autori} one {# co-autore} other {# co-autori}}",
+    "votesHeading": "Votazioni",
+    "approvals": "{count, plural, =0 {Approvazioni} one {# approvazione} other {# approvazioni}}",
+    "rejections": "{count, plural, =0 {Rifiuti} one {# rifiuto} other {# rifiuti}}",
+    "transparencyNote": "Su wiemeinsch.ch le votazioni sono pubbliche — la trasparenza fa parte del dibattito.",
+    "emptyTickets": "Nessun ticket inviato finora.",
+    "emptyStatements": "Nessuno statement scritto finora.",
+    "emptyCoAuthor": "Nessun co-autore finora.",
+    "emptyVotes": "Nessuna votazione finora.",
+    "ownProfile": "Questo è il tuo profilo pubblico — così ti vedono gli altri. I tuoi dati personali non compaiono mai qui.",
+    "settingsLink": "Modifica le impostazioni",
+    "openChangeRequests": "{count, plural, one {# richiesta di modifica attende la tua decisione} other {# richieste di modifica attendono la tua decisione}}",
+    "anonymous": "Sconosciuto"
+  },
+  "settings": {
+    "title": "Impostazioni",
+    "intro": "Qui scegli in quale lingua leggere la piattaforma e puoi indicare, se vuoi, alcune informazioni su di te.",
+    "languageHeading": "Lingua",
+    "languageLabel": "Lingua preferita",
+    "languageHint": "I ticket e gli statement ti vengono mostrati in questa lingua, indipendentemente dall'indirizzo che apri.",
+    "demographyHeading": "Dati personali (facoltativi)",
+    "privacyNote": "Questi dati non sono mai visibili pubblicamente — né sul tuo profilo né tramite un'interfaccia. Vengono valutati solo in forma anonima, in gruppi di almeno 20 persone. Puoi lasciare vuoto ogni campo.",
+    "birthYear": "Anno di nascita",
+    "gender": "Genere",
+    "education": "Titolo di studio più alto",
+    "postalCode": "NPA",
+    "occupation": "Professione",
+    "occupationHint": "Facoltativo, al massimo 100 caratteri.",
+    "noAnswer": "Nessuna indicazione",
+    "save": "Salva",
+    "saving": "Salvataggio in corso…",
+    "saved": "Salvato.",
+    "publicProfile": "Vedi il profilo pubblico",
+    "genders": {
+      "M": "Maschile",
+      "F": "Femminile",
+      "D": "Diverso"
+    },
+    "educations": {
+      "OBLIGATORISCHE_SCHULE": "Scuola dell'obbligo",
+      "BERUFSLEHRE": "Tirocinio (AFC, CFP)",
+      "GYMNASIALE_MATURA": "Maturità liceale, SMS",
+      "HOEHERE_BERUFSBILDUNG": "Formazione professionale superiore (SSS, APF)",
+      "BACHELOR": "Bachelor (SUP, università)",
+      "MASTER_ODER_HOEHER": "Master o superiore"
+    },
+    "errors": {
+      "unauthorized": "La tua sessione è scaduta. Accedi di nuovo.",
+      "rate_limited": "Troppe modifiche — attendi un momento.",
+      "invalid_input": "Controlla i dati inseriti.",
+      "invalid_birth_year": "Indica un anno compreso tra il 1900 e oggi.",
+      "invalid_postal_code": "Indica un NPA svizzero di quattro cifre.",
+      "invalid_occupation": "Indica una professione oppure lascia vuoto il campo.",
+      "max_100": "Al massimo 100 caratteri."
+    }
+  },
+  "moderation": {
+    "report": "Segnala",
+    "dialogTitle": "Segnala il contributo",
+    "dialogIntro": "Scegli il motivo. La segnalazione va alla moderazione; il contributo resta visibile fino alla decisione.",
+    "reasonLegend": "Motivo",
+    "submit": "Invia la segnalazione",
+    "cancel": "Annulla",
+    "sent": "Grazie — la segnalazione è arrivata alla moderazione.",
+    "loginHint": "Per segnalare serve un account.",
+    "loginLink": "Accedi",
+    "reasons": {
+      "BELEIDIGUNG": "Insulto",
+      "POLEMIK": "Polemica o incitamento all'odio",
+      "SPAM": "Spam o pubblicità",
+      "FALSCHINFORMATION": "Informazione falsa",
+      "KEIN_POLITISCHER_BEZUG": "Senza riferimento politico",
+      "PERSOENLICHE_DATEN": "Dati personali"
+    },
+    "errors": {
+      "unauthorized": "Effettua l'accesso.",
+      "rate_limited": "Troppe segnalazioni. Riprova più tardi.",
+      "invalid_input": "Questa segnalazione non è possibile.",
+      "generic": "Non ha funzionato. Riprova."
+    }
+  },
+  "admin": {
+    "title": "Moderazione",
+    "intro": "Segnalazioni e contestazioni del linter. Depubblicare cambia solo uno stato — non viene cancellato nulla.",
+    "openCases": "{count, plural, =0 {Nessun caso aperto} one {# caso aperto} other {# casi aperti}}",
+    "filterStatus": "Stato",
+    "filterType": "Tipo",
+    "statusOPEN": "Aperti",
+    "statusRESOLVED": "Conclusi",
+    "typeALL": "Tutti",
+    "typeREPORT": "Segnalazioni",
+    "typeAPPEAL": "Contestazioni",
+    "caseREPORT": "Segnalazione",
+    "caseAPPEAL": "Contestazione",
+    "empty": "Nessun caso in questa vista.",
+    "columnCase": "Caso",
+    "columnReason": "Motivo",
+    "columnContent": "Contenuto",
+    "columnReporter": "Da",
+    "columnDate": "Data",
+    "open": "Apri",
+    "back": "Torna alla coda",
+    "caseHeading": "{type} del {date}",
+    "reportedBy": "Segnalato da @{handle}",
+    "appealedBy": "Contestato da @{handle}",
+    "reasonHeading": "Motivo",
+    "contentHeading": "Contenuto interessato",
+    "draftHeading": "Testo contestato (non pubblicato)",
+    "findingsHeading": "Obiezioni del Civic-Linter",
+    "viewContent": "Vedi nel board",
+    "contentGone": "Il contenuto non è più disponibile.",
+    "contentDepublished": "Questo contenuto è depubblicato.",
+    "fields": {
+      "title": "Titolo",
+      "hashtags": "Hashtag",
+      "problem": "Problema",
+      "solution": "Soluzione",
+      "funding": "Finanziamento",
+      "content": "Statement"
+    },
+    "noteLabel": "Nota interna (facoltativa)",
+    "actionDismiss": "Respingi",
+    "actionDepublish": "Depubblica",
+    "actionApprove": "Approva e pubblica",
+    "actionPending": "in corso …",
+    "resolvedInfo": "{decision} il {date}",
+    "noteInfo": "Nota: {note}",
+    "decisions": {
+      "DISMISSED": "Respinto",
+      "DEPUBLISHED": "Depubblicato",
+      "APPEAL_APPROVED": "Approvato e pubblicato"
+    },
+    "errors": {
+      "unauthorized": "Nessuna autorizzazione.",
+      "rate_limited": "Troppe richieste. Riprova più tardi.",
+      "invalid_input": "Questo caso non può essere deciso così.",
+      "ai_unavailable": "La traduzione non è raggiungibile — il caso resta aperto.",
+      "generic": "Non ha funzionato. Riprova."
+    },
+    "findingsNote": "Motivazioni generate automaticamente dal Civic-Linter — indicazioni, non una raccomandazione. Il testo deriva dal contenuto contestato e può mirare a influenzare la decisione."
+  },
+  "errors": {
+    "notFoundTitle": "Pagina non trovata",
+    "notFoundBody": "Questo indirizzo non esiste (più). Il contenuto potrebbe essere stato rimosso o il link è incompleto.",
+    "errorTitle": "Si è verificato un errore",
+    "errorBody": "Non è stato possibile caricare la pagina. Riprova — se l'errore persiste, contatta il gestore.",
+    "retry": "Riprova",
+    "backHome": "Alla bacheca"
+  }
+}

@@ -1,0 +1,19 @@
+# Zeilenenden: im Repository IMMER LF, unabhängig vom Betriebssystem des
+# Arbeitsplatzes. Der Grund ist nicht Kosmetik: Shell-Skripte (scripts/backup/)
+# und der Dockerfile-Entrypoint laufen in Linux-Containern — ein mit CRLF
+# ausgechecktes und so committetes Skript stirbt dort mit
+# "bad interpreter: /bin/sh^M". Auf Windows-Checkouts gilt sonst core.autocrlf.
+* text=auto eol=lf
+
+# Ausführbare Dateien und Container-Rezepte: nie CRLF, auch nicht im Checkout.
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Binärdateien nie anfassen (sonst zerstört die Konvertierung den Inhalt).
+*.pdf binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary

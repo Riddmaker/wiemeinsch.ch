@@ -1,0 +1,20 @@
+# Build-Artefakte & Lockfiles
+src/generated/
+.next/
+out/
+build/
+coverage/
+package-lock.json
+next-env.d.ts
+test-results/
+.claude/
+
+# Vom User genehmigte bzw. generierte Artefakte — nicht umformatieren
+STYLEGUIDE.html
+AGENTS.md
+OWASP-Gen-AI.pdf
+.mcp.json
+
+# Inhaltliche Dokumente (Specs, Plan, Memory-relevante Texte) — Formatierung Sache des Autors
+*.md
+

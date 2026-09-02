@@ -1,0 +1,214 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+/*
+ ---break---
+ */
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design-Tokens — exakt aus Styleguide (:root-Block), der genehmigten
+ * visuellen Referenz. Sync-Regel: zuerst, dann Styleguide,
+ * dann diese Datei (HABIT 5). Bewusst KEIN Dark Mode: "Behördendokument"
+ * ist ein heller, papierener Grundton (Styleguide Art. 1).
+ */
+:root {
+  /* Farb-Semantik */
+  --rot-bund: #da291c; /* NUR Branding (Schweizer Kreuz) + CONTRA */
+  --gruen-pro: #15803d; /* NUR PRO + Zustimmungs-Anteile */
+  --grau-meta: #55606e; /* ERWEITERUNG / FRAGE / Meta & System */
+  --grau-linie: #d6d9de; /* Trennlinien, Rahmen von Meta-Elementen */
+  --grau-flaeche: #f3f4f6; /* neutrale Hintergrundflächen */
+  --schwarz: #141414; /* Grundton Text & primäre Aktionen */
+  --weiss: #ffffff; /* Grundton Fläche ("Papier") */
+  /* Fehler/Linter — bewusst NICHT Bundesrot (Verwechslungsschutz) */
+  --signal-rot: #991b1b;
+  --signal-fond: #fde8e8;
+  /* shadcn-Basistokens — auf die Styleguide-Palette gemappt (keine Fremdfarben). */
+  --background: var(--weiss);
+  --foreground: var(--schwarz);
+  --card: var(--weiss);
+  --card-foreground: var(--schwarz);
+  --popover: var(--weiss);
+  --popover-foreground: var(--schwarz);
+  --primary: var(--schwarz);
+  --primary-foreground: var(--weiss);
+  --secondary: var(--grau-flaeche);
+  --secondary-foreground: var(--schwarz);
+  --muted: var(--grau-flaeche);
+  --muted-foreground: var(--grau-meta);
+  --accent: var(--grau-flaeche);
+  --accent-foreground: var(--schwarz);
+  --destructive: var(--signal-rot);
+  --border: var(--grau-linie);
+  --input: var(--grau-linie);
+  --ring: var(--schwarz);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 2px; /* Styleguide Art. 5: border-radius 2px — keine runden Pillen */
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+@theme inline {
+  /* Semantische Farbnamen (Plan P3.3) — nie generisch red/green verwenden. */
+  --color-contra: var(--rot-bund);
+  --color-pro: var(--gruen-pro);
+  --color-meta: var(--grau-meta);
+  --color-line: var(--grau-linie);
+  --color-surface: var(--grau-flaeche);
+  --color-ink: var(--schwarz);
+  --color-paper: var(--weiss);
+  --color-signal: var(--signal-rot);
+  --color-signal-bg: var(--signal-fond);
+
+  /* Typografie-Säulen , Fonts via next/font im Layout. */
+  --font-sans: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
+  --font-serif: var(--font-merriweather), Georgia, serif;
+  --font-mono: var(--font-space-mono), "Courier New", monospace;
+  --font-heading: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+body {
+  background: var(--weiss);
+  color: var(--schwarz);
+  font-family: var(--font-sans);
+}
+
+/* Sichtbarer Tastatur-Fokus (Styleguide Art. 5, WCAG 2.1 AA). */
+:focus-visible {
+  outline: 2px solid var(--schwarz);
+  outline-offset: 3px;
+}
+
+/* Constrained Editor (Styleguide Art. 8) — Republik-Style-Textfläche. */
+.editor-text .tiptap {
+  font-family: var(--font-serif);
+  font-size: 15.5px;
+  line-height: 1.7;
+  padding: 18px 20px;
+  min-height: 120px;
+  outline: none;
+}
+.editor-text .tiptap p {
+  margin: 0 0 12px;
+}
+.editor-text .tiptap ul {
+  list-style: disc;
+  margin: 0 0 12px;
+  padding-left: 22px;
+}
+
+/* Civic-Linter-Markierung (Styleguide Art. 8) — Signalrot, NICHT Bundesrot. */
+.linter-mark {
+  background: var(--signal-fond);
+  border-bottom: 2px solid var(--signal-rot);
+  padding: 1px 2px;
+}
+/*
+ ---break---
+ */
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+/*
+ ---break---
+ */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  /*
+   * Browser geben <fieldset> ein implizites `min-width: min-content`. Ein
+   * langes, unteilbares Wort im Inneren macht das Feld damit breiter als sein
+   * Container — bei 375 px riss deshalb die Einstellungsseite in FR und IT aus
+   * dem Layout, während sie in DE passte (P14.4). Das Zurücksetzen ist die
+   * übliche Normalisierung und ändert am Aussehen sonst nichts.
+   */
+  fieldset {
+    min-width: 0;
+  }
+}

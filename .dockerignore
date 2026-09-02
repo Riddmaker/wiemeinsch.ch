@@ -1,0 +1,13 @@
+# Nicht in den Build-Kontext — hält Image-Builds klein und Secrets draussen (HABIT 1)
+node_modules
+.next
+.git
+.env*
+!.env.example
+tests
+playwright-report
+test-results
+coverage
+OWASP-Gen-AI.pdf
+STYLEGUIDE.html
+*.md
