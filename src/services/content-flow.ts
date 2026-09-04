@@ -79,3 +79,107 @@ export function requireLocale<T>(
   }
   return value;
 }
+
+/**
+ * Linter-Eingaben einer TEIL-Fassung (Änderungsantrag, E12): Nur die Felder,
+ * die der Antrag tatsächlich ändert, gehen an den Civic-Linter. Bewusst
+ * dieselben Feldnamen wie `ticketLintFields` — sonst führte eine
+ * Linter-Anfechtung Gründe auf, die im Formular nie geprüft wurden.
+ */
+export function proposalLintFields(
+  proposal: {
+    title?: string;
+    problem?: ConstrainedDoc;
+    solution?: ConstrainedDoc;
+    funding?: ConstrainedDoc;
+  },
+  hashtags?: string[],
+): Partial<Record<TicketLintField, string>> {
+  const fields: Partial<Record<TicketLintField, string>> = {};
+  if (proposal.title !== undefined) {
+    fields.title = proposal.title;
+  }
+  if (proposal.problem !== undefined) {
+    fields.problem = plainText(proposal.problem);
+  }
+  if (proposal.solution !== undefined) {
+    fields.solution = plainText(proposal.solution);
+  }
+  if (proposal.funding !== undefined) {
+    fields.funding = plainText(proposal.funding);
+  }
+  if (hashtags !== undefined) {
+    // Hashtags werden nicht übersetzt — nur die Original-Fassung prüft sie.
+    fields.hashtags = hashtags.map((tag) => `#${tag}`).join(" ");
+  }
+  return fields;
+}
+
+/**
+ * Übersetzt eine TEIL-Fassung in die zwei anderen Landessprachen — Feld für
+ * Feld, nur was vorhanden ist. Der Titel ist ein reiner String, die übrigen
+ * Felder sind TipTap-Dokumente und laufen über den Markdown-Rundweg, damit
+ * Fettschrift und Listen die Sprache überstehen.
+ *
+ * Wirft MistralUnavailableError (E8 fail-closed).
+ */
+export async function translateProposal(
+  proposal: {
+    title?: string;
+    problem?: ConstrainedDoc;
+    solution?: ConstrainedDoc;
+    funding?: ConstrainedDoc;
+  },
+  sourceLocale: AppLocale,
+): Promise<
+  Partial<
+    Record<
+      AppLocale,
+      {
+        title?: string;
+        problem?: ConstrainedDoc;
+        solution?: ConstrainedDoc;
+        funding?: ConstrainedDoc;
+      }
+    >
+  >
+> {
+  const [titleT, problemT, solutionT, fundingT] = await Promise.all([
+    proposal.title !== undefined
+      ? translateText({ text: proposal.title, sourceLocale })
+      : Promise.resolve(null),
+    proposal.problem !== undefined
+      ? translateDoc(proposal.problem, sourceLocale)
+      : Promise.resolve(null),
+    proposal.solution !== undefined
+      ? translateDoc(proposal.solution, sourceLocale)
+      : Promise.resolve(null),
+    proposal.funding !== undefined
+      ? translateDoc(proposal.funding, sourceLocale)
+      : Promise.resolve(null),
+  ]);
+
+  const result: Partial<
+    Record<
+      AppLocale,
+      {
+        title?: string;
+        problem?: ConstrainedDoc;
+        solution?: ConstrainedDoc;
+        funding?: ConstrainedDoc;
+      }
+    >
+  > = {};
+  for (const locale of routing.locales) {
+    if (locale === sourceLocale) {
+      continue;
+    }
+    result[locale] = {
+      ...(titleT ? { title: requireLocale(titleT, locale).trim() } : {}),
+      ...(problemT ? { problem: requireLocale(problemT, locale) } : {}),
+      ...(solutionT ? { solution: requireLocale(solutionT, locale) } : {}),
+      ...(fundingT ? { funding: requireLocale(fundingT, locale) } : {}),
+    };
+  }
+  return result;
+}

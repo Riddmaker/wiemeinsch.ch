@@ -73,6 +73,7 @@ vi.mock("@/services/content-pipeline", async (importOriginal) => {
 });
 
 const translateDocMock = vi.fn();
+const translateProposalMock = vi.fn();
 vi.mock("@/services/content-flow", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("@/services/content-flow")>();
@@ -80,6 +81,11 @@ vi.mock("@/services/content-flow", async (importOriginal) => {
     ...actual,
     translateDoc: (doc: unknown, locale: unknown) =>
       translateDocMock(doc, locale),
+    // Seit E12 übersetzt der Änderungsantrag über `translateProposal`. Der
+    // Mock auf `translateDoc` greift dort NICHT: Beide liegen in derselben
+    // Datei, der Aufruf ist modulintern und geht am Mock vorbei.
+    translateProposal: (proposal: unknown, locale: unknown) =>
+      translateProposalMock(proposal, locale),
   };
 });
 
@@ -122,6 +128,8 @@ const prismaMock = vi.hoisted(() => ({
   ticket: { findUnique: vi.fn(), findFirst: vi.fn() },
   statement: { findUnique: vi.fn(), findFirst: vi.fn() },
   changeRequest: { findUnique: vi.fn(), findFirst: vi.fn() },
+  // E12: Der Antrag wird gegen die aktuelle Ticket-Fassung verglichen.
+  ticketTranslation: { findUnique: vi.fn() },
   moderationCase: {
     findUnique: vi.fn(),
     findFirst: vi.fn(),
@@ -218,13 +226,20 @@ const changeRequestDraft = {
 
 const submitChangeRequestInput = {
   ...changeRequestDraft,
-  translations: { fr: richDoc(250), it: richDoc(250) },
+  translations: {
+    fr: { solution: richDoc(250) },
+    it: { solution: richDoc(250) },
+  },
 };
 
 const mergeInput = {
   changeRequestId: "cr-1",
   locale: "de" as const,
-  versions: { de: richDoc(250), fr: richDoc(250), it: richDoc(250) },
+  versions: {
+    de: { solution: richDoc(250) },
+    fr: { solution: richDoc(250) },
+    it: { solution: richDoc(250) },
+  },
 };
 
 const profileInput = {
@@ -463,6 +478,10 @@ beforeEach(() => {
   // Linter sauber, Übersetzungen vorhanden.
   lintFieldsMock.mockResolvedValue({});
   translateDocMock.mockResolvedValue({ fr: richDoc(250), it: richDoc(250) });
+  translateProposalMock.mockResolvedValue({
+    fr: { solution: richDoc(250) },
+    it: { solution: richDoc(250) },
+  });
   publishMocks.regionExists.mockResolvedValue(true);
   publishMocks.createTicket.mockResolvedValue("ticket-new");
   publishMocks.createStatement.mockResolvedValue("statement-new");
@@ -488,6 +507,13 @@ beforeEach(() => {
     ticket: { authorId: OWNER, status: "PUBLISHED" },
   });
   prismaMock.changeRequest.findFirst.mockResolvedValue(null);
+  // Aktueller Stand unterscheidet sich vom Antrag (sonst: no_changes).
+  prismaMock.ticketTranslation.findUnique.mockResolvedValue({
+    title: "Anderer Titel",
+    problem: richDoc(260),
+    solution: richDoc(260),
+    funding: null,
+  });
 
   prismaMock.moderationCase.findFirst.mockResolvedValue(null);
   prismaMock.moderationCase.findUnique.mockResolvedValue(reportedStatementCase);

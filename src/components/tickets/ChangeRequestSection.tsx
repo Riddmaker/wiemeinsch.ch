@@ -3,6 +3,7 @@ import { ChangeRequestCard } from "@/components/tickets/ChangeRequestCard";
 import { ChangeRequestForm } from "@/components/tickets/ChangeRequestForm";
 import type { AppLocale } from "@/i18n/routing";
 import { sortForDisplay, type ChangeRequestEntry } from "@/lib/change-requests";
+import type { CurrentTicketVersion } from "@/components/tickets/ChangeRequestCard";
 
 /**
  * Political-Pull-Request-Abschnitt der Detailseite (P10.1/10.2): Antragsformular
@@ -12,7 +13,7 @@ import { sortForDisplay, type ChangeRequestEntry } from "@/lib/change-requests";
 export async function ChangeRequestSection({
   ticketId,
   entries,
-  currentSolution,
+  current,
   contentLocale,
   routeLocale,
   isAuthor,
@@ -20,8 +21,8 @@ export async function ChangeRequestSection({
 }: {
   ticketId: string;
   entries: ChangeRequestEntry[];
-  /** Aktueller Lösungstext in der Lese-Sprache (Vorbefüllung + Vergleich). */
-  currentSolution: unknown;
+  /** Aktuelle Ticket-Fassung in der Lese-Sprache (Vorbefüllung + Vergleich). */
+  current: CurrentTicketVersion;
   /** Lese-/Schreibsprache des Betrachters. */
   contentLocale: AppLocale;
   routeLocale: AppLocale;
@@ -65,7 +66,7 @@ export async function ChangeRequestSection({
             <ChangeRequestForm
               ticketId={ticketId}
               contentLocale={contentLocale}
-              currentSolution={currentSolution}
+              current={current}
               isLoggedIn={viewerId !== null}
             />
           </div>
@@ -80,7 +81,7 @@ export async function ChangeRequestSection({
             <ChangeRequestCard
               key={entry.id}
               entry={entry}
-              currentSolution={currentSolution}
+              current={current}
               locale={routeLocale}
               isTicketAuthor={isAuthor}
             />

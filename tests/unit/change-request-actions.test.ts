@@ -69,6 +69,7 @@ const txMock = vi.hoisted(() => ({
 }));
 const prismaMock = vi.hoisted(() => ({
   ticket: { findUnique: vi.fn() },
+  ticketTranslation: { findUnique: vi.fn() },
   changeRequest: { findFirst: vi.fn(), findUnique: vi.fn() },
   $transaction: vi.fn(),
 }));
@@ -94,21 +95,47 @@ const doc = (chars: number): ConstrainedDoc => ({
 
 const TICKET_CREATED_AT = new Date(Date.now() - 5 * 3_600_000); // 5 h alt
 
+/**
+ * Aktueller Ticket-Inhalt in der Antragssprache. Seit E12 vergleicht die
+ * Action jeden Antrag damit — ein Antrag, der nichts ändert, wird abgelehnt.
+ * Der Text unterscheidet sich bewusst von `doc(400)`.
+ */
+const CURRENT_VERSION = {
+  title: "Aktueller Titel",
+  problem: doc(300),
+  solution: {
+    type: "doc" as const,
+    content: [
+      {
+        type: "paragraph" as const,
+        content: [{ type: "text" as const, text: "y".repeat(400) }],
+      },
+    ],
+  },
+  funding: null,
+};
+
 const draft = {
   locale: "de" as const,
   ticketId: "ticket-1",
   solution: doc(400),
 };
 
+// E12: Fassungen sind jetzt Vorschlagsobjekte je Feld, nicht mehr ein
+// blosses Lösungs-Dokument.
 const submitInput = {
   ...draft,
-  translations: { fr: doc(400), it: doc(400) },
+  translations: { fr: { solution: doc(400) }, it: { solution: doc(400) } },
 };
 
 const mergeInput = {
   changeRequestId: "cr-1",
   locale: "de" as const,
-  versions: { de: doc(400), fr: doc(400), it: doc(400) },
+  versions: {
+    de: { solution: doc(400) },
+    fr: { solution: doc(400) },
+    it: { solution: doc(400) },
+  },
 };
 
 /** Antrag auf einem fremden Ticket, offen, Autor des Tickets ist user-2. */
@@ -134,6 +161,7 @@ beforeEach(() => {
     status: "PUBLISHED",
     authorId: "author-9",
   });
+  prismaMock.ticketTranslation.findUnique.mockResolvedValue(CURRENT_VERSION);
   prismaMock.changeRequest.findFirst.mockResolvedValue(null);
   prismaMock.changeRequest.findUnique.mockResolvedValue(openChangeRequest);
   prismaMock.$transaction.mockImplementation(
@@ -142,7 +170,7 @@ beforeEach(() => {
   txMock.ticket.findUnique.mockResolvedValue({
     status: "PUBLISHED",
     authorId: "author-9",
-    solutionRevision: 3,
+    contentRevision: 3,
     upvotes: 10,
     downvotes: 4,
     statementCount: 2,
@@ -255,8 +283,8 @@ describe("prepareChangeRequest (P10.1) — Reihenfolge & Bypass-Schutz", () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(plainText(result.translations.fr)).toContain("FR: ");
-      expect(plainText(result.translations.it)).toContain("IT: ");
+      expect(plainText(result.translations.fr!.solution!)).toContain("FR: ");
+      expect(plainText(result.translations.it!.solution!)).toContain("IT: ");
       expect(result.translations.de).toBeUndefined();
     }
   });
@@ -323,7 +351,7 @@ describe("submitChangeRequest (P10.1/10.4/10.5)", () => {
         ticketId: string;
         authorId: string;
         originalLocale: string;
-        baseSolutionRevision: number;
+        baseContentRevision: number;
         translations: { create: { locale: string; isOriginal: boolean }[] };
       };
     };
@@ -332,7 +360,7 @@ describe("submitChangeRequest (P10.1/10.4/10.5)", () => {
       authorId: "user-1",
       originalLocale: "DE",
       // 10.4: Revisionsstand bei Antragstellung als Stale-Referenz.
-      baseSolutionRevision: 3,
+      baseContentRevision: 3,
     });
     const rows = created.data.translations.create;
     expect(rows.map((row) => row.locale).sort()).toEqual(["DE", "FR", "IT"]);
@@ -456,7 +484,7 @@ describe("mergeChangeRequest (P10.3) — nur der Original-Autor", () => {
     expect(
       await mergeChangeRequest({
         ...mergeInput,
-        versions: { de: doc(400), fr: doc(400) },
+        versions: { de: { solution: doc(400) }, fr: { solution: doc(400) } },
       }),
     ).toEqual({ ok: false, error: "invalid_input" });
     expect(lintFieldsMock).not.toHaveBeenCalled();
@@ -486,14 +514,19 @@ describe("mergeChangeRequest (P10.3) — nur der Original-Autor", () => {
     );
     expect(locales.sort()).toEqual(["DE", "FR", "IT"]);
 
-    const ticketUpdate = txMock.ticket.update.mock.calls[0]?.[0] as {
+    // `ticket.update` läuft mehrfach (Hashtags, Revision, Zähler-Refresh) —
+    // gezielt den Revisions-/Co-Autor-Schritt suchen statt auf die
+    // Aufrufreihenfolge zu wetten.
+    const ticketUpdate = txMock.ticket.update.mock.calls
+      .map((call) => call[0] as { data: Record<string, unknown> })
+      .find((call) => "contentRevision" in call.data) as {
       data: {
-        solutionRevision: { increment: number };
+        contentRevision: { increment: number };
         coAuthors: { connect: { id: string } };
       };
     };
-    // 10.4: jede Lösungsänderung erhöht die Revision (Stale-Basis).
-    expect(ticketUpdate.data.solutionRevision).toEqual({ increment: 1 });
+    // 10.4: jede Inhaltsänderung erhöht die Revision (Stale-Basis).
+    expect(ticketUpdate.data.contentRevision).toEqual({ increment: 1 });
     // Proof of Stake: der Antragsteller wird Co-Autor.
     expect(ticketUpdate.data.coAuthors).toEqual({ connect: { id: "user-2" } });
 
@@ -576,6 +609,131 @@ describe("declineChangeRequest (P10.3)", () => {
     expect(await declineChangeRequest({ changeRequestId: "cr-1" })).toEqual({
       ok: false,
       error: "not_open",
+    });
+  });
+});
+
+/**
+ * E12 (04.09.2026): Ein Antrag darf jedes Inhaltsfeld betreffen — Titel,
+ * Problem, Lösung, Finanzierung und Hashtags — und muss mindestens eines
+ * ÄNDERN. Sicherheitsrelevant ist beides: dass nur die vorgeschlagenen
+ * Felder gelintet und geschrieben werden (kein stiller Durchgriff auf
+ * ungeprüften Text) und dass ein Antrag ohne Änderung gar nicht entsteht.
+ */
+describe("Änderungsanträge über alle Felder (E12)", () => {
+  it("Antrag nur auf den Titel: lintet nur den Titel", async () => {
+    const result = await prepareChangeRequest({
+      locale: "de",
+      ticketId: "ticket-1",
+      title: "Ein deutlich besserer Titel",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(lintFieldsMock).toHaveBeenCalledTimes(1);
+    expect(lintFieldsMock.mock.calls[0]![0]).toEqual({
+      title: "Ein deutlich besserer Titel",
+    });
+  });
+
+  it("Antrag nur auf die Hashtags: lintet nur die Hashtags", async () => {
+    prismaMock.ticket.findUnique.mockResolvedValue({
+      status: "PUBLISHED",
+      authorId: "author-9",
+      hashtags: [{ tag: "verkehr" }],
+    });
+
+    const result = await prepareChangeRequest({
+      locale: "de",
+      ticketId: "ticket-1",
+      hashtags: ["verkehr", "sicherheit"],
+    });
+
+    expect(result.ok).toBe(true);
+    expect(lintFieldsMock.mock.calls[0]![0]).toEqual({
+      hashtags: "#verkehr #sicherheit",
+    });
+  });
+
+  it("Antrag ohne jede Änderung: no_changes, kein Linter, keine Kosten", async () => {
+    const result = await prepareChangeRequest({
+      locale: "de",
+      ticketId: "ticket-1",
+      title: CURRENT_VERSION.title,
+    });
+
+    expect(result).toEqual({ ok: false, error: "no_changes" });
+    expect(lintFieldsMock).not.toHaveBeenCalled();
+    expect(translateTextMock).not.toHaveBeenCalled();
+  });
+
+  it("Antrag ganz ohne Feld wird vom Schema abgewiesen", async () => {
+    expect(
+      await prepareChangeRequest({ locale: "de", ticketId: "ticket-1" }),
+    ).toEqual({ ok: false, error: "invalid_input" });
+    expect(lintFieldsMock).not.toHaveBeenCalled();
+  });
+
+  it("Übersetzung mit abweichenden Feldern wird abgewiesen", async () => {
+    // Original ändert den Titel, die FR-Fassung die Lösung — so käme
+    // ungeprüfter Text in ein Feld, das der Antrag nie betraf.
+    expect(
+      await submitChangeRequest({
+        locale: "de",
+        ticketId: "ticket-1",
+        title: "Neuer Titel",
+        translations: {
+          fr: { solution: doc(400) },
+          it: { title: "Nouveau titre" },
+        },
+      }),
+    ).toEqual({ ok: false, error: "invalid_input" });
+    expect(lintFieldsMock).not.toHaveBeenCalled();
+  });
+
+  it("Merge ersetzt NUR die vorgeschlagenen Felder", async () => {
+    // Entscheiden darf nur der Ticket-Autor (user-2, siehe openChangeRequest).
+    requireUserMock.mockResolvedValue({ id: "user-2" });
+    await mergeChangeRequest({
+      changeRequestId: "cr-1",
+      locale: "de",
+      versions: {
+        de: { title: "Neuer Titel" },
+        fr: { title: "Nouveau titre" },
+        it: { title: "Nuovo titolo" },
+      },
+    });
+
+    const patches = txMock.ticketTranslation.updateMany.mock.calls.map(
+      (call) => (call[0] as { data: Record<string, unknown> }).data,
+    );
+    expect(patches).toHaveLength(3);
+    for (const patch of patches) {
+      expect(Object.keys(patch)).toEqual(["title"]);
+      expect(patch.solution).toBeUndefined();
+    }
+  });
+
+  it("Merge mit Hashtags löst die alten und setzt die neuen", async () => {
+    requireUserMock.mockResolvedValue({ id: "user-2" });
+    await mergeChangeRequest({
+      changeRequestId: "cr-1",
+      locale: "de",
+      versions: {
+        de: { solution: doc(400) },
+        fr: { solution: doc(400) },
+        it: { solution: doc(400) },
+      },
+      hashtags: ["velo"],
+    });
+
+    const updates = txMock.ticket.update.mock.calls.map(
+      (call) => (call[0] as { data: Record<string, unknown> }).data,
+    );
+    const hashtagUpdates = updates.filter((data) => "hashtags" in data);
+    expect(hashtagUpdates).toHaveLength(2);
+    expect(hashtagUpdates[0]!.hashtags).toEqual({ set: [] });
+    expect(hashtagUpdates[1]!.hashtags).toEqual({
+      connectOrCreate: [{ where: { tag: "velo" }, create: { tag: "velo" } }],
     });
   });
 });

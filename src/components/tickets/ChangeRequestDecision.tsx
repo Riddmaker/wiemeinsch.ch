@@ -13,8 +13,29 @@ import type { LinterRange } from "@/components/editor/linter-highlight";
 import { LinterFeedback } from "@/components/tickets/LinterFeedback";
 import { useRouter } from "@/i18n/navigation";
 import { routing, type AppLocale } from "@/i18n/routing";
-import { SOLUTION_MAX, SOLUTION_MIN } from "@/lib/validation/limits";
+import {
+  type ChangeRequestProposal,
+  type ChangeRequestTextField,
+} from "@/lib/validation/change-request";
+import {
+  FUNDING_MAX,
+  PROBLEM_MAX,
+  PROBLEM_MIN,
+  SOLUTION_MAX,
+  SOLUTION_MIN,
+  TITLE_MAX,
+} from "@/lib/validation/limits";
 import type { ConstrainedDoc } from "@/lib/validation/tiptap";
+
+/** Limiten der Rich-Text-Felder; der Titel läuft als einfaches Eingabefeld. */
+const DOC_LIMITS: Record<
+  "problem" | "solution" | "funding",
+  { min: number; max: number }
+> = {
+  problem: { min: PROBLEM_MIN, max: PROBLEM_MAX },
+  solution: { min: SOLUTION_MIN, max: SOLUTION_MAX },
+  funding: { min: 0, max: FUNDING_MAX },
+};
 
 /**
  * Entscheid über einen Änderungsantrag (P10.3) — nur für den Original-Autor
@@ -28,12 +49,19 @@ import type { ConstrainedDoc } from "@/lib/validation/tiptap";
 
 const subscribeNoop = () => () => {};
 
-function mergeDraftKey(changeRequestId: string, locale: AppLocale): string {
-  return `change-request-merge-${changeRequestId}-${locale}`;
+function mergeDraftKey(
+  changeRequestId: string,
+  field: string,
+  locale: AppLocale,
+): string {
+  return `change-request-merge-${changeRequestId}-${field}-${locale}`;
 }
 
-function toHighlights(findings: ChangeRequestLinterFields): LinterRange[] {
-  return (findings.solution ?? []).map((finding) => ({
+function toHighlights(
+  findings: ChangeRequestLinterFields,
+  field: ChangeRequestTextField,
+): LinterRange[] {
+  return (findings[field] ?? []).map((finding) => ({
     start: finding.from,
     end: finding.to,
     reason: finding.reason,
@@ -43,15 +71,23 @@ function toHighlights(findings: ChangeRequestLinterFields): LinterRange[] {
 export function ChangeRequestDecision({
   changeRequestId,
   proposedVersions,
+  changedFields,
+  proposedHashtags,
   isStale,
 }: {
   changeRequestId: string;
   /** Die drei Fassungen des Antrags (Original + zwei Übersetzungen). */
-  proposedVersions: Partial<Record<AppLocale, ConstrainedDoc>>;
-  /** true, wenn die Lösung seit Antragstellung geändert wurde (P10.4). */
+  proposedVersions: Partial<Record<AppLocale, ChangeRequestProposal>>;
+  /** Welche Textfelder der Antrag betrifft (E12) — nur diese sind editierbar. */
+  changedFields: ChangeRequestTextField[];
+  /** Vorgeschlagene Hashtags, falls der Antrag sie ändert. */
+  proposedHashtags?: string[];
+  /** true, wenn der Ticket-Inhalt seit Antragstellung geändert wurde (P10.4). */
   isStale: boolean;
 }) {
   const t = useTranslations("changeRequests");
+  const tTicket = useTranslations("ticketDetail");
+  const tNew = useTranslations("ticketNew");
   const tRoot = useTranslations();
   const locale = useLocale() as AppLocale;
   const router = useRouter();
@@ -64,7 +100,9 @@ export function ChangeRequestDecision({
 
   const [mode, setMode] = useState<"idle" | "review">("idle");
   const [versions, setVersions] =
-    useState<Partial<Record<AppLocale, ConstrainedDoc>>>(proposedVersions);
+    useState<Partial<Record<AppLocale, ChangeRequestProposal>>>(
+      proposedVersions,
+    );
   const [findings, setFindings] = useState<
     Partial<Record<AppLocale, ChangeRequestLinterFields>>
   >({});
@@ -74,9 +112,18 @@ export function ChangeRequestDecision({
   const errorText = (code: string): string =>
     t.has(`errors.${code}`) ? t(`errors.${code}`) : t("errors.invalid_input");
 
+  const fieldLabel: Record<ChangeRequestTextField, string> = {
+    title: tNew("titleLabel"),
+    problem: tTicket("problem"),
+    solution: tTicket("solution"),
+    funding: tTicket("funding"),
+  };
+
   const clearMergeDrafts = () => {
     for (const target of routing.locales) {
-      clearDraft(mergeDraftKey(changeRequestId, target));
+      for (const field of changedFields) {
+        clearDraft(mergeDraftKey(changeRequestId, field, target));
+      }
     }
   };
 
@@ -88,6 +135,7 @@ export function ChangeRequestDecision({
         changeRequestId,
         locale,
         versions,
+        ...(proposedHashtags ? { hashtags: proposedHashtags } : {}),
       });
       if (!result.ok) {
         if (result.error === "linter") {
@@ -202,36 +250,77 @@ export function ChangeRequestDecision({
           return null;
         }
         const versionFindings = findings[target] ?? {};
+        const clearFindings = () =>
+          setFindings((prev) => {
+            if (!prev[target]) {
+              return prev;
+            }
+            const nextFindings = { ...prev };
+            delete nextFindings[target];
+            return nextFindings;
+          });
+
         return (
-          <div key={target} className="flex flex-col gap-1.5">
+          <div key={target} className="flex flex-col gap-3">
             <span className="font-mono text-[11.5px] uppercase tracking-wide text-ink">
               {tRoot(`localeSwitcher.${target}`)}
             </span>
-            <ConstrainedEditor
-              name={mergeDraftKey(changeRequestId, target)}
-              label={`${t("proposedSolution")} — ${tRoot(`localeSwitcher.${target}`)}`}
-              minChars={SOLUTION_MIN}
-              maxChars={SOLUTION_MAX}
-              initialContent={version}
-              onUpdate={(next) => {
-                setVersions((prev) => ({
-                  ...prev,
-                  [target]: next as ConstrainedDoc,
-                }));
-                setFindings((prev) => {
-                  if (!prev[target]) {
-                    return prev;
-                  }
-                  const nextFindings = { ...prev };
-                  delete nextFindings[target];
-                  return nextFindings;
-                });
-              }}
-              highlights={toHighlights(versionFindings)}
-            />
-            {versionFindings.solution && (
-              <LinterFeedback findings={versionFindings.solution} />
+
+            {changedFields.includes("title") && (
+              <label className="flex flex-col gap-1.5">
+                <span className="font-mono text-[11px] uppercase tracking-wide text-meta">
+                  {fieldLabel.title}
+                </span>
+                <input
+                  type="text"
+                  data-testid={`change-request-merge-title-${target}`}
+                  maxLength={TITLE_MAX}
+                  value={version.title ?? ""}
+                  onChange={(event) => {
+                    setVersions((prev) => ({
+                      ...prev,
+                      [target]: { ...prev[target], title: event.target.value },
+                    }));
+                    clearFindings();
+                  }}
+                  className="rounded-[2px] border-[1.5px] border-line bg-paper px-3 py-2 font-serif text-[15.5px] focus:border-ink focus:outline-none"
+                />
+                {versionFindings.title && (
+                  <LinterFeedback findings={versionFindings.title} />
+                )}
+              </label>
             )}
+
+            {(["problem", "solution", "funding"] as const)
+              .filter((field) => changedFields.includes(field))
+              .map((field) => (
+                <div key={field} className="flex flex-col gap-1.5">
+                  <span className="font-mono text-[11px] uppercase tracking-wide text-meta">
+                    {fieldLabel[field]}
+                  </span>
+                  <ConstrainedEditor
+                    name={mergeDraftKey(changeRequestId, field, target)}
+                    label={`${fieldLabel[field]} — ${tRoot(`localeSwitcher.${target}`)}`}
+                    minChars={DOC_LIMITS[field].min}
+                    maxChars={DOC_LIMITS[field].max}
+                    initialContent={version[field]}
+                    onUpdate={(next) => {
+                      setVersions((prev) => ({
+                        ...prev,
+                        [target]: {
+                          ...prev[target],
+                          [field]: next as ConstrainedDoc,
+                        },
+                      }));
+                      clearFindings();
+                    }}
+                    highlights={toHighlights(versionFindings, field)}
+                  />
+                  {versionFindings[field] && (
+                    <LinterFeedback findings={versionFindings[field]} />
+                  )}
+                </div>
+              ))}
           </div>
         );
       })}

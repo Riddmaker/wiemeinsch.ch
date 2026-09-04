@@ -215,7 +215,7 @@ model Ticket {
   scoreTrending    Float @default(0) @map("score_trending")
 
   // Erhöht sich bei jeder Lösungsänderung (PPR-Merge) — Stale-Erkennung (P10.4).
-  solutionRevision Int @default(0)
+  contentRevision Int @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -354,8 +354,13 @@ model ChangeRequest {
   status         ChangeRequestStatus @default(OPEN)
   originalLocale Locale
 
-  // Wert von Ticket.solutionRevision bei Antragstellung — Stale-Warnung beim Merge (P10.4).
-  baseSolutionRevision Int
+  // Wert von Ticket.contentRevision bei Antragstellung — Stale-Warnung beim Merge (P10.4).
+  baseContentRevision Int
+
+  // Vorgeschlagene Hashtag-Liste (String[] als JSON). NULL = unverändert;
+  // ein leeres Array heisst «alle entfernen». Hashtags werden nicht übersetzt
+  // und hängen deshalb am Antrag, nicht an der Sprachfassung.
+  hashtags Json?
 
   createdAt DateTime  @default(now())
   decidedAt DateTime?
@@ -374,7 +379,13 @@ model ChangeRequestTranslation {
   locale          Locale
   isOriginal      Boolean @default(false)
 
-  solution Json // vorgeschlagener Lösungstext (TipTap-JSON)
+  // Vorgeschlagene Fassung je Feld. NULL = «dieses Feld ändert der Antrag
+  // nicht» (E12, 04.09.2026) — ein Antrag darf einzelne Felder betreffen,
+  // muss aber mindestens eines ändern (in der Action geprüft).
+  title    String?
+  problem  Json?
+  solution Json?
+  funding  Json?
 
   changeRequest ChangeRequest @relation(fields: [changeRequestId], references: [id], onDelete: Cascade)
 

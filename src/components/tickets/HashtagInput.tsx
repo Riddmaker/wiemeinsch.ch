@@ -17,10 +17,16 @@ export function HashtagInput({
   tags,
   onChange,
   error,
+  label,
 }: {
   tags: string[];
   onChange: (tags: string[]) => void;
   error?: string;
+  /**
+   * Abweichende Feldbeschriftung. Der Änderungsantrag nutzt das: Dort ist
+   * jedes Feld freiwillig, ein «(optional)» im Label wäre irreführend.
+   */
+  label?: string;
 }) {
   const t = useTranslations("ticketNew");
   const [input, setInput] = useState("");
@@ -79,7 +85,7 @@ export function HashtagInput({
         className="font-mono text-[11.5px] uppercase tracking-wide text-ink"
         id="hashtags-label"
       >
-        {t("hashtagsLabel")}
+        {label ?? t("hashtagsLabel")}
       </span>
       <div
         className={`flex flex-wrap items-center gap-2 rounded-[2px] border-[1.5px] px-3 py-2 ${

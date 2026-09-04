@@ -67,7 +67,7 @@ export default async function TicketDetailPage({
   const isTicketAuthor = userId === ticket.authorId;
   const changeRequests = await loadChangeRequests({
     ticketId: ticket.id,
-    solutionRevision: ticket.solutionRevision,
+    contentRevision: ticket.contentRevision,
     displayLocale,
     includeVersions: isTicketAuthor,
   });
@@ -217,11 +217,17 @@ export default async function TicketDetailPage({
         </section>
       )}
 
-      {/* Political Pull Request (P10): Anträge auf den Lösungstext. */}
+      {/* Political Pull Request (P10): Anträge auf den Ticket-Inhalt (E12). */}
       <ChangeRequestSection
         ticketId={ticket.id}
         entries={changeRequests}
-        currentSolution={readingVersion.solution}
+        current={{
+          title: readingVersion.title,
+          problem: readingVersion.problem,
+          solution: readingVersion.solution,
+          funding: readingVersion.funding,
+          hashtags: ticket.hashtags.map((tag) => tag.tag),
+        }}
         contentLocale={displayLocale}
         routeLocale={locale as AppLocale}
         isAuthor={isTicketAuthor}
