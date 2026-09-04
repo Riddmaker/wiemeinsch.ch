@@ -31,6 +31,9 @@ export default function proxy(request: NextRequest) {
 
   request.headers.set("x-nonce", nonce);
   request.headers.set("content-security-policy", csp);
+  // Der Layout braucht den vollen Pfad, um Angemeldete auf ihre Profilsprache
+  // umzuleiten (E11) — Layouts bekommen ihn in Next nicht von sich aus.
+  request.headers.set("x-pathname", request.nextUrl.pathname);
 
   const response = intlMiddleware(request);
 

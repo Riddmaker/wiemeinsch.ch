@@ -33,7 +33,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-import { updateProfile } from "@/actions/profile";
+import { setPreferredLocale, updateProfile } from "@/actions/profile";
 import { UnauthorizedError } from "@/lib/require-user";
 import {
   BIRTH_YEAR_MIN,
@@ -227,5 +227,65 @@ describe("profileSettingsSchema — Grenzwerte (P11.1)", () => {
         occupation: null,
       });
     }
+  });
+});
+
+/**
+ * Sprachwahl im Header (E11, 04.09.2026): schreibt AUSSCHLIESSLICH
+ * `preferredLocale` des eigenen Users. Reihenfolge wie bei jeder Action:
+ * Auth → Rate-Limit → Validierung → Mutation.
+ */
+describe("setPreferredLocale", () => {
+  beforeEach(() => {
+    // Eigene Zurücksetzung: Das `beforeEach` oben liegt in einem anderen
+    // describe-Block und greift hier nicht.
+    requireUserMock.mockReset();
+    checkRateLimitMock.mockReset();
+    prismaMock.user.update.mockReset();
+    requireUserMock.mockResolvedValue({ id: "user-1" });
+    checkRateLimitMock.mockResolvedValue({ ok: true });
+    prismaMock.user.update.mockResolvedValue({ id: "user-1" });
+  });
+
+  it("schreibt nur die Sprachspalte des eigenen Users", async () => {
+    await expect(setPreferredLocale("FR")).resolves.toEqual({ ok: true });
+    expect(prismaMock.user.update).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: { preferredLocale: "FR" },
+    });
+  });
+
+  it("lehnt ohne Session ab, ohne die Datenbank zu berühren", async () => {
+    requireUserMock.mockImplementation(() => {
+      throw new UnauthorizedError();
+    });
+    await expect(setPreferredLocale("FR")).resolves.toEqual({
+      ok: false,
+      error: "unauthorized",
+    });
+    expect(prismaMock.user.update).not.toHaveBeenCalled();
+  });
+
+  it("greift vor der Mutation ins Rate-Limit", async () => {
+    checkRateLimitMock.mockResolvedValue({ ok: false });
+    await expect(setPreferredLocale("FR")).resolves.toEqual({
+      ok: false,
+      error: "rate_limited",
+    });
+    expect(prismaMock.user.update).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["Kleinschreibung", "fr"],
+    ["unbekannte Sprache", "EN"],
+    ["leer", ""],
+    ["Objekt", { preferredLocale: "FR" }],
+    ["null", null],
+  ])("weist ungültige Eingabe ab (%s)", async (_label, input) => {
+    await expect(setPreferredLocale(input)).resolves.toEqual({
+      ok: false,
+      error: "invalid_input",
+    });
+    expect(prismaMock.user.update).not.toHaveBeenCalled();
   });
 });

@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Inter, Merriweather, Space_Mono } from "next/font/google";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
+import { getMessages, getTranslations } from "next-intl/server";
 import { AppFooter } from "@/components/layout/AppFooter";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { routing } from "@/i18n/routing";
+import { authOptions } from "@/lib/auth";
+import { toAppLocale } from "@/lib/locale";
+import { localeRedirectTarget } from "@/lib/locale-redirect";
+import { prisma } from "@/lib/prisma";
 import "../globals.css";
 
 // Fallback-Stacks wie im Styleguide (globals.css @theme).
@@ -22,10 +28,16 @@ const spaceMono = Space_Mono({
   variable: "--font-space-mono",
 });
 
-export const metadata: Metadata = {
-  title: "wiemeinsch.ch",
-  description: "Das politische Backlog der Schweiz",
-};
+// Beschreibung aus dem Sprachkatalog: Sie war bis 04.09.2026 hart auf Deutsch
+// verdrahtet und erschien damit auch auf /fr und /it deutsch — sichtbar in
+// Suchergebnissen und beim Teilen von Links.
+export async function generateMetadata({
+  params,
+}: LayoutProps<"/[locale]">): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "home" });
+  return { title: "wiemeinsch.ch", description: t("title") };
+}
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -38,6 +50,27 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) {
     notFound();
+  }
+
+  // E11: Angemeldete sehen die ganze Anwendung in ihrer Profilsprache —
+  // Oberfläche UND Inhalt. Ein geteilter Link in einer anderen Sprache wird
+  // hierher umgeleitet. Gäste behalten die Locale aus dem Pfad.
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id;
+  if (userId) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { preferredLocale: true },
+    });
+    if (user) {
+      const pathname = (await headers()).get("x-pathname");
+      const target = pathname
+        ? localeRedirectTarget(pathname, toAppLocale(user.preferredLocale))
+        : null;
+      if (target) {
+        redirect(target);
+      }
+    }
   }
 
   const messages = await getMessages();

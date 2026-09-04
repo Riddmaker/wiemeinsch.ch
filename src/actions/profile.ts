@@ -4,7 +4,10 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { requireUser, UnauthorizedError } from "@/lib/require-user";
-import { profileSettingsSchema } from "@/lib/validation/profile";
+import {
+  dbLocaleSchema,
+  profileSettingsSchema,
+} from "@/lib/validation/profile";
 
 // Muster für ALLE Server Actions (P4.7/P7.3): requireUser() → Rate-Limit →
 // Zod-Validierung → Mutation. Keine rohen Fehlerdetails an den Client.
@@ -65,6 +68,56 @@ export async function updateProfile(input: unknown): Promise<ActionResult> {
 
   // Die Anzeige-Sprache steckt in serverseitig gerenderten Seiten (P7.6) —
   // nach einem Sprachwechsel müssen die zwischengespeicherten Seiten weg.
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/**
+ * Sprachwahl im Header (E11, 04.09.2026).
+ *
+ * Der Umschalter setzt die Profilsprache — bewusst dauerhaft und nicht nur
+ * für die Sitzung: Wer oben umschaltet, will die Anwendung in dieser
+ * Sprache, und die Einstellung soll das danach auch zeigen. Der Wechsel ist
+ * eine sichtbare Nutzerhandlung, keine versteckte Nebenwirkung.
+ *
+ * Eigene Action statt `updateProfile`, weil das Formular dort die
+ * Demografie-Felder mitschickt; hier wird ausschliesslich eine Spalte des
+ * eigenen Users geschrieben.
+ */
+export async function setPreferredLocale(
+  input: unknown,
+): Promise<ActionResult> {
+  let userId: string;
+  try {
+    ({ id: userId } = await requireUser());
+  } catch (e) {
+    if (e instanceof UnauthorizedError) {
+      return { ok: false, error: "unauthorized" };
+    }
+    throw e;
+  }
+
+  const limit = await checkRateLimit({
+    scope: "locale-switch",
+    identifier: userId,
+    limit: 30,
+    windowSeconds: 900,
+  });
+  if (!limit.ok) {
+    return { ok: false, error: "rate_limited" };
+  }
+
+  const parsed = dbLocaleSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "invalid_input" };
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { preferredLocale: parsed.data },
+  });
+
+  // Die Sprache steckt in serverseitig gerenderten Seiten — Cache leeren.
   revalidatePath("/", "layout");
   return { ok: true };
 }

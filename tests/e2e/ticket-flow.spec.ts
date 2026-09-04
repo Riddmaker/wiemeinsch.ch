@@ -110,9 +110,11 @@ test(
     await anonPage.goto(frPath);
     await expect(anonPage.getByText("Original : Allemand")).toBeVisible();
     await expect(anonPage.getByText("Traduit par IA")).toBeVisible();
-    await expect(anonPage.getByText("Afficher l'original")).toBeVisible();
+    await expect(
+      anonPage.getByText("Afficher dans la langue d'origine"),
+    ).toBeVisible();
     // Toggle: Original anzeigen → deutscher Titel
-    await anonPage.getByText("Afficher l'original").click();
+    await anonPage.getByText("Afficher dans la langue d'origine").click();
     await expect(anonPage.getByRole("heading", { level: 1 })).toContainText(
       "Vernehmlassungsfristen digital vereinheitlichen",
     );

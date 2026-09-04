@@ -1,28 +1,24 @@
 import { getServerSession } from "next-auth";
 import type { AppLocale } from "@/i18n/routing";
 import { authOptions } from "@/lib/auth";
-import { toAppLocale } from "@/lib/locale";
-import { prisma } from "@/lib/prisma";
 
 /**
- * Anzeige-Sprache für Inhalte (P7.6/P8.4): Eingeloggte sehen ihre bevorzugte
- * Sprache, Ausgeloggte die Routen-Locale. Liefert die userId gleich mit,
- * damit Seiten keine zweite Session-Abfrage brauchen.
+ * Anzeige-Sprache für Inhalte.
+ *
+ * Seit E11 (04.09.2026) ist das schlicht die Locale im Pfad — für
+ * Angemeldete stellt der Layout vorher sicher, dass dort ihre Profilsprache
+ * steht (siehe lib/locale-redirect.ts). Vorher las diese Funktion bei JEDEM
+ * Seitenaufruf die Profilsprache aus der Datenbank und übersteuerte damit
+ * die Route; das erzeugte die halb übersetzte Ansicht und eine zusätzliche
+ * Abfrage pro Seite.
+ *
+ * Liefert die userId weiterhin mit, damit Seiten keine zweite
+ * Session-Abfrage brauchen.
  */
 export async function getDisplayLocale(routeLocale: AppLocale): Promise<{
   displayLocale: AppLocale;
   userId: string | null;
 }> {
   const session = await getServerSession(authOptions);
-  const userId = session?.user?.id ?? null;
-  if (userId) {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { preferredLocale: true },
-    });
-    if (user) {
-      return { displayLocale: toAppLocale(user.preferredLocale), userId };
-    }
-  }
-  return { displayLocale: routeLocale, userId };
+  return { displayLocale: routeLocale, userId: session?.user?.id ?? null };
 }

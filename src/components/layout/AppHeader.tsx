@@ -51,7 +51,7 @@ export async function AppHeader() {
       </nav>
 
       <div className="ml-auto flex items-center gap-2 sm:gap-4">
-        <LocaleSwitcher />
+        <LocaleSwitcher isLoggedIn={userId !== null} />
         {userId ? (
           // Wie Navigation und Anmelde-Button (P3) erst ab `sm`: bei 375 px
           // reichen Logo, Sprachwahl, @handle und Abmelden sonst über den Rand
