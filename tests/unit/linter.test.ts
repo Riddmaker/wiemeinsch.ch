@@ -24,6 +24,7 @@ vi.mock("@/services/mistral", async (importOriginal) => {
 });
 
 import { lintText } from "@/services/linter";
+import { LINTER_MAX_SUGGESTION_LENGTH } from "@/lib/validation/linter";
 import { MistralUnavailableError } from "@/services/mistral";
 
 const CLEAN_SCORES = {
@@ -227,6 +228,167 @@ describe("lintText — Stufe 2 (strukturiertes LLM-Feedback)", () => {
       );
       expect(finding.explanation).toContain("Feigheit");
     }
+  });
+
+  /**
+   * Schreibvorschlag (Entscheid 04.09.2026): Der Linter gibt eine sachliche
+   * Neuformulierung NUR zurück, wenn der beanstandete Satz einen sachlichen
+   * Kern hat. Fehlt der Kern (reine Pauschalabwertung), bleibt das Feld leer —
+   * ein Vorschlag wäre dort eine dem Autor untergeschobene Position.
+   */
+  describe("Schreibvorschlag", () => {
+    const zweiSaetze =
+      "Chostet zviell gäld, machemer sicher nöd. Immer das Grüezüg überall.";
+
+    it("reicht einen Vorschlag durch, wenn ein sachlicher Kern da ist", async () => {
+      moderateMock.mockResolvedValue(cleanModeration);
+      completeMock.mockResolvedValue(
+        chatResponse({
+          findings: [
+            {
+              quote: "Chostet zviell gäld, machemer sicher nöd.",
+              reason: "UNSACHLICH",
+              explanation: "Pauschal und ohne Begründung.",
+              suggestion: "Die Kosten scheinen mir zu hoch.",
+            },
+          ],
+        }),
+      );
+
+      const result = await lintText({
+        text: zweiSaetze,
+        textLocale: "de",
+        userLocale: "de",
+      });
+
+      expect(result.status).toBe("blocked");
+      if (result.status === "blocked") {
+        expect(result.findings[0]!.suggestion).toBe(
+          "Die Kosten scheinen mir zu hoch.",
+        );
+      }
+    });
+
+    it("lässt den Vorschlag weg, wenn das Modell einen Leerstring liefert", async () => {
+      moderateMock.mockResolvedValue(cleanModeration);
+      completeMock.mockResolvedValue(
+        chatResponse({
+          findings: [
+            {
+              quote: "Immer das Grüezüg überall.",
+              reason: "POLEMIK",
+              explanation: "Pauschal abwertend, ohne fassbare Aussage.",
+              suggestion: "",
+            },
+          ],
+        }),
+      );
+
+      const result = await lintText({
+        text: zweiSaetze,
+        textLocale: "de",
+        userLocale: "de",
+      });
+
+      expect(result.status).toBe("blocked");
+      if (result.status === "blocked") {
+        expect(result.findings[0]!.suggestion).toBeUndefined();
+        // Die Begründung bleibt — nur der Vorschlag entfällt.
+        expect(result.findings[0]!.explanation).toContain("Pauschal");
+      }
+    });
+
+    it("behandelt reine Leerzeichen wie «kein Vorschlag»", async () => {
+      moderateMock.mockResolvedValue(cleanModeration);
+      completeMock.mockResolvedValue(
+        chatResponse({
+          findings: [
+            {
+              quote: "Immer das Grüezüg überall.",
+              reason: "POLEMIK",
+              explanation: "Pauschal abwertend.",
+              suggestion: "   ",
+            },
+          ],
+        }),
+      );
+
+      const result = await lintText({
+        text: zweiSaetze,
+        textLocale: "de",
+        userLocale: "de",
+      });
+
+      if (result.status === "blocked") {
+        expect(result.findings[0]!.suggestion).toBeUndefined();
+      }
+    });
+
+    it("verwirft die Antwort nicht, wenn das Feld ganz fehlt (kein Fail-closed)", async () => {
+      moderateMock.mockResolvedValue(cleanModeration);
+      completeMock.mockResolvedValue(
+        chatResponse({
+          findings: [
+            {
+              quote: "Immer das Grüezüg überall.",
+              reason: "POLEMIK",
+              explanation: "Pauschal abwertend.",
+            },
+          ],
+        }),
+      );
+
+      const result = await lintText({
+        text: zweiSaetze,
+        textLocale: "de",
+        userLocale: "de",
+      });
+
+      expect(result.status).toBe("blocked");
+      expect(completeMock).toHaveBeenCalledTimes(1);
+      if (result.status === "blocked") {
+        expect(result.findings[0]!.suggestion).toBeUndefined();
+      }
+    });
+
+    it("lehnt überlange Vorschläge als ungültig ab (Längen-Cap, P6.4)", async () => {
+      moderateMock.mockResolvedValue(cleanModeration);
+      completeMock.mockResolvedValue(
+        chatResponse({
+          findings: [
+            {
+              quote: "Immer das Grüezüg überall.",
+              reason: "POLEMIK",
+              explanation: "Pauschal abwertend.",
+              suggestion: "x".repeat(LINTER_MAX_SUGGESTION_LENGTH + 1),
+            },
+          ],
+        }),
+      );
+
+      await expect(
+        lintText({ text: zweiSaetze, textLocale: "de", userLocale: "de" }),
+      ).rejects.toBeInstanceOf(MistralUnavailableError);
+      expect(completeMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("verlangt den Vorschlag in der Sprache des INHALTS, die Begründung in der des Users", async () => {
+      moderateMock.mockResolvedValue(cleanModeration);
+      completeMock.mockResolvedValue(chatResponse({ findings: [] }));
+
+      await lintText({ text: zweiSaetze, textLocale: "de", userLocale: "fr" });
+
+      const systemPrompt = completeMock.mock.calls[0]![0].messages[0]
+        .content as string;
+      expect(systemPrompt).toContain(
+        "`suggestion`: a factual rewrite of the sentence, written in German (Swiss Standard German)",
+      );
+      expect(systemPrompt).toContain(
+        "`explanation`: one or two short sentences, written in French (Switzerland)",
+      );
+      // Der Vorschlag darf keine Argumente erfinden.
+      expect(systemPrompt).toContain("EMPTY STRING");
+    });
   });
 
   it("übergibt den User-Content als abgegrenzten Datenblock, nie als Instruktion (P6.3)", async () => {

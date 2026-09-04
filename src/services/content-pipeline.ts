@@ -14,6 +14,8 @@ export type ClientFinding = {
   to: number;
   reason: LinterFinding["reason"];
   explanation?: string;
+  /** Neuformulierung; fehlt, wenn der Satz keinen sachlichen Kern hat. */
+  suggestion?: string;
 };
 
 export type BlockedFields<Field extends string> = Partial<
@@ -26,6 +28,7 @@ function toClientFinding(finding: LinterFinding): ClientFinding {
     to: finding.to,
     reason: finding.reason,
     ...(finding.explanation ? { explanation: finding.explanation } : {}),
+    ...(finding.suggestion ? { suggestion: finding.suggestion } : {}),
   };
 }
 

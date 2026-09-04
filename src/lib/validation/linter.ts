@@ -4,8 +4,8 @@ import { z } from "./zod";
  * Schemas für die Civic-Linter-LLM-Antwort (Insecure-Output-Handling-Defense,
  * OWASP GenAI / P6.4): Die Antwort des LLM ist
  * untrusted Input und wird hart validiert, bevor irgendetwas damit passiert.
- * Ihr Freitext (`explanation`) wird im UI ausschliesslich als Text gerendert,
- * nie als HTML.
+ * Ihr Freitext (`explanation`, `suggestion`) wird im UI ausschliesslich als
+ * Text gerendert, nie als HTML.
  *
  * Zwei Schemas mit klarer Rollenteilung:
  * - `linterWireSchema`: bewusst nur JSON-Schema-Grundtypen (Object/Array/
@@ -38,6 +38,7 @@ export type LinterReason = z.infer<typeof linterReasonSchema>;
 export const LINTER_MAX_FINDINGS = 20;
 export const LINTER_MAX_QUOTE_LENGTH = 700;
 export const LINTER_MAX_EXPLANATION_LENGTH = 400;
+export const LINTER_MAX_SUGGESTION_LENGTH = 700;
 
 /** Wire-Format für `responseFormat` (nur Grundtypen, siehe oben). */
 export const linterWireSchema = z.object({
@@ -46,6 +47,14 @@ export const linterWireSchema = z.object({
       quote: z.string(),
       reason: linterReasonSchema,
       explanation: z.string(),
+      /**
+       * Sachliche Neuformulierung — LEERSTRING, wenn der Satz keinen
+       * sachlichen Kern hat. Bewusst ein Pflichtfeld mit erlaubtem Leerwert
+       * statt eines optionalen Feldes: Ein weggelassenes Feld ist im
+       * JSON-Schema-Modus der API nicht zuverlässig ausdrückbar (siehe
+       * Kopfkommentar), ein Leerstring dagegen immer.
+       */
+      suggestion: z.string(),
     }),
   ),
 });
@@ -60,6 +69,14 @@ export const linterLlmResponseSchema = z.object({
         reason: linterReasonSchema,
         /** Begründung in der Sprache des Users; wird nur als Text gerendert. */
         explanation: z.string().min(1).max(LINTER_MAX_EXPLANATION_LENGTH),
+        /**
+         * Neuformulierung in der Sprache des INHALTS (nicht des Users) — sie
+         * ersetzt einen Satz im Text. Leer/fehlend heisst «kein sachlicher
+         * Kern vorhanden»; `nullish`, damit ein weggelassenes oder `null`
+         * gesetztes Feld die Antwort nicht fail-closed verwirft (E8), während
+         * der Längen-Cap streng bleibt.
+         */
+        suggestion: z.string().max(LINTER_MAX_SUGGESTION_LENGTH).nullish(),
       }),
     )
     .max(LINTER_MAX_FINDINGS),

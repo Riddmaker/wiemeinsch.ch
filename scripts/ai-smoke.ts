@@ -36,6 +36,11 @@ function describeLinterResult(result: LinterResult, text: string): string[] {
       if (finding.explanation) {
         lines.push(`  Begründung: ${finding.explanation}`);
       }
+      lines.push(
+        finding.suggestion
+          ? `  Vorschlag:  ${finding.suggestion}`
+          : "  Vorschlag:  (keiner — kein sachlicher Kern)",
+      );
     }
   }
   return lines;
