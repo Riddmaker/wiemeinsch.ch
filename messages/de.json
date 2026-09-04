@@ -3,13 +3,28 @@
     "name": "wiemeinsch.ch",
     "logoAria": "Logo wiemeinsch.ch: Schweizer Kreuz im Kreis"
   },
+  "common": {
+    "backToTop": "Nach oben"
+  },
   "header": {
     "board": "Board",
     "submit": "Einreichen",
     "login": "Anmelden",
     "profile": "Profil",
     "logout": "Abmelden",
-    "admin": "Admin"
+    "admin": "Admin",
+    "unread": "Es gibt Neues"
+  },
+  "notifications": {
+    "heading": "Es gibt Neues",
+    "intro": "Dein aktueller Stand — nicht nur die Zuwächse.",
+    "markRead": "Alles als gelesen markieren",
+    "reactions": "Reaktionen",
+    "reactionCounts": "{up, plural, one {# Zustimmung} other {# Zustimmungen}} · {down, plural, one {# Ablehnung} other {# Ablehnungen}}",
+    "statements": "Statements",
+    "changeRequests": "Änderungsanträge",
+    "changeRequestCount": "{count, plural, one {# offener Antrag} other {# offene Anträge}}",
+    "affected": "Betroffene Tickets"
   },
   "localeSwitcher": {
     "label": "Sprache wählen",
@@ -37,7 +52,8 @@
     "downvotesAria": "Ablehnungen",
     "statements": "{count, plural, one {# Statement} other {# Statements}}",
     "changeRequests": "{count, plural, one {# Änderungsantrag} other {# Änderungsanträge}}",
-    "empty": "Noch keine Tickets veröffentlicht."
+    "empty": "Noch keine Tickets veröffentlicht.",
+    "loadMore": "Weitere Tickets laden"
   },
   "impressum": {
     "title": "Impressum",
@@ -118,6 +134,7 @@
   },
   "linter": {
     "chip": "CIVIC-LINTER · {reason}",
+    "suggestion": "Vorschlag:",
     "appeal": "Entscheid anfechten",
     "reasons": {
       "RAGEBAIT": "Ragebait",
@@ -150,8 +167,8 @@
     "by": "Von @{handle}",
     "original": "Original: {language}",
     "aiTranslated": "AI-übersetzt",
-    "showOriginal": "Im Original anzeigen",
-    "showTranslation": "Übersetzung anzeigen",
+    "showOriginal": "In Originalsprache anzeigen",
+    "showTranslation": "In meiner Sprache anzeigen",
     "problem": "Problem",
     "solution": "Lösung",
     "funding": "Finanzierung / Trade-off",
@@ -193,7 +210,7 @@
     "heading": "{count, plural, =0 {Änderungsanträge} one {# Änderungsantrag} other {# Änderungsanträge}}",
     "intro": "Statt zu kritisieren: Übernimm den Lösungstext, ändere ihn ab und reiche ihn als Antrag ein. Nimmt der Autor an, wirst du als Co-Autor gelistet.",
     "newButton": "Änderungsantrag stellen",
-    "prefillHint": "Der aktuelle Lösungstext ist übernommen — ändere ihn ab.",
+    "prefillHint": "Die Felder enthalten den aktuellen Stand. Ändere, was du verbessern willst — eingereicht wird nur, was du tatsächlich änderst.",
     "cancel": "Abbrechen",
     "toPreview": "Prüfen und übersetzen",
     "checking": "Civic-Linter prüft…",
@@ -218,8 +235,11 @@
     "decided": "Entschieden {date}",
     "original": "Original: {language}",
     "aiTranslated": "AI-übersetzt",
-    "currentSolution": "Aktuelle Lösung",
-    "proposedSolution": "Vorschlag",
+    "currentVersion": "Aktuell",
+    "proposedVersion": "Vorgeschlagen",
+    "hashtagsField": "Hashtags",
+    "changes": "Ändert: {fields}",
+    "diffLegend": "Rot durchgestrichen = entfällt · Grün = neu",
     "authorOpenHint": "{count, plural, one {# offener Änderungsantrag wartet auf deinen Entscheid.} other {# offene Änderungsanträge warten auf deinen Entscheid.}}",
     "authorEmptyHint": "Auf dein eigenes Ticket kannst du keinen Änderungsantrag stellen.",
     "staleWarning": "Die Lösung hat sich seit diesem Antrag geändert — beim Übernehmen ersetzt der Antrag die aktuelle Fassung vollständig.",
@@ -239,7 +259,11 @@
       "not_author": "Nur der Original-Autor kann über Änderungsanträge entscheiden.",
       "not_open": "Über diesen Antrag wurde bereits entschieden.",
       "min_200": "Mindestens 200 Zeichen",
-      "max_3000": "Maximal 3'000 Zeichen"
+      "max_3000": "Maximal 3'000 Zeichen",
+      "no_changes": "Du hast nichts geändert. Passe mindestens ein Feld an.",
+      "max_80": "Maximal 80 Zeichen",
+      "max_1500": "Maximal 1'500 Zeichen",
+      "min_1": "Pflichtfeld"
     }
   },
   "profile": {
@@ -258,6 +282,7 @@
     "ownProfile": "Das ist dein öffentliches Profil — so sehen dich andere. Deine Angaben zur Person erscheinen hier nie.",
     "settingsLink": "Einstellungen bearbeiten",
     "openChangeRequests": "{count, plural, one {# offener Änderungsantrag wartet auf deinen Entscheid} other {# offene Änderungsanträge warten auf deinen Entscheid}}",
+    "openChangeRequestsOnTicket": "{count, plural, one {# Antrag} other {# Anträge}}",
     "anonymous": "Unbekannt"
   },
   "settings": {
@@ -273,7 +298,7 @@
     "education": "Höchster Abschluss",
     "postalCode": "PLZ",
     "occupation": "Beruf",
-    "occupationHint": "Optional, höchstens 100 Zeichen.",
+    "occupationHint": "Höchstens 40 Zeichen.",
     "noAnswer": "Keine Angabe",
     "save": "Speichern",
     "saving": "Wird gespeichert…",
@@ -299,7 +324,7 @@
       "invalid_birth_year": "Bitte gib ein Jahr zwischen 1900 und heute an.",
       "invalid_postal_code": "Bitte gib eine vierstellige Schweizer PLZ an.",
       "invalid_occupation": "Bitte gib einen Beruf an oder lass das Feld leer.",
-      "max_100": "Höchstens 100 Zeichen."
+      "max_40": "Höchstens 40 Zeichen."
     }
   },
   "moderation": {

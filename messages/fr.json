@@ -3,13 +3,28 @@
     "name": "wiemeinsch.ch",
     "logoAria": "Logo wiemeinsch.ch: croix suisse dans un cercle"
   },
+  "common": {
+    "backToTop": "Retour en haut"
+  },
   "header": {
     "board": "Board",
     "submit": "Soumettre",
     "login": "Se connecter",
     "profile": "Profil",
     "logout": "Se déconnecter",
-    "admin": "Admin"
+    "admin": "Admin",
+    "unread": "Du nouveau"
+  },
+  "notifications": {
+    "heading": "Du nouveau",
+    "intro": "Votre état actuel — pas seulement les ajouts.",
+    "markRead": "Tout marquer comme lu",
+    "reactions": "Réactions",
+    "reactionCounts": "{up, plural, one {# approbation} other {# approbations}} · {down, plural, one {# rejet} other {# rejets}}",
+    "statements": "Statements",
+    "changeRequests": "Demandes de modification",
+    "changeRequestCount": "{count, plural, one {# demande ouverte} other {# demandes ouvertes}}",
+    "affected": "Tickets concernés"
   },
   "localeSwitcher": {
     "label": "Choisir la langue",
@@ -37,7 +52,8 @@
     "downvotesAria": "Rejets",
     "statements": "{count, plural, one {# statement} other {# statements}}",
     "changeRequests": "{count, plural, one {# demande de modification} other {# demandes de modification}}",
-    "empty": "Aucun ticket publié pour l'instant."
+    "empty": "Aucun ticket publié pour l'instant.",
+    "loadMore": "Charger d'autres tickets"
   },
   "impressum": {
     "title": "Mentions légales",
@@ -118,6 +134,7 @@
   },
   "linter": {
     "chip": "CIVIC-LINTER · {reason}",
+    "suggestion": "Proposition :",
     "appeal": "Contester la décision",
     "reasons": {
       "RAGEBAIT": "Ragebait",
@@ -150,8 +167,8 @@
     "by": "Par @{handle}",
     "original": "Original : {language}",
     "aiTranslated": "Traduit par IA",
-    "showOriginal": "Afficher l'original",
-    "showTranslation": "Afficher la traduction",
+    "showOriginal": "Afficher dans la langue d'origine",
+    "showTranslation": "Afficher dans ma langue",
     "problem": "Problème",
     "solution": "Solution",
     "funding": "Financement / compromis",
@@ -193,7 +210,7 @@
     "heading": "{count, plural, =0 {Demandes de modification} one {# demande de modification} other {# demandes de modification}}",
     "intro": "Plutôt que de critiquer : reprenez le texte de la solution, modifiez-le et soumettez-le comme demande. Si l'auteur l'accepte, vous serez listé comme co-auteur.",
     "newButton": "Déposer une demande de modification",
-    "prefillHint": "Le texte actuel de la solution est repris — modifiez-le.",
+    "prefillHint": "Les champs contiennent la version actuelle. Modifiez ce que vous voulez améliorer — seules vos modifications réelles sont soumises.",
     "cancel": "Annuler",
     "toPreview": "Vérifier et traduire",
     "checking": "Le civic linter vérifie…",
@@ -218,8 +235,11 @@
     "decided": "Décidée le {date}",
     "original": "Original : {language}",
     "aiTranslated": "Traduit par IA",
-    "currentSolution": "Solution actuelle",
-    "proposedSolution": "Proposition",
+    "currentVersion": "Actuel",
+    "proposedVersion": "Proposé",
+    "hashtagsField": "Hashtags",
+    "changes": "Modifie : {fields}",
+    "diffLegend": "Rouge barré = supprimé · Vert = ajouté",
     "authorOpenHint": "{count, plural, one {# demande de modification attend votre décision.} other {# demandes de modification attendent votre décision.}}",
     "authorEmptyHint": "Vous ne pouvez pas déposer de demande de modification sur votre propre ticket.",
     "staleWarning": "La solution a changé depuis cette demande — en la reprenant, elle remplacera entièrement la version actuelle.",
@@ -239,7 +259,11 @@
       "not_author": "Seul l'auteur original peut statuer sur les demandes de modification.",
       "not_open": "Cette demande a déjà été traitée.",
       "min_200": "200 caractères au minimum",
-      "max_3000": "3'000 caractères au maximum"
+      "max_3000": "3'000 caractères au maximum",
+      "no_changes": "Vous n'avez rien modifié. Adaptez au moins un champ.",
+      "max_80": "80 caractères au maximum",
+      "max_1500": "1'500 caractères au maximum",
+      "min_1": "Champ obligatoire"
     }
   },
   "profile": {
@@ -258,6 +282,7 @@
     "ownProfile": "Voici votre profil public — c'est ainsi que les autres vous voient. Vos informations personnelles n'y apparaissent jamais.",
     "settingsLink": "Modifier les paramètres",
     "openChangeRequests": "{count, plural, one {# demande de modification attend votre décision} other {# demandes de modification attendent votre décision}}",
+    "openChangeRequestsOnTicket": "{count, plural, one {# demande} other {# demandes}}",
     "anonymous": "Inconnu"
   },
   "settings": {
@@ -273,7 +298,7 @@
     "education": "Diplôme le plus élevé",
     "postalCode": "NPA",
     "occupation": "Profession",
-    "occupationHint": "Facultatif, 100 caractères au maximum.",
+    "occupationHint": "40 caractères au maximum.",
     "noAnswer": "Sans indication",
     "save": "Enregistrer",
     "saving": "Enregistrement…",
@@ -299,7 +324,7 @@
       "invalid_birth_year": "Indiquez une année comprise entre 1900 et aujourd'hui.",
       "invalid_postal_code": "Indiquez un NPA suisse à quatre chiffres.",
       "invalid_occupation": "Indiquez une profession ou laissez le champ vide.",
-      "max_100": "100 caractères au maximum."
+      "max_40": "40 caractères au maximum."
     }
   },
   "moderation": {
