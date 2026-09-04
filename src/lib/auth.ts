@@ -3,6 +3,7 @@ import type { NextAuthOptions } from "next-auth";
 import type { Adapter } from "next-auth/adapters";
 import EmailProvider from "next-auth/providers/email";
 import GoogleProvider from "next-auth/providers/google";
+import { assignHandle } from "@/lib/handle";
 import { prisma } from "@/lib/prisma";
 
 // NextAuth v4.24 (Auth.js-v5 ist weiterhin Beta — Stabilitätsregel, Versions-Log).
@@ -73,17 +74,9 @@ export const authOptions: NextAuthOptions = {
   },
   events: {
     async createUser({ user }) {
-      // Öffentlicher @handle: E-Mail-Präfix (normalisiert) + Zufallssuffix (unique).
-      const base =
-        (user.email?.split("@")[0] ?? "user")
-          .toLowerCase()
-          .replace(/[^a-z0-9_]/g, "")
-          .slice(0, 20) || "user";
-      const suffix = Math.random().toString(36).slice(2, 6);
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { handle: `${base}_${suffix}` },
-      });
+      // Öffentlicher @handle: Zufallswort + Suffix, OHNE Bezug zur Mailadresse
+      // (siehe lib/handle.ts — der Handle ist öffentlich und nicht änderbar).
+      await assignHandle(user.id);
     },
   },
 };
