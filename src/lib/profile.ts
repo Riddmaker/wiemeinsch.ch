@@ -192,15 +192,55 @@ export async function loadProfile(opts: {
 /**
  * Offene Änderungsanträge auf den eigenen Tickets (P10.2, im Profil
  * nachgeholt): nur für den eigenen Blick auf das Profil — ein Fremder sieht
- * die Zahl nicht, sie gehört zur eigenen Arbeitsliste.
+ * sie nicht, sie gehören zur eigenen Arbeitsliste.
+ *
+ * Liefert seit 04.09.2026 die betroffenen TICKETS mit, nicht nur eine Zahl:
+ * Der Hinweis «1 offener Antrag wartet» ohne Link zwang den Autor, das
+ * Ticket selbst zu suchen. Ein Ticket kann mehrere Anträge haben, deshalb
+ * die Anzahl je Ticket.
  */
-export async function countOpenChangeRequestsForAuthor(
+export type OpenChangeRequestTarget = {
+  ticketId: string;
+  title: string;
+  count: number;
+};
+
+export async function loadOpenChangeRequestsForAuthor(
   userId: string,
-): Promise<number> {
-  return prisma.changeRequest.count({
+  displayLocale: AppLocale,
+): Promise<{ total: number; tickets: OpenChangeRequestTarget[] }> {
+  const rows = await prisma.changeRequest.findMany({
     where: {
       status: "OPEN",
       ticket: { authorId: userId, status: "PUBLISHED" },
     },
+    select: {
+      ticketId: true,
+      ticket: {
+        select: {
+          translations: {
+            select: { locale: true, title: true, isOriginal: true },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: "asc" },
   });
+
+  const byTicket = new Map<string, OpenChangeRequestTarget>();
+  for (const row of rows) {
+    const existing = byTicket.get(row.ticketId);
+    if (existing) {
+      existing.count += 1;
+      continue;
+    }
+    byTicket.set(row.ticketId, {
+      ticketId: row.ticketId,
+      title:
+        pickTranslation(row.ticket.translations, displayLocale)?.title ?? "",
+      count: 1,
+    });
+  }
+
+  return { total: rows.length, tickets: [...byTicket.values()] };
 }

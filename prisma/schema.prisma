@@ -91,6 +91,12 @@ model User {
   image         String?
 
   handle          String? @unique // öffentlicher @handle (wird bei Registrierung gesetzt, P4)
+
+  // Benachrichtigungen (E14): EIN Zeitstempel statt einer Ereignistabelle.
+  // Alles, was danach passiert ist, gilt als ungelesen; angezeigt werden
+  // dann die aktuellen GESAMTZAHLEN, nicht Deltas — deshalb muss nichts
+  // pro Ereignis nachgehalten werden. NULL = noch nie gelesen.
+  notificationsReadAt DateTime?
   preferredLocale Locale  @default(DE)
   isAdmin         Boolean @default(false)
 
@@ -292,6 +298,7 @@ model Statement {
   moderationCases ModerationCase[]
 
   @@index([ticketId, category])
+  @@index([authorId]) // Benachrichtigungen: Reaktionen auf meine Statements (E14)
 }
 
 model StatementTranslation {
@@ -325,6 +332,9 @@ model TicketVote {
 
   @@unique([userId, ticketId])
   @@index([userId, createdAt(sort: Desc)]) // öffentliche Voting-Historie (P11)
+  // Benachrichtigungen (E14): «gibt es neue Stimmen auf meine Tickets?».
+  // `updatedAt`, weil auch ein Umschalten der Stimme eine Reaktion ist.
+  @@index([ticketId, updatedAt])
 }
 
 model StatementVote {
@@ -340,6 +350,7 @@ model StatementVote {
   statement Statement @relation(fields: [statementId], references: [id], onDelete: Cascade)
 
   @@unique([userId, statementId])
+  @@index([statementId, updatedAt]) // Benachrichtigungen (E14)
 }
 
 // ---------------------------------------------------------------------------

@@ -1,10 +1,12 @@
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { NotificationPanel } from "@/components/profile/NotificationPanel";
 import { Link } from "@/i18n/navigation";
 import type { AppLocale } from "@/i18n/routing";
 import { getDisplayLocale } from "@/lib/display-locale";
+import { loadNotifications } from "@/lib/notifications";
 import {
-  countOpenChangeRequestsForAuthor,
+  loadOpenChangeRequestsForAuthor,
   loadProfile,
   type ProfileStatementEntry,
   type ProfileTicketEntry,
@@ -45,8 +47,12 @@ export default async function ProfilePage({
 
   const isSelf = userId === profile.user.id;
   const openChangeRequests = isSelf
-    ? await countOpenChangeRequestsForAuthor(profile.user.id)
-    : 0;
+    ? await loadOpenChangeRequestsForAuthor(profile.user.id, displayLocale)
+    : { total: 0, tickets: [] };
+  // Benachrichtigungen NUR für den Profilinhaber — /profil/[id] ist öffentlich.
+  const notifications = isSelf
+    ? await loadNotifications(profile.user.id, displayLocale)
+    : null;
 
   const dateFormat = new Intl.DateTimeFormat(`${locale}-CH`, {
     day: "2-digit",
@@ -129,6 +135,8 @@ export default async function ProfilePage({
         {t("memberSince", { date: dateFormat.format(profile.user.createdAt) })}
       </p>
 
+      {notifications && <NotificationPanel summary={notifications} />}
+
       {isSelf && (
         <div
           className="mt-6 border border-line bg-surface px-4 py-3.5"
@@ -137,13 +145,33 @@ export default async function ProfilePage({
           <p className="font-serif text-[15px] leading-relaxed">
             {t("ownProfile")}
           </p>
-          {openChangeRequests > 0 && (
-            <p
-              className="mt-2 font-mono text-xs text-ink"
-              data-testid="profile-open-change-requests"
-            >
-              {t("openChangeRequests", { count: openChangeRequests })}
-            </p>
+          {openChangeRequests.total > 0 && (
+            <div className="mt-2" data-testid="profile-open-change-requests">
+              <p className="font-mono text-xs text-ink">
+                {t("openChangeRequests", { count: openChangeRequests.total })}
+              </p>
+              {/* Mit Link zum Ticket — ohne ihn müsste der Autor es suchen. */}
+              <ul className="mt-1 flex flex-col gap-0.5">
+                {openChangeRequests.tickets.map((entry) => (
+                  <li key={entry.ticketId}>
+                    <Link
+                      href={`/tickets/${entry.ticketId}`}
+                      data-testid="profile-open-change-request-link"
+                      className="font-serif text-[14.5px] underline underline-offset-4 hover:text-ink"
+                    >
+                      {entry.title}
+                    </Link>
+                    {entry.count > 1 && (
+                      <span className="ml-1.5 font-mono text-[11.5px] text-meta">
+                        {t("openChangeRequestsOnTicket", {
+                          count: entry.count,
+                        })}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
           <Link
             href="/einstellungen"

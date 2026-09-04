@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { LogoutButton } from "@/components/layout/LogoutButton";
 import { Link } from "@/i18n/navigation";
 import { authOptions } from "@/lib/auth";
+import { hasUnreadNotifications } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { SwissCrossLogo } from "./SwissCrossLogo";
@@ -22,6 +23,9 @@ export async function AppHeader() {
         select: { handle: true, isAdmin: true },
       })
     : null;
+  // Roter Punkt statt Zahl (E14, User-Entscheid): Er soll auffallen und zum
+  // Nachsehen bewegen, nicht eine Menge beziffern.
+  const unread = userId ? await hasUnreadNotifications(userId) : false;
 
   return (
     <header className="flex items-center gap-4 border-b border-line bg-paper px-4 py-3.5 sm:gap-7 sm:px-5">
@@ -70,9 +74,19 @@ export async function AppHeader() {
             <Link
               href={`/profil/${userId}`}
               data-testid="header-profile"
-              className="max-w-[16ch] truncate font-mono text-[13px] font-bold text-ink underline-offset-[6px] hover:underline"
+              className="flex max-w-[18ch] items-start gap-1 font-mono text-[13px] font-bold text-ink underline-offset-[6px] hover:underline"
             >
-              {me?.handle ? `@${me.handle}` : t("header.profile")}
+              <span className="truncate">
+                {me?.handle ? `@${me.handle}` : t("header.profile")}
+              </span>
+              {unread && (
+                <span
+                  data-testid="header-unread-dot"
+                  aria-label={t("header.unread")}
+                  role="status"
+                  className="mt-[1px] inline-block h-[7px] w-[7px] shrink-0 rounded-full bg-contra"
+                />
+              )}
             </Link>
             <LogoutButton />
           </div>

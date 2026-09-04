@@ -121,3 +121,41 @@ export async function setPreferredLocale(
   revalidatePath("/", "layout");
   return { ok: true };
 }
+
+/**
+ * «Alles als gelesen markieren» (E14, 04.09.2026).
+ *
+ * Setzt EINEN Zeitstempel — es gibt keine Ereignistabelle, in der einzelne
+ * Benachrichtigungen abgehakt würden. Danach ist der rote Punkt weg, bis
+ * wieder etwas passiert.
+ */
+export async function markNotificationsRead(): Promise<ActionResult> {
+  let userId: string;
+  try {
+    ({ id: userId } = await requireUser());
+  } catch (e) {
+    if (e instanceof UnauthorizedError) {
+      return { ok: false, error: "unauthorized" };
+    }
+    throw e;
+  }
+
+  const limit = await checkRateLimit({
+    scope: "notifications-read",
+    identifier: userId,
+    limit: 60,
+    windowSeconds: 900,
+  });
+  if (!limit.ok) {
+    return { ok: false, error: "rate_limited" };
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { notificationsReadAt: new Date() },
+  });
+
+  // Der rote Punkt hängt im Header — der ist serverseitig gerendert.
+  revalidatePath("/", "layout");
+  return { ok: true };
+}

@@ -31,4 +31,7 @@ export const privateUserFields = [
   "email",
   "emailVerified",
   "isAdmin",
+  // Lesemarke der Benachrichtigungen (E14): verrät, wann jemand zuletzt
+  // hereingeschaut hat — ein Aktivitätsmuster, das niemanden etwas angeht.
+  "notificationsReadAt",
 ] as const satisfies readonly Prisma.UserScalarFieldEnum[];
