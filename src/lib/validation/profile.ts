@@ -12,7 +12,14 @@ import { z } from "./zod";
 
 /** Untergrenze wie in amtlichen Statistiken; Obergrenze ist das laufende Jahr. */
 export const BIRTH_YEAR_MIN = 1900;
-export const OCCUPATION_MAX = 100;
+/**
+ * Datensparsamkeit (nDSG): Das Feld soll eine Berufsbezeichnung aufnehmen,
+ * keine Freitext-Biografie. 40 Zeichen decken auch lange deutsche Komposita
+ * («Sozialversicherungsfachfrau») und französische Bezeichnungen
+ * («Ingénieure en environnement») ab. Bei Änderung: den Fehler-Key
+ * `settings.errors.max_<n>` in messages/{de,fr,it}.json mitziehen.
+ */
+export const OCCUPATION_MAX = 40;
 
 export function currentBirthYearMax(now: Date = new Date()): number {
   return now.getFullYear();
