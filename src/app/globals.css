@@ -14,7 +14,7 @@
  */
 :root {
   /* Farb-Semantik */
-  --rot-bund: #da291c; /* NUR Branding (Schweizer Kreuz) + CONTRA */
+  --rot-bund: #e11a27; /* NUR Branding (Schweizer Kreuz) + CONTRA */
   --gruen-pro: #15803d; /* NUR PRO + Zustimmungs-Anteile */
   --grau-meta: #55606e; /* ERWEITERUNG / FRAGE / Meta & System */
   --grau-linie: #d6d9de; /* Trennlinien, Rahmen von Meta-Elementen */

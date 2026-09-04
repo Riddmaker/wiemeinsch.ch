@@ -18,7 +18,7 @@ const login = (page: Page) => loginWithPrefix(page, "e2e-statement");
 /** Farb-Semantik aus globals.css (Styleguide Art. 7, Farbe + Chip). */
 const CATEGORY_COLORS: Record<string, string> = {
   PRO: "rgb(21, 128, 61)", // --gruen-pro
-  CONTRA: "rgb(218, 41, 28)", // --rot-bund
+  CONTRA: "rgb(225, 26, 39)", // --rot-bund (CD Bund #E11A27)
   ERWEITERUNG: "rgb(85, 96, 110)", // --grau-meta
   FRAGE: "rgb(85, 96, 110)", // --grau-meta
 };

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1.5 -1.5 67 67" width="67" height="67" role="img" aria-label="wiemeinsch.ch">
+  <!-- Geometrie 1:1 aus SwissCrossLogo.tsx. Die viewBox hat bewusst 1.5
+       Einheiten Luft rundherum: Berührt der Kreis den Rand exakt, schneiden
+       Rasterer bei krummen Skalierungen (Windows 125/150 %) den roten Ring
+       einseitig weg — der Kreis wirkt dann aus der Mitte gerutscht. -->
+  <circle cx="32" cy="32" r="32" fill="#E11A27"/>
+  <rect x="26" y="12" width="12" height="40" fill="#FFFFFF"/>
+  <rect x="12" y="26" width="40" height="12" fill="#FFFFFF"/>
+</svg>
