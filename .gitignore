@@ -62,3 +62,9 @@ next-env.d.ts
 /STYLEGUIDE.html
 /STYLEGUIDE.pdf
 /OWASP-Gen-AI.pdf
+# Betriebsdokumente: Topologie, Secret-Namen, Backup-/Wiederherstellungswege und
+# die Liste der offenen Härtungsschritte. Für Aussenstehende ohne Nutzen — und
+# eine öffentliche Checkliste dessen, was noch nicht gehärtet ist, wäre eine
+# Prüfliste für Angreifer.
+/DEPLOYMENT.md
+/RESTORE.md
