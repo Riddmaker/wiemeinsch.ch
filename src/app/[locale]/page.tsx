@@ -5,6 +5,11 @@ import {
 } from "@/components/tickets/TicketCard";
 import { Link } from "@/i18n/navigation";
 import type { AppLocale } from "@/i18n/routing";
+import {
+  boardFetchSize,
+  BOARD_PAGE_SIZE,
+  parseBoardPages,
+} from "@/lib/board-paging";
 import { getDisplayLocale } from "@/lib/display-locale";
 import { prisma } from "@/lib/prisma";
 import { regionName } from "@/lib/ticket-display";
@@ -16,6 +21,7 @@ import type { Prisma } from "@/generated/prisma/client";
  * Das Board (P8.4, Styleguide Art. 6): drei Tabs, Sortierung = indexierter
  * ORDER BY auf den denormalisierten Score-Spalten (kein Live-Aggregat).
  * Consensus: Tickets mit N < 10 ohne Rang unterhalb, Label «zu wenig Stimmen».
+ * Seitenweise nachladbar über `?seiten=` (siehe lib/board-paging.ts).
  */
 
 const TABS = ["trending", "consensus", "controversial"] as const;
@@ -27,9 +33,6 @@ const TAB_ORDER: Record<BoardTab, Prisma.TicketOrderByWithRelationInput> = {
   controversial: { scoreControversy: "desc" },
 };
 
-/** MVP ohne Pagination — Obergrenze für die Board-Abfrage. */
-const BOARD_SIZE = 50;
-
 export default async function BoardPage({
   params,
   searchParams,
@@ -40,6 +43,7 @@ export default async function BoardPage({
   const tab: BoardTab = (TABS as readonly string[]).includes(tabParam)
     ? (tabParam as BoardTab)
     : "trending";
+  const pages = parseBoardPages(sp.seiten);
 
   const t = await getTranslations("board");
   const tHome = await getTranslations("home");
@@ -49,7 +53,9 @@ export default async function BoardPage({
   const tickets = await prisma.ticket.findMany({
     where: { status: "PUBLISHED" },
     orderBy: [TAB_ORDER[tab], { createdAt: "desc" }],
-    take: BOARD_SIZE,
+    // Eine Zeile mehr als angezeigt: verrät, ob es noch weitere gibt, ohne
+    // eine zweite COUNT-Abfrage.
+    take: boardFetchSize(pages),
     include: {
       translations: { select: { locale: true, title: true, isOriginal: true } },
       hashtags: { orderBy: { tag: "asc" }, select: { tag: true } },
@@ -58,7 +64,10 @@ export default async function BoardPage({
     },
   });
 
-  const cards: (TicketCardData & { voteCount: number })[] = tickets.map(
+  const hasMore = tickets.length > pages * BOARD_PAGE_SIZE;
+  const visible = hasMore ? tickets.slice(0, pages * BOARD_PAGE_SIZE) : tickets;
+
+  const cards: (TicketCardData & { voteCount: number })[] = visible.map(
     (ticket) => {
       const version = pickTranslation(ticket.translations, displayLocale);
       const region = regionName(ticket, locale as AppLocale);
@@ -146,6 +155,28 @@ export default async function BoardPage({
               tooFewVotes
             />
           ))}
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="mt-6 flex justify-center">
+          {/* `scroll={false}`: Die Seite rendert serverseitig mit mehr Zeilen,
+              die Leseposition bleibt aber stehen — Nachladen ohne Sprung nach
+              oben und ohne clientseitiges Fetchen. */}
+          <Link
+            data-testid="board-load-more"
+            scroll={false}
+            href={{
+              pathname: "/",
+              query: {
+                ...(tab === "trending" ? {} : { tab }),
+                seiten: pages + 1,
+              },
+            }}
+            className="border-[1.5px] border-ink px-5 py-2 font-mono text-[13px] font-bold uppercase tracking-wide text-ink hover:bg-ink hover:text-paper"
+          >
+            {t("loadMore")}
+          </Link>
         </div>
       )}
     </div>

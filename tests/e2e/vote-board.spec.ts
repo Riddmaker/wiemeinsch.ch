@@ -144,7 +144,11 @@ test("Consensus-Tab: breite Zustimmung schlägt laute Nische, N<10 ohne Rang", a
 test("Kontrovers-Tab: knappe Spaltung rankt über einseitiges Volumen", async ({
   page,
 }) => {
-  await page.goto("/de?tab=controversial");
+  // `seiten=25` (Maximum): Der Test prüft die REIHENFOLGE, nicht die
+  // Pagination. Seit E-Board-Pagination zeigt Seite 1 nur 20 Tickets — ein
+  // Ticket mit Kontrovers-Score 0 steht ganz hinten und fiele in einer
+  // gewachsenen Datenbank aus der ersten Seite heraus.
+  await page.goto("/de?tab=controversial&seiten=25");
   await expect(page.getByTestId("tab-controversial")).toHaveAttribute(
     "aria-current",
     "page",

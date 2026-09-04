@@ -7,6 +7,7 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations } from "next-intl/server";
 import { AppFooter } from "@/components/layout/AppFooter";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { BackToTop } from "@/components/layout/BackToTop";
 import { routing } from "@/i18n/routing";
 import { authOptions } from "@/lib/auth";
 import { toAppLocale } from "@/lib/locale";
@@ -85,6 +86,7 @@ export default async function LocaleLayout({
           <AppHeader />
           <main className="flex-1">{children}</main>
           <AppFooter />
+          <BackToTop />
         </NextIntlClientProvider>
       </body>
     </html>
