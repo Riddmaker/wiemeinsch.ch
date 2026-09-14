@@ -62,7 +62,10 @@ jobs:
         run: npm run lint
 
       - name: TypeScript
-        run: npx tsc --noEmit
+        # `next typegen` erzeugt die globalen Routen-Typen (PageProps,
+        # LayoutProps) unter .next/types. Lokal existieren sie immer, im frischen
+        # Checkout nicht — der erste Lauf auf main scheiterte genau daran.
+        run: npm run typecheck
 
       - name: Prettier
         run: npm run format:check
