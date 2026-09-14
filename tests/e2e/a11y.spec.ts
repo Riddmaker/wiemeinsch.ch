@@ -90,6 +90,7 @@ const guestPages: [label: string, path: string][] = [
   ["Statement-Dashboard", `/de/tickets/${STATEMENT_TICKET}`],
   ["Login", "/de/login"],
   ["Impressum", "/de/impressum"],
+  ["FAQ & Presse", "/de/faq"],
   ["Öffentliches Profil", `/de/profil/${PROFILE_ID}`],
   ["404", "/de/diese-seite-gibt-es-nicht"],
   // Stichproben in den beiden anderen Sprachen: gleiche Struktur, andere

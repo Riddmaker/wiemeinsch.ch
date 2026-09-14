@@ -25,7 +25,8 @@
     "profile": "Profil",
     "logout": "Se déconnecter",
     "admin": "Admin",
-    "unread": "Du nouveau"
+    "unread": "Du nouveau",
+    "faq": "FAQ & presse"
   },
   "notifications": {
     "heading": "Du nouveau",
@@ -48,7 +49,8 @@
   },
   "footer": {
     "impressum": "Mentions légales",
-    "license": "Open source sous licence PolyForm Noncommercial 1.0.0"
+    "license": "Open source sous licence PolyForm Noncommercial 1.0.0",
+    "faq": "FAQ & presse"
   },
   "home": {
     "title": "Le backlog politique de la Suisse",
@@ -73,6 +75,88 @@
     "title": "Mentions légales",
     "responsible": "Responsable du contenu de ce site web :",
     "emailLabel": "Courriel"
+  },
+  "faq": {
+    "metaTitle": "FAQ & presse — wiemeinsch.ch",
+    "metaDescription": "Pourquoi wiemeinsch.ch est nécessaire, comment la plateforme fonctionne et du matériel pour les médias.",
+    "title": "FAQ & presse",
+    "lead": "wiemeinsch.ch est le backlog politique de la Suisse : on y consigne des problèmes sous forme de tickets et on améliore ensemble les solutions — de manière structurée plutôt que polarisée.",
+    "jumpLabel": "Sur cette page",
+    "sections": {
+      "why": "Pourquoi",
+      "idea": "L'idée",
+      "how": "Comment ça marche",
+      "questions": "Questions fréquentes",
+      "press": "Presse"
+    },
+    "why": {
+      "title": "Pourquoi c'est nécessaire",
+      "body1": "En ligne, l'indignation est récompensée, pas les solutions. Une analyse de 2,7 millions de publications de médias et de membres du Congrès américains sur Facebook et Twitter le montre : chaque terme désignant le camp politique adverse augmentait de 67 % les chances qu'une publication soit partagée.<fn>1</fn>",
+      "body2": "Les espaces de commentaires amplifient le phénomène : qui peut répondre se dispute. La Suisse vote jusqu'à quatre fois par an — mais il n'existe guère d'endroit où les propositions peuvent mûrir sereinement avant."
+    },
+    "idea": {
+      "title": "L'idée",
+      "body": "Les équipes de développement logiciel résolvent ensemble des problèmes complexes : les tâches arrivent sous forme de tickets dans un backlog, les améliorations sous forme de pull requests, et les décisions restent traçables. wiemeinsch.ch transpose cette méthode à la politique — et récompense le consensus plutôt que le bruit.",
+      "originTitle": "D'où vient l'idée",
+      "origin": "Le modèle est vTaiwan : depuis 2015, des citoyennes et citoyens y délibèrent sur des questions législatives — sans fonction de réponse, avec des votes qui font apparaître les points communs. Selon vTaiwan, 80 % des 26 procédures menées jusqu'en 2018 ont débouché sur une action concrète du gouvernement.<fn>2</fn> wiemeinsch.ch applique cette approche à la démocratie directe — pour la Confédération, les cantons et les communes."
+    },
+    "how": {
+      "title": "Comment ça marche",
+      "step1Title": "Soumettre un problème",
+      "step1": "Titre, problème, solution et, si vous le souhaitez, financement. Le Civic-Linter retient la polémique et les insultes et propose des formulations factuelles. Chaque contribution paraît en allemand, en français et en italien.",
+      "step2Title": "Voter",
+      "step2": "Approuver ou rejeter — modifiable à tout moment.",
+      "step3Title": "Situer",
+      "step3": "Des statements Pour, Contre, Complément ou Question, sans fonction de réponse.",
+      "step4Title": "Améliorer",
+      "step4": "Déposer une demande de modification. Si l'auteur du ticket la reprend, vous en devenez co-auteur.",
+      "step5Title": "Lire le board",
+      "step5": "«Consensus» montre une large adhésion, «Controverse» rend les divisions visibles, «Trending» montre l'activité.",
+      "toBoard": "Vers le board"
+    },
+    "questions": {
+      "title": "Questions fréquentes",
+      "bindingQ": "Est-ce contraignant ?",
+      "bindingA": "Non. wiemeinsch.ch fait émerger des thèmes et montre où il y a accord. Les décisions restent l'affaire des parlements et du peuple.",
+      "publicQ": "Qu'est-ce qui est public ?",
+      "publicA": "Votre @handle aléatoire, vos contributions et vos votes. L'année de naissance, le NPA et les autres indications sont facultatifs et jamais publics.",
+      "whoQ": "Qui peut participer ?",
+      "whoA": "Tout le monde peut lire. Pour participer, il suffit de se connecter avec une adresse e-mail confirmée ou un compte Google — quel que soit le lieu de domicile.",
+      "costQ": "Est-ce payant ?",
+      "costA": "Non, et il n'y a pas de publicité."
+    },
+    "press": {
+      "title": "Presse",
+      "intro": "Matériel librement utilisable pour des articles sur wiemeinsch.ch.",
+      "shortLabel": "En une phrase",
+      "short": "wiemeinsch.ch est le backlog politique de la Suisse : les citoyennes et citoyens y consignent des problèmes politiques sous forme de tickets et améliorent ensemble les solutions — de manière structurée plutôt que polarisée.",
+      "longLabel": "En un paragraphe",
+      "long": "wiemeinsch.ch transpose des outils du développement logiciel à la démocratie directe suisse. Qui constate un problème politique le soumet sous forme de ticket avec problème, solution et financement ; d'autres votent, le situent par des statements ou améliorent la solution par une demande de modification. Une vérification par IA retient la polémique, et un classement récompense la large adhésion plutôt que le bruit. La plateforme est trilingue, sans publicité et open source.",
+      "copy": "Copier",
+      "copied": "Copié",
+      "factsTitle": "Fiche d'information",
+      "statusLabel": "État",
+      "status": "En développement",
+      "languagesLabel": "Langues",
+      "languages": "allemand, français, italien",
+      "levelsLabel": "Échelons politiques",
+      "levels": "Confédération, cantons, communes",
+      "aiLabel": "IA",
+      "ai": "Mistral AI — Civic-Linter et traduction",
+      "codeLabel": "Code source",
+      "licenseLabel": "Licence",
+      "adsLabel": "Publicité",
+      "ads": "Aucune",
+      "logoTitle": "Logo",
+      "logoNote": "Croix suisse dans un cercle rouge. Merci de ne pas le déformer, le recolorer ni y ajouter d'effets.",
+      "logoSvg": "Télécharger en SVG",
+      "logoPng": "Télécharger en PNG (1024 px)",
+      "contactTitle": "Contact"
+    },
+    "sourcesTitle": "Sources",
+    "source1": "Rathje, S., Van Bavel, J. J. & van der Linden, S. (2021) : Out-group animosity drives engagement on social media. PNAS 118 (26).",
+    "source2": "Horton, C. (2018) : The simple but ingenious system Taiwan uses to crowdsource its laws. MIT Technology Review.",
+    "footnoteLabel": "Source {number}"
   },
   "login": {
     "title": "Se connecter",

@@ -25,7 +25,8 @@
     "profile": "Profil",
     "logout": "Abmelden",
     "admin": "Admin",
-    "unread": "Es gibt Neues"
+    "unread": "Es gibt Neues",
+    "faq": "FAQ & Presse"
   },
   "notifications": {
     "heading": "Es gibt Neues",
@@ -48,7 +49,8 @@
   },
   "footer": {
     "impressum": "Impressum",
-    "license": "Quelloffen unter PolyForm Noncommercial 1.0.0"
+    "license": "Quelloffen unter PolyForm Noncommercial 1.0.0",
+    "faq": "FAQ & Presse"
   },
   "home": {
     "title": "Das politische Backlog der Schweiz",
@@ -73,6 +75,88 @@
     "title": "Impressum",
     "responsible": "Verantwortlich für den Inhalt dieser Website:",
     "emailLabel": "E-Mail"
+  },
+  "faq": {
+    "metaTitle": "FAQ & Presse — wiemeinsch.ch",
+    "metaDescription": "Warum es wiemeinsch.ch braucht, wie die Plattform funktioniert und Material für Medien.",
+    "title": "FAQ & Presse",
+    "lead": "wiemeinsch.ch ist das politische Backlog der Schweiz: Hier werden Probleme als Tickets erfasst und Lösungen gemeinsam verbessert — strukturiert statt polarisiert.",
+    "jumpLabel": "Auf dieser Seite",
+    "sections": {
+      "why": "Warum",
+      "idea": "Die Idee",
+      "how": "So funktioniert es",
+      "questions": "Häufige Fragen",
+      "press": "Presse"
+    },
+    "why": {
+      "title": "Warum es das braucht",
+      "body1": "Online wird Empörung belohnt, nicht Lösungen. Eine Auswertung von 2,7 Millionen Beiträgen von US-Medien und Kongressmitgliedern auf Facebook und Twitter zeigt: Jeder Begriff, der die politische Gegenseite bezeichnet, erhöhte die Chance, geteilt zu werden, um 67 %.<fn>1</fn>",
+      "body2": "Kommentarspalten verstärken das: Wer antworten kann, streitet. Die Schweiz stimmt bis zu viermal im Jahr ab — aber einen Ort, an dem Anliegen vorher sachlich reifen, gibt es kaum."
+    },
+    "idea": {
+      "title": "Die Idee",
+      "body": "Software-Teams lösen komplexe Probleme gemeinsam: Aufgaben landen als Tickets im Backlog, Verbesserungen kommen als Pull Request, entschieden wird nachvollziehbar. wiemeinsch.ch überträgt das auf die Politik — und belohnt Konsens statt Lautstärke.",
+      "originTitle": "Woher die Idee kommt",
+      "origin": "Vorbild ist vTaiwan: Seit 2015 beraten dort Bürgerinnen und Bürger über Gesetzesfragen — ohne Antwortfunktion, mit Abstimmungen, die Gemeinsamkeiten sichtbar machen. Laut vTaiwan führten bis 2018 80 % von 26 Verfahren zu konkretem Regierungshandeln.<fn>2</fn> wiemeinsch.ch bringt diesen Ansatz in die direkte Demokratie — für Bund, Kantone und Gemeinden."
+    },
+    "how": {
+      "title": "So funktioniert es",
+      "step1Title": "Problem einreichen",
+      "step1": "Titel, Problem, Lösung, optional die Finanzierung. Der Civic-Linter hält Polemik und Beleidigungen zurück und schlägt sachliche Formulierungen vor. Jeder Beitrag erscheint auf Deutsch, Französisch und Italienisch.",
+      "step2Title": "Abstimmen",
+      "step2": "Zustimmung oder Ablehnung — jederzeit änderbar.",
+      "step3Title": "Einordnen",
+      "step3": "Statements als Pro, Contra, Erweiterung oder Frage, ohne Antwortfunktion.",
+      "step4Title": "Verbessern",
+      "step4": "Einen Änderungsantrag stellen. Übernimmt die Autorschaft ihn, wirst du Co-Autorin oder Co-Autor.",
+      "step5Title": "Board lesen",
+      "step5": "«Consensus» zeigt breite Zustimmung, «Kontrovers» macht Spaltung sichtbar, «Trending» zeigt Aktivität.",
+      "toBoard": "Zum Board"
+    },
+    "questions": {
+      "title": "Häufige Fragen",
+      "bindingQ": "Ist das verbindlich?",
+      "bindingA": "Nein. wiemeinsch.ch setzt Themen und zeigt, wo Einigkeit besteht. Entscheiden tun weiterhin Parlamente und Stimmvolk.",
+      "publicQ": "Was ist öffentlich?",
+      "publicA": "Dein zufälliger @handle, deine Beiträge und wie du abgestimmt hast. Jahrgang, PLZ und die weiteren Angaben sind freiwillig und nie öffentlich.",
+      "whoQ": "Wer kann mitmachen?",
+      "whoA": "Lesen können alle. Mitmachen kann, wer sich mit bestätigter E-Mail-Adresse oder Google-Konto anmeldet — unabhängig vom Wohnort.",
+      "costQ": "Kostet es etwas?",
+      "costA": "Nein, und es gibt keine Werbung."
+    },
+    "press": {
+      "title": "Presse",
+      "intro": "Material zur freien Verwendung in Berichten über wiemeinsch.ch.",
+      "shortLabel": "In einem Satz",
+      "short": "wiemeinsch.ch ist das politische Backlog der Schweiz: Bürgerinnen und Bürger erfassen politische Probleme als Tickets und verbessern Lösungen gemeinsam — strukturiert statt polarisiert.",
+      "longLabel": "In einem Absatz",
+      "long": "wiemeinsch.ch überträgt Werkzeuge aus der Softwareentwicklung auf die direkte Demokratie der Schweiz. Wer ein politisches Problem sieht, reicht es als Ticket mit Problem, Lösung und Finanzierung ein; andere stimmen ab, ordnen es mit Statements ein oder verbessern die Lösung per Änderungsantrag. Eine KI-Prüfung hält Polemik zurück, eine Rangliste belohnt breite Zustimmung statt Lautstärke. Die Plattform ist dreisprachig, werbefrei und quelloffen.",
+      "copy": "Kopieren",
+      "copied": "Kopiert",
+      "factsTitle": "Faktenblatt",
+      "statusLabel": "Stand",
+      "status": "In Entwicklung",
+      "languagesLabel": "Sprachen",
+      "languages": "Deutsch, Französisch, Italienisch",
+      "levelsLabel": "Politische Ebenen",
+      "levels": "Bund, Kantone, Gemeinden",
+      "aiLabel": "KI",
+      "ai": "Mistral AI — Civic-Linter und Übersetzung",
+      "codeLabel": "Quellcode",
+      "licenseLabel": "Lizenz",
+      "adsLabel": "Werbung",
+      "ads": "Keine",
+      "logoTitle": "Logo",
+      "logoNote": "Schweizer Kreuz im roten Kreis. Bitte nicht verzerren, umfärben oder mit Effekten versehen.",
+      "logoSvg": "SVG herunterladen",
+      "logoPng": "PNG herunterladen (1024 px)",
+      "contactTitle": "Kontakt"
+    },
+    "sourcesTitle": "Quellen",
+    "source1": "Rathje, S., Van Bavel, J. J. & van der Linden, S. (2021): Out-group animosity drives engagement on social media. PNAS 118 (26).",
+    "source2": "Horton, C. (2018): The simple but ingenious system Taiwan uses to crowdsource its laws. MIT Technology Review.",
+    "footnoteLabel": "Quelle {number}"
   },
   "login": {
     "title": "Anmelden",

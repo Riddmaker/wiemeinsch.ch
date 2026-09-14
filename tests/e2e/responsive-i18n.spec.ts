@@ -19,6 +19,7 @@ const PAGES: [label: string, path: (locale: string) => string][] = [
   ["Statement-Dashboard", (l) => `/${l}/tickets/seed-ticket-5`],
   ["Login", (l) => `/${l}/login`],
   ["Impressum", (l) => `/${l}/impressum`],
+  ["FAQ & Presse", (l) => `/${l}/faq`],
   ["Profil", (l) => `/${l}/profil/seed-user-2`],
 ];
 

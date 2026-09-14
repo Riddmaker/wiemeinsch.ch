@@ -52,6 +52,13 @@ export async function AppHeader() {
         >
           {t("header.submit")}
         </Link>
+        <Link
+          href="/faq"
+          data-testid="header-faq"
+          className="text-[14.5px] font-medium text-ink underline-offset-[6px] hover:underline"
+        >
+          {t("header.faq")}
+        </Link>
       </nav>
 
       <div className="ml-auto flex items-center gap-2 sm:gap-4">

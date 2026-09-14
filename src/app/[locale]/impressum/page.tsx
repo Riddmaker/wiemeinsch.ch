@@ -1,15 +1,8 @@
 import { getTranslations } from "next-intl/server";
+import { CONTACT } from "@/lib/contact";
 
 // Statisches Impressum (UWG Art. 3 Abs. 1 lit. s), Server Component ohne Client-JS.
-// Dummy-Adresse aus
-// ladungsfähige Adresse ersetzen (DEPLOYMENT-Checkliste P15.5). Bewusst OHNE Telefonnummer.
-const CONTACT = {
-  name: "Cedric Meier",
-  street: "Musterstrasse 1",
-  city: "8000 Zürich",
-  country: "Schweiz",
-  email: "kontakt@wiemeinsch.ch",
-} as const;
+// Die Angaben selbst stehen in lib/contact.ts (auch von der Presse-Seite genutzt).
 
 export default async function ImpressumPage() {
   const t = await getTranslations("impressum");
