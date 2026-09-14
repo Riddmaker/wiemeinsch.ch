@@ -115,22 +115,30 @@ jobs:
           # der inneren Shell expandieren, die sie aus der Job-Umgebung erbt.
           timeout 120 bash -c 'until docker compose exec -T db pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do sleep 2; done'
 
-      - name: Schema migrieren und Stammdaten einspielen
-        env:
-          DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
-        run: |
-          npx prisma migrate deploy
-          npx prisma db seed
-
       - name: App-Image bauen und starten
+        # Kein `migrate deploy` auf dem Runner: Das Image migriert beim Start
+        # selbst und spielt die Stammdaten ein — genau wie in Produktion. Die
+        # CI-Datenbank ist hier noch leer, jeder Lauf prüft also den Weg von
+        # null bis zum aktuellen Schema.
         run: |
           docker compose -f docker-compose.yml -f docker-compose.ci.yml \
             --profile prod up -d --build app-prod
 
       - name: Auf den Healthcheck warten
         run: |
-          timeout 180 bash -c 'until curl -fsS http://localhost:3000/api/health > /dev/null; do sleep 2; done'
+          timeout 240 bash -c 'until curl -fsS http://localhost:3000/api/health > /dev/null; do sleep 2; done'
           timeout 60 bash -c 'until curl -fsS http://localhost:8025/api/v1/messages > /dev/null; do sleep 2; done'
+          # Belegt im Log, dass Migration und Stammdaten tatsächlich liefen.
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml logs app-prod | grep -E '^\S+\s+\| \[start\]|Seed ok'
+
+      - name: Dev-Testdaten einspielen
+        # Erst NACH dem Start, weil das Schema jetzt vom Image stammt. Auf dem
+        # Runner ist NODE_ENV nicht `production`, der Seed legt also zusätzlich
+        # die Testszenarien an, die die E2E-Suite braucht (Stammdaten
+        # idempotent ein zweites Mal).
+        env:
+          DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+        run: npx prisma db seed
 
       - name: Playwright-Browser installieren
         # Beide Projekte (chromium, mobile) sind Chromium-basiert.
