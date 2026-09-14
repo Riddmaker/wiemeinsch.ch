@@ -46,6 +46,10 @@ export default function globalSetup(): void {
     const output = execFileSync(command, [...args], {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
+      // Unter Windows ist `npm` ein `npm.cmd`, das execFile ohne Shell nicht
+      // findet (ENOENT). Die Argumente sind fest im Code — keine Injection-
+      // Fläche. Auf dem Linux-Runner bleibt es beim direkten Aufruf.
+      shell: process.platform === "win32",
     });
     const line = output
       .split("\n")
