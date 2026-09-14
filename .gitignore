@@ -68,3 +68,5 @@ next-env.d.ts
 # Prüfliste für Angreifer.
 /DEPLOYMENT.md
 /RESTORE.md
+# Jelastic-Manifest der Produktionsumgebung — dieselbe Begründung.
+/infra/
