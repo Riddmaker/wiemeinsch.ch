@@ -16,7 +16,7 @@
 #      Kommandozeile — Kommandozeilen sind über `ps` für jeden Prozess auf dem
 #      Node sichtbar (HABIT 1).
 #
-# Benötigte Umgebungsvariablen (Namen, nie Werte, siehe README → Deployment):
+# Benötigte Umgebungsvariablen (Namen, nie Werte):
 #   PGHOST PGPORT PGUSER PGDATABASE PGPASSWORD
 #   BACKUP_AGE_RECIPIENT      öffentlicher age-Schlüssel (age1...) — kein Secret
 #   BACKUP_S3_BUCKET          Ziel-Bucket, z.B. wiemeinsch-backup

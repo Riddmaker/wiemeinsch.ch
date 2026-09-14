@@ -14,8 +14,8 @@ import { recomputeAllTicketScores } from "@/services/scoring-recompute";
  *
  * Erreichbarkeit: Der Scheduler ruft sie intern im Umgebungsnetz auf
  * (`http://app:3000`). Sie ist damit kein öffentlicher Endpunkt — zusätzlich
- * empfiehlt README → Deployment eine Cloudflare-Regel, die `/api/cron/*` am Rand
- * abweist (Defense in Depth).
+ * gehört eine Cloudflare-Regel davor, die `/api/cron/*` am Rand abweist
+ * (Defense in Depth).
  *
  * Schutz:
  *   - Ohne konfiguriertes `CRON_SECRET` verhält sich die Route, als gäbe es

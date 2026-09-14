@@ -4,7 +4,7 @@
 #
 # Der Regelfall ist NICHT der Ernstfall, sondern der quartalsweise Restore-Test
 # in die lokale Compose-Umgebung: ein Backup, das nie zurückgespielt wurde, ist
-# keines. Schritt-für-Schritt-Anleitung dazu in RESTORE.md.
+# keines.
 #
 # Aufruf:
 #   restore.sh --list [daily|weekly|monthly]
@@ -44,7 +44,7 @@ case "${1:-}" in
     ARG="${2:?Objekt-Schlüssel fehlt}"
     ;;
   --file)
-    MODE=file
+    MODE="file"
     ARG="${2:?Dateipfad fehlt}"
     ;;
   --help | -h) usage 0 ;;
@@ -101,4 +101,4 @@ log "Spiele nach ${PGDATABASE} auf ${PGHOST} zurück (bestehende Objekte werden 
 pg_restore --clean --if-exists --no-owner --no-privileges \
   --dbname "${PGDATABASE}" "${DECRYPTED}"
 
-log "Restore abgeschlossen. Jetzt die App gegen diesen Stand starten und prüfen (RESTORE.md)."
+log "Restore abgeschlossen. Jetzt die App gegen diesen Stand starten und prüfen."

@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
  * und ist NICHT änderbar. Er darf deshalb nichts über die Person verraten:
  * Bis 04.09.2026 wurde er aus dem Präfix der Mailadresse gebildet, womit sich
  * `vorname.nachname@…` dauerhaft im öffentlichen Profil wiederfand — ein
- * direkter Widerspruch zum Datenschutz-Grundsatz in REQUIREMENTS.md, der die
+ * direkter Widerspruch zum Datenschutz-Grundsatz der Plattform, der die
  * demografischen Felder gerade deshalb verbirgt, weil sie zusammen mit der
  * öffentlichen Abstimmungshistorie deanonymisieren.
  *
