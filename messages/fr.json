@@ -6,6 +6,18 @@
   "common": {
     "backToTop": "Retour en haut"
   },
+  "actionFailure": {
+    "stale": {
+      "title": "Cette page n'est plus à jour",
+      "body": "wiemeinsch.ch a été mis à jour entre-temps. Rechargez la page, puis réessayez. Les textes des éditeurs sont conservés comme brouillon."
+    },
+    "failed": {
+      "title": "Cela n'a pas fonctionné",
+      "body": "Le serveur n'a pas répondu. Vérifiez votre connexion et réessayez."
+    },
+    "reload": "Recharger la page",
+    "dismiss": "Fermer"
+  },
   "header": {
     "board": "Board",
     "submit": "Soumettre",

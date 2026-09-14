@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { withdrawChangeRequest } from "@/actions/change-requests";
+import { callAction } from "@/lib/call-action";
 import { useRouter } from "@/i18n/navigation";
 
 /**
@@ -25,7 +26,10 @@ export function ChangeRequestWithdraw({
     setErrorCode(null);
     setBusy(true);
     try {
-      const result = await withdrawChangeRequest({ changeRequestId });
+      const result = await callAction(() =>
+        withdrawChangeRequest({ changeRequestId }),
+      );
+      if (!result) return;
       if (!result.ok) {
         setErrorCode(result.error);
         return;

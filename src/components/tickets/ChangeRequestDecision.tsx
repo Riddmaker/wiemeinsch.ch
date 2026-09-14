@@ -10,6 +10,7 @@ import {
   returnChangeRequest,
   type ChangeRequestLinterFields,
 } from "@/actions/change-requests";
+import { callAction } from "@/lib/call-action";
 import { clearDraft, loadDraft } from "@/components/editor/drafts";
 import { HashtagInput } from "@/components/tickets/HashtagInput";
 import { LinterFeedback } from "@/components/tickets/LinterFeedback";
@@ -145,7 +146,8 @@ export function ChangeRequestDecision({
     setErrorCode(null);
     setBusy(kind);
     try {
-      const result = await action();
+      const result = await callAction(action);
+      if (!result) return false;
       if (!result.ok) {
         if (result.error && result.error !== "linter") {
           setErrorCode(result.error);
@@ -189,7 +191,10 @@ export function ChangeRequestDecision({
     setErrorCode(null);
     setBusy("prepare");
     try {
-      const result = await prepareAdjustedMerge(adjustInput());
+      const result = await callAction(() =>
+        prepareAdjustedMerge(adjustInput()),
+      );
+      if (!result) return;
       if (!result.ok) {
         if (result.error === "linter") {
           setFindings(result.fields);
@@ -214,22 +219,25 @@ export function ChangeRequestDecision({
   };
 
   const handleMergeAdjusted = async () => {
-    await run("merge", async () => {
-      const result = await mergeAdjustedChangeRequest({
-        ...adjustInput(),
-        translations,
-      });
-      if (!result.ok && result.error === "linter") {
-        setTranslationFindings(result.versions);
-        const own = result.versions[contentLocale];
-        if (own) {
-          // Beanstandung an der eigenen Fassung → zurück zur Bearbeitung.
-          setFindings(own);
-          setMode("adjust");
-        }
-      }
-      return result;
-    });
+    // `.then` statt `await`: Der Aufruf läuft über `run` → `callAction`, und
+    // der Wächter in tests/unit/call-action.test.ts verbietet ein direktes
+    // `await` auf eine Action in Komponenten.
+    await run("merge", () =>
+      mergeAdjustedChangeRequest({ ...adjustInput(), translations }).then(
+        (result) => {
+          if (!result.ok && result.error === "linter") {
+            setTranslationFindings(result.versions);
+            const own = result.versions[contentLocale];
+            if (own) {
+              // Beanstandung an der eigenen Fassung → zurück zur Bearbeitung.
+              setFindings(own);
+              setMode("adjust");
+            }
+          }
+          return result;
+        },
+      ),
+    );
   };
 
   const banner = (text: string) => (

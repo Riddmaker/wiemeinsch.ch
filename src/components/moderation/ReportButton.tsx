@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useId, useState, useTransition } from "react";
 import { reportContent } from "@/actions/moderation";
+import { callAction } from "@/lib/call-action";
 import { LoginHint } from "@/components/auth/LoginHint";
 import { REPORT_REASONS, type ReportReason } from "@/lib/validation/moderation";
 
@@ -45,11 +46,14 @@ export function ReportButton({
   const submit = () => {
     setErrorCode(null);
     startTransition(async () => {
-      const result = await reportContent({
-        targetType: target.kind === "ticket" ? "TICKET" : "STATEMENT",
-        targetId: target.id,
-        reason,
-      });
+      const result = await callAction(() =>
+        reportContent({
+          targetType: target.kind === "ticket" ? "TICKET" : "STATEMENT",
+          targetId: target.id,
+          reason,
+        }),
+      );
+      if (!result) return;
       if (result.ok) {
         setOpen(false);
         setStatus("sent");

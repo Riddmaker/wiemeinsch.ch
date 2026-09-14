@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { voteOnStatement, voteOnTicket } from "@/actions/votes";
+import { callAction } from "@/lib/call-action";
 import { LoginHint } from "@/components/auth/LoginHint";
 import type { VoteChoice } from "@/lib/validation/vote";
 
@@ -60,10 +61,12 @@ export function VoteButtons({
       return;
     }
     startTransition(async () => {
-      const result =
+      const result = await callAction(() =>
         target.kind === "ticket"
-          ? await voteOnTicket({ ticketId: target.id, value })
-          : await voteOnStatement({ statementId: target.id, value });
+          ? voteOnTicket({ ticketId: target.id, value })
+          : voteOnStatement({ statementId: target.id, value }),
+      );
+      if (!result) return;
       if (result.ok) {
         setCounts({ upvotes: result.upvotes, downvotes: result.downvotes });
         setMyVote(result.myVote);

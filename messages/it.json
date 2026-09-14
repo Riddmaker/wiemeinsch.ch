@@ -6,6 +6,18 @@
   "common": {
     "backToTop": "Torna su"
   },
+  "actionFailure": {
+    "stale": {
+      "title": "Questa pagina non è più aggiornata",
+      "body": "Nel frattempo wiemeinsch.ch è stato aggiornato. Ricarica la pagina e riprova. I testi negli editor restano salvati come bozza."
+    },
+    "failed": {
+      "title": "Non ha funzionato",
+      "body": "Il server non ha risposto. Controlla la connessione e riprova."
+    },
+    "reload": "Ricarica la pagina",
+    "dismiss": "Chiudi"
+  },
   "header": {
     "board": "Board",
     "submit": "Inoltrare",

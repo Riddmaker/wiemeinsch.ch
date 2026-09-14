@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { markNotificationsRead } from "@/actions/profile";
+import { callAction } from "@/lib/call-action";
 import { useRouter } from "@/i18n/navigation";
 
 /**
@@ -21,7 +22,8 @@ export function MarkNotificationsReadButton({ label }: { label: string }) {
       disabled={pending}
       onClick={() => {
         startTransition(async () => {
-          await markNotificationsRead();
+          const result = await callAction(() => markNotificationsRead());
+          if (!result) return;
           router.refresh();
         });
       }}

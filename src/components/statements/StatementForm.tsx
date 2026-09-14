@@ -7,6 +7,7 @@ import {
   publishStatement,
   type StatementLinterFields,
 } from "@/actions/statements";
+import { callAction } from "@/lib/call-action";
 import { LoginHint } from "@/components/auth/LoginHint";
 import { ConstrainedEditor } from "@/components/editor/ConstrainedEditor";
 import { clearDraft, loadDraft, saveDraft } from "@/components/editor/drafts";
@@ -139,7 +140,8 @@ export function StatementForm({
     setFieldError(null);
     setBusy("prepare");
     try {
-      const result = await prepareStatementPublish(input);
+      const result = await callAction(() => prepareStatementPublish(input));
+      if (!result) return;
       if (!result.ok) {
         if (result.error === "linter") {
           setFindings(result.fields);
@@ -172,10 +174,13 @@ export function StatementForm({
     }
     setBusy("publish");
     try {
-      const result = await publishStatement({
-        ...buildDraftInput(),
-        translations: translationsInput,
-      });
+      const result = await callAction(() =>
+        publishStatement({
+          ...buildDraftInput(),
+          translations: translationsInput,
+        }),
+      );
+      if (!result) return;
       if (!result.ok) {
         if (result.error === "linter") {
           setTranslationFindings(result.versions);

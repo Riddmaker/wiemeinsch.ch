@@ -7,6 +7,7 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations } from "next-intl/server";
 import { AppFooter } from "@/components/layout/AppFooter";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { ActionFailureNotice } from "@/components/layout/ActionFailureNotice";
 import { BackToTop } from "@/components/layout/BackToTop";
 import { routing } from "@/i18n/routing";
 import { authOptions } from "@/lib/auth";
@@ -87,6 +88,7 @@ export default async function LocaleLayout({
           <main className="flex-1">{children}</main>
           <AppFooter />
           <BackToTop />
+          <ActionFailureNotice />
         </NextIntlClientProvider>
       </body>
     </html>

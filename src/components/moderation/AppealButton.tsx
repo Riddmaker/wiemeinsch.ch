@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { appealLinterDecision } from "@/actions/moderation";
+import { callAction } from "@/lib/call-action";
 
 /**
  * Anfechtung eines Civic-Linter-Entscheids (P12.2) — der in P7 angelegte
@@ -30,7 +31,10 @@ export function AppealButton({
   const submit = () => {
     setMessage(null);
     startTransition(async () => {
-      const result = await appealLinterDecision({ kind, draft: buildDraft() });
+      const result = await callAction(() =>
+        appealLinterDecision({ kind, draft: buildDraft() }),
+      );
+      if (!result) return;
       if (result.ok) {
         setStatus("sent");
         setMessage(t("appealSent"));

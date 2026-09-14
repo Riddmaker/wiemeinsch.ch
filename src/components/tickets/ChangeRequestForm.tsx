@@ -7,6 +7,7 @@ import {
   submitChangeRequest,
   type ChangeRequestLinterFields,
 } from "@/actions/change-requests";
+import { callAction } from "@/lib/call-action";
 import { LoginHint } from "@/components/auth/LoginHint";
 import { ConstrainedEditor } from "@/components/editor/ConstrainedEditor";
 import { clearDraft, loadDraft, saveDraft } from "@/components/editor/drafts";
@@ -235,7 +236,8 @@ export function ChangeRequestForm({
     setFieldError(null);
     setBusy("prepare");
     try {
-      const result = await prepareChangeRequest(input);
+      const result = await callAction(() => prepareChangeRequest(input));
+      if (!result) return;
       if (!result.ok) {
         if (result.error === "linter") {
           setFindings(result.fields);
@@ -270,10 +272,13 @@ export function ChangeRequestForm({
     }
     setBusy("submit");
     try {
-      const result = await submitChangeRequest({
-        ...buildDraftInput(),
-        translations: translationsInput,
-      });
+      const result = await callAction(() =>
+        submitChangeRequest({
+          ...buildDraftInput(),
+          translations: translationsInput,
+        }),
+      );
+      if (!result) return;
       if (!result.ok) {
         if (result.error === "linter") {
           setTranslationFindings(result.versions);

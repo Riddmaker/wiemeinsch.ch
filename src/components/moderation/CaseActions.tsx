@@ -7,6 +7,7 @@ import {
   depublishReportedContent,
   dismissCase,
 } from "@/actions/moderation";
+import { callAction } from "@/lib/call-action";
 import { useRouter } from "@/i18n/navigation";
 import { RESOLUTION_NOTE_MAX } from "@/lib/validation/moderation";
 
@@ -38,13 +39,15 @@ export function CaseActions({
     setRunning(action);
     startTransition(async () => {
       const input = { caseId, note };
-      const result =
+      const result = await callAction(() =>
         action === "dismiss"
-          ? await dismissCase(input)
+          ? dismissCase(input)
           : action === "depublish"
-            ? await depublishReportedContent(input)
-            : await approveAppeal(input);
+            ? depublishReportedContent(input)
+            : approveAppeal(input),
+      );
       setRunning(null);
+      if (!result) return;
       if (!result.ok) {
         setErrorCode(result.error);
         return;

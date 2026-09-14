@@ -6,6 +6,18 @@
   "common": {
     "backToTop": "Nach oben"
   },
+  "actionFailure": {
+    "stale": {
+      "title": "Diese Seite ist nicht mehr aktuell",
+      "body": "wiemeinsch.ch wurde inzwischen aktualisiert. Lade die Seite neu und versuche es danach nochmals. Texte in den Editoren bleiben als Entwurf erhalten."
+    },
+    "failed": {
+      "title": "Das hat nicht geklappt",
+      "body": "Der Server hat nicht geantwortet. Prüfe deine Verbindung und versuche es nochmals."
+    },
+    "reload": "Seite neu laden",
+    "dismiss": "Schliessen"
+  },
   "header": {
     "board": "Board",
     "submit": "Einreichen",

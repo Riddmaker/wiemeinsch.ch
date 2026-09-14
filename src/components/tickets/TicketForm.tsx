@@ -9,6 +9,7 @@ import {
   type TicketLinterFields,
   type TicketTranslationPreview,
 } from "@/actions/tickets";
+import { callAction } from "@/lib/call-action";
 import { ConstrainedEditor } from "@/components/editor/ConstrainedEditor";
 import { clearDraft, loadDraft, saveDraft } from "@/components/editor/drafts";
 import type { LinterRange } from "@/components/editor/linter-highlight";
@@ -279,7 +280,8 @@ export function TicketForm({
     }
     setBusy("prepare");
     try {
-      const result = await prepareTicketPublish(input);
+      const result = await callAction(() => prepareTicketPublish(input));
+      if (!result) return;
       if (!result.ok) {
         if (result.error === "linter") {
           setFindings(result.fields);
@@ -319,10 +321,13 @@ export function TicketForm({
     }
     setBusy("publish");
     try {
-      const result = await publishTicket({
-        ...buildDraftInput(),
-        translations: translationsInput,
-      });
+      const result = await callAction(() =>
+        publishTicket({
+          ...buildDraftInput(),
+          translations: translationsInput,
+        }),
+      );
+      if (!result) return;
       if (!result.ok) {
         if (result.error === "linter") {
           setTranslationFindings(result.versions);

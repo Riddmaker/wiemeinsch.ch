@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { setPreferredLocale } from "@/actions/profile";
+import { callAction } from "@/lib/call-action";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { toDbLocale } from "@/lib/locale";
@@ -43,7 +44,10 @@ export function LocaleSwitcher({ isLoggedIn }: { isLoggedIn: boolean }) {
             data-testid={`locale-${locale}`}
             onClick={() => {
               startTransition(async () => {
-                await setPreferredLocale(toDbLocale(locale));
+                const result = await callAction(() =>
+                  setPreferredLocale(toDbLocale(locale)),
+                );
+                if (!result) return;
                 // Erst nach dem Schreiben navigieren: Sonst käme die neue
                 // Seite noch mit der alten Profilsprache zurück.
                 router.replace(pathname, { locale });

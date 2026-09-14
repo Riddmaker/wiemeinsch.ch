@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { updateProfile } from "@/actions/profile";
+import { callAction } from "@/lib/call-action";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import {
@@ -73,7 +74,11 @@ export function ProfileSettingsForm({
     }
     setErrorCode(null);
     setStatus("saving");
-    const result = await updateProfile(values);
+    const result = await callAction(() => updateProfile(values));
+    if (!result) {
+      setStatus("idle");
+      return;
+    }
     if (!result.ok) {
       setErrorCode(result.error);
       setStatus("idle");
