@@ -30,7 +30,7 @@ ausgewiesen.
 | Mechanismus | Was er bewirkt |
 |---|---|
 | **Civic-Linter** | Zweistufige KI-Prüfung vor dem Publizieren: erst ein Moderations-Modell gegen Toxizität und Prompt-Injection, dann ein Sprachmodell gegen Polemik und Unsachlichkeit. Wer blockiert wird, sieht die beanstandete Stelle, bekommt — wenn ein sachlicher Kern erkennbar ist — einen Formulierungsvorschlag, und kann den Entscheid anfechten. |
-| **Political Pull Request** | Wer ein fremdes Ticket verbessern will, stellt einen Änderungsantrag auf Titel, Problem, Lösung, Finanzierung oder Hashtags. Nur die Autorschaft entscheidet über den Merge; wird gemergt, wird die antragstellende Person Co-Autor. |
+| **Political Pull Request** | Wer ein fremdes Ticket verbessern will, stellt einen Änderungsantrag auf Titel, Problem, Lösung, Finanzierung oder Hashtags — sichtbar als Wort-Diff. Nur die Autorschaft entscheidet: unverändert übernehmen, anpassen und übernehmen, mit einem Grund aus festem Katalog zur Überarbeitung zurückgeben oder ablehnen. Die antragstellende Person kann einen laufenden Antrag überarbeiten oder zurückziehen. Wird gemergt, wird sie Co-Autor — und wurde dabei angepasst, steht das ausdrücklich dabei, damit niemandem Worte zugeschrieben werden, die nicht die eigenen sind. |
 | **Statement-Dashboard** | Beiträge sind kategorisiert (Pro, Contra, Erweiterung, Frage) — und es gibt **keine Antwortfunktion**. Ohne Threads entsteht kein Schlagabtausch. |
 | **Drei Ranglisten** | *Konsens* (Wilson-Untergrenze — breite Zustimmung schlägt laute Nische), *Kontrovers* (macht Spaltung sichtbar, statt sie zu belohnen) und *Trending* (Aktivität mit Zeitverfall). |
 | **Pseudonymität** | Der öffentliche `@handle` entsteht zufällig aus schweizerischen Orts- und Gewässernamen und hat keinen Bezug zur Mailadresse. Er steht über jedem Beitrag — ein aus der Adresse abgeleiteter Name hätte Klarnamen dauerhaft veröffentlicht. |
@@ -64,12 +64,15 @@ Architekturprinzipien, die im Code durchgesetzt werden:
 Voraussetzungen: Node.js ≥ 24, npm ≥ 11, Docker Desktop.
 
 ```bash
-npm ci                  # exakte Versionen aus package-lock.json
+npm ci                  # exakte Versionen aus package-lock.json (für Tests und Werkzeuge)
 cp .env.example .env    # lokale Werte eintragen — .env wird nie committet
 docker compose up -d    # App (Hot Reload), PostgreSQL, Mailpit
-npx prisma migrate deploy
-npx prisma db seed      # Stammdaten + Testdaten
+docker compose exec app npx prisma migrate deploy
+docker compose exec app npx prisma db seed      # Stammdaten + Testdaten
 ```
+
+Migration und Seed laufen **im App-Container**, weil die Datenbank vom Host aus
+nicht erreichbar ist (siehe unten).
 
 Die App läuft auf `http://localhost:3000`, der Mail-Fänger **Mailpit** auf
 `http://localhost:8025` (dort landen die Magic-Link-Mails).
@@ -84,7 +87,9 @@ docker compose up                          # Dev: next dev mit Hot Reload
 docker compose --profile prod up --build   # Prod: exakt das Image der Pipeline
 ```
 
-Abgenommen wird gegen das **Prod-Profil**, nicht gegen `next dev`.
+Abgenommen wird gegen das **Prod-Profil**, nicht gegen `next dev`. Das
+Prod-Image wendet beim Start selbst ausstehende Migrationen an und spielt die
+Stammdaten ein (nie die Testdaten); scheitert das, startet der Server nicht.
 
 Qualitätsschranken — alle müssen grün sein:
 
