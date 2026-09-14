@@ -2,7 +2,11 @@ import { getTranslations } from "next-intl/server";
 import { ChangeRequestCard } from "@/components/tickets/ChangeRequestCard";
 import { ChangeRequestForm } from "@/components/tickets/ChangeRequestForm";
 import type { AppLocale } from "@/i18n/routing";
-import { sortForDisplay, type ChangeRequestEntry } from "@/lib/change-requests";
+import {
+  isActiveStatus,
+  sortForDisplay,
+  type ChangeRequestEntry,
+} from "@/lib/change-requests";
 import type { CurrentTicketVersion } from "@/components/tickets/ChangeRequestCard";
 
 /**
@@ -18,8 +22,10 @@ export async function ChangeRequestSection({
   routeLocale,
   isAuthor,
   viewerId,
+  ticketAuthorHandle,
 }: {
   ticketId: string;
+  ticketAuthorHandle: string | null;
   entries: ChangeRequestEntry[];
   /** Aktuelle Ticket-Fassung in der Lese-Sprache (Vorbefüllung + Vergleich). */
   current: CurrentTicketVersion;
@@ -32,9 +38,9 @@ export async function ChangeRequestSection({
   const t = await getTranslations("changeRequests");
   const sorted = sortForDisplay(entries);
   const openCount = entries.filter((entry) => entry.status === "OPEN").length;
-  // Pro User genau ein offener Antrag (gleiche Regel wie in der Action).
-  const hasOwnOpenRequest = entries.some(
-    (entry) => entry.status === "OPEN" && entry.authorId === viewerId,
+  // Pro User genau ein laufender Antrag (gleiche Regel wie in der Action).
+  const ownActive = entries.find(
+    (entry) => isActiveStatus(entry.status) && entry.authorId === viewerId,
   );
 
   return (
@@ -52,12 +58,14 @@ export async function ChangeRequestSection({
             ? t("authorOpenHint", { count: openCount })
             : t("authorEmptyHint")}
         </p>
-      ) : hasOwnOpenRequest ? (
+      ) : ownActive ? (
         <p
           data-testid="change-request-own-open"
           className="mt-3 font-mono text-xs text-meta"
         >
-          {t("errors.duplicate_open")}
+          {ownActive.status === "CHANGES_REQUESTED"
+            ? t("ownReturnedHint")
+            : t("ownOpenHint")}
         </p>
       ) : (
         <>
@@ -83,7 +91,11 @@ export async function ChangeRequestSection({
               entry={entry}
               current={current}
               locale={routeLocale}
+              contentLocale={contentLocale}
+              ticketId={ticketId}
+              ticketAuthorHandle={ticketAuthorHandle}
               isTicketAuthor={isAuthor}
+              viewerId={viewerId}
             />
           ))}
         </div>

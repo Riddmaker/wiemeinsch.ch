@@ -1,11 +1,14 @@
 import { getTranslations } from "next-intl/server";
 import { ChangeRequestDecision } from "@/components/tickets/ChangeRequestDecision";
+import { ChangeRequestForm } from "@/components/tickets/ChangeRequestForm";
+import { ChangeRequestWithdraw } from "@/components/tickets/ChangeRequestWithdraw";
 import { DiffView } from "@/components/tickets/DiffView";
 import { Link } from "@/i18n/navigation";
 import type { AppLocale } from "@/i18n/routing";
-import type {
-  ChangeRequestEntry,
-  ChangeRequestStatus,
+import {
+  isActiveStatus,
+  type ChangeRequestEntry,
+  type ChangeRequestStatus,
 } from "@/lib/change-requests";
 import { diffTags } from "@/lib/text-diff";
 import type { ChangeRequestTextField } from "@/lib/validation/change-request";
@@ -23,12 +26,25 @@ import { plainText, type ConstrainedDoc } from "@/lib/validation/tiptap";
  * - **Diff statt Gegenüberstellung.** Vorher standen alt und neu als zwei
  *   Blöcke nebeneinander; wer den Unterschied wollte, musste ihn selbst
  *   suchen. Jetzt zeigt ein Block, was weg- und was dazukommt.
+ *
+ * E15 (14.09.2026):
+ * - Hat der Ticket-Autor den Vorschlag vor der Übernahme angepasst, trägt
+ *   die Karte «mit Anpassungen von @autor», und der Diff zeigt genau diese
+ *   Anpassungen (Vorschlag → übernommene Fassung). So bleibt sichtbar, was
+ *   vom Antragsteller stammt.
+ * - Zurückgegebene Anträge nennen den Grund schon im eingeklappten Zustand
+ *   und klappen für den Antragsteller selbst auf.
+ * - Der Antragsteller überarbeitet oder zieht seinen laufenden Antrag direkt
+ *   auf der Karte zurück.
  */
 
 const STATUS_CHIP: Record<ChangeRequestStatus, string> = {
   OPEN: "border-ink text-ink",
+  // Gestrichelt: läuft noch, liegt aber gerade nicht beim Autor.
+  CHANGES_REQUESTED: "border-dashed border-ink text-ink",
   MERGED: "border-ink bg-ink text-paper",
   DECLINED: "border-line text-meta",
+  WITHDRAWN: "border-line text-meta",
 };
 
 export type CurrentTicketVersion = {
@@ -58,14 +74,24 @@ export async function ChangeRequestCard({
   entry,
   current,
   locale,
+  contentLocale,
+  ticketId,
+  ticketAuthorHandle,
   isTicketAuthor,
+  viewerId,
 }: {
   entry: ChangeRequestEntry;
   /** Aktuelle Ticket-Fassung in der Lese-Sprache — die «alte» Seite. */
   current: CurrentTicketVersion;
   /** Locale der Route — Datumsformat. */
   locale: AppLocale;
+  /** Lese-/Schreibsprache des Betrachters (Anpassen, Überarbeiten). */
+  contentLocale: AppLocale;
+  ticketId: string;
+  /** Für den Vermerk «mit Anpassungen von @autor» (E15). */
+  ticketAuthorHandle: string | null;
   isTicketAuthor: boolean;
+  viewerId: string | null;
 }) {
   const t = await getTranslations("changeRequests");
   const tTicket = await getTranslations("ticketDetail");
@@ -92,14 +118,30 @@ export async function ChangeRequestCard({
     ...(entry.hashtags ? [t("hashtagsField")] : []),
   ].join(", ");
 
+  // E15: Bei einer angepassten Übernahme zeigt der Diff die Anpassungen des
+  // Autors — die «alte» Seite ist dann der Vorschlag, nicht das Ticket.
+  const showsAdjustments = entry.status === "MERGED" && entry.merged;
+  const before = (field: ChangeRequestTextField): unknown =>
+    showsAdjustments ? entry.display[field] : current[field];
+  const after = (field: ChangeRequestTextField): unknown =>
+    showsAdjustments ? entry.merged?.[field] : entry.display[field];
+
   const tagDiff = entry.hashtags
-    ? diffTags(current.hashtags, entry.hashtags)
+    ? showsAdjustments
+      ? diffTags(entry.hashtags, entry.mergedHashtags ?? entry.hashtags)
+      : diffTags(current.hashtags, entry.hashtags)
     : [];
+
+  const isRequester = viewerId !== null && entry.authorId === viewerId;
+  const isActive = isActiveStatus(entry.status);
+  const closedLabel = entry.status === "WITHDRAWN" ? "withdrawnOn" : "decided";
 
   return (
     <details
       data-testid="change-request-card"
       data-status={entry.status}
+      // Wer seinen Antrag zurückbekommen hat, soll ihn nicht erst suchen.
+      open={isRequester && entry.status === "CHANGES_REQUESTED"}
       // Das Dreieck dreht sich beim Aufklappen mit — der Zustand muss auch
       // ohne JavaScript sichtbar sein, deshalb über den `open`-Zustand des
       // `<details>` statt über React-State.
@@ -126,15 +168,25 @@ export async function ChangeRequestCard({
           >
             {t(`status.${entry.status}`)}
           </span>
+          {entry.status === "MERGED" && entry.mergedWithEdits && (
+            <span data-testid="change-request-adjusted">
+              {t("adjustedBy", { handle: ticketAuthorHandle ?? "" })}
+            </span>
+          )}
           {entry.authorHandle && (
             <span>{t("by", { handle: entry.authorHandle })}</span>
           )}
           <span>
             {t("submitted", { date: dateFormat.format(entry.createdAt) })}
           </span>
+          {entry.revisedAt && (
+            <span data-testid="change-request-revised">
+              {t("revised", { date: dateFormat.format(entry.revisedAt) })}
+            </span>
+          )}
           {entry.decidedAt && (
             <span>
-              {t("decided", { date: dateFormat.format(entry.decidedAt) })}
+              {t(closedLabel, { date: dateFormat.format(entry.decidedAt) })}
             </span>
           )}
         </div>
@@ -144,6 +196,16 @@ export async function ChangeRequestCard({
         >
           {t("changes", { fields: changedLabels })}
         </p>
+        {entry.status === "CHANGES_REQUESTED" && entry.returnReason && (
+          <p
+            data-testid="change-request-return-reason"
+            className="mt-1.5 font-mono text-[11.5px] text-ink"
+          >
+            {t("returnedBecause", {
+              reason: t(`returnReasons.${entry.returnReason}`),
+            })}
+          </p>
+        )}
       </summary>
 
       <div className="p-4 sm:p-5">
@@ -166,7 +228,9 @@ export async function ChangeRequestCard({
         </p>
 
         <p className="mt-3 font-mono text-[11px] uppercase tracking-wide text-meta">
-          {t("diffLegend")}
+          {showsAdjustments
+            ? t("diffLegendAdjusted", { handle: ticketAuthorHandle ?? "" })
+            : t("diffLegend")}
         </p>
 
         {entry.changedFields.map((field) => (
@@ -176,8 +240,8 @@ export async function ChangeRequestCard({
             </h3>
             <DiffView
               testId={`change-request-diff-${field}`}
-              before={textOf(current[field])}
-              after={textOf(entry.display[field])}
+              before={textOf(before(field))}
+              after={textOf(after(field))}
             />
           </section>
         ))}
@@ -225,13 +289,36 @@ export async function ChangeRequestCard({
           </section>
         )}
 
-        {isTicketAuthor && entry.status === "OPEN" && entry.versions && (
+        {isTicketAuthor && isActive && entry.versions && (
           <ChangeRequestDecision
             changeRequestId={entry.id}
+            status={entry.status as "OPEN" | "CHANGES_REQUESTED"}
+            requesterHandle={entry.authorHandle}
+            contentLocale={contentLocale}
             proposedVersions={entry.versions}
             changedFields={entry.changedFields}
             {...(entry.hashtags ? { proposedHashtags: entry.hashtags } : {})}
             isStale={entry.isStale}
+          />
+        )}
+
+        {isRequester && isActive && entry.versions && (
+          <ChangeRequestForm
+            // Neu montieren nach jeder Überarbeitung: die Startwerte kommen
+            // aus dem gespeicherten Vorschlag.
+            key={`${entry.id}-${entry.revisedAt?.getTime() ?? 0}`}
+            ticketId={ticketId}
+            contentLocale={contentLocale}
+            current={current}
+            isLoggedIn
+            revision={{
+              changeRequestId: entry.id,
+              proposal: entry.versions[contentLocale] ?? entry.display,
+              ...(entry.hashtags ? { hashtags: entry.hashtags } : {}),
+            }}
+            secondaryAction={
+              <ChangeRequestWithdraw changeRequestId={entry.id} />
+            }
           />
         )}
       </div>

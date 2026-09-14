@@ -24,7 +24,9 @@
     "statements": "Statements",
     "changeRequests": "Demandes de modification",
     "changeRequestCount": "{count, plural, one {# demande ouverte} other {# demandes ouvertes}}",
-    "affected": "Tickets concernés"
+    "affected": "Tickets concernés",
+    "returnedChangeRequests": "À réviser",
+    "returnedChangeRequestCount": "{count, plural, one {# demande attend votre révision} other {# demandes attendent votre révision}}"
   },
   "localeSwitcher": {
     "label": "Choisir la langue",
@@ -172,7 +174,8 @@
     "problem": "Problème",
     "solution": "Solution",
     "funding": "Financement / compromis",
-    "coAuthor": "Co-auteur : @{handle} (demande de modification n° {number}, reprise le {date})"
+    "coAuthor": "Co-auteur : @{handle} (demande de modification n° {number}, reprise le {date})",
+    "coAuthorAdjusted": "Co-auteur : @{handle} (demande de modification n° {number}, reprise avec adaptations le {date})"
   },
   "statements": {
     "heading": "{count, plural, =0 {Statements} one {# statement} other {# statements}}",
@@ -208,7 +211,7 @@
   },
   "changeRequests": {
     "heading": "{count, plural, =0 {Demandes de modification} one {# demande de modification} other {# demandes de modification}}",
-    "intro": "Plutôt que de critiquer : reprenez le texte de la solution, modifiez-le et soumettez-le comme demande. Si l'auteur l'accepte, vous serez listé comme co-auteur.",
+    "intro": "Plutôt que de critiquer : reprenez le contenu du ticket, modifiez-le et soumettez-le comme demande. Si l'auteur l'accepte, vous serez listé comme co-auteur.",
     "newButton": "Déposer une demande de modification",
     "prefillHint": "Les champs contiennent la version actuelle. Modifiez ce que vous voulez améliorer — seules vos modifications réelles sont soumises.",
     "cancel": "Annuler",
@@ -228,7 +231,9 @@
     "status": {
       "OPEN": "Ouverte",
       "MERGED": "Reprise",
-      "DECLINED": "Refusée"
+      "DECLINED": "Refusée",
+      "CHANGES_REQUESTED": "En révision",
+      "WITHDRAWN": "Retirée"
     },
     "by": "Par @{handle}",
     "submitted": "Déposée le {date}",
@@ -242,10 +247,9 @@
     "diffLegend": "Rouge barré = supprimé · Vert = ajouté",
     "authorOpenHint": "{count, plural, one {# demande de modification attend votre décision.} other {# demandes de modification attendent votre décision.}}",
     "authorEmptyHint": "Vous ne pouvez pas déposer de demande de modification sur votre propre ticket.",
-    "staleWarning": "La solution a changé depuis cette demande — en la reprenant, elle remplacera entièrement la version actuelle.",
-    "mergeIntro": "Vérifiez les trois versions linguistiques. Vous pouvez les adapter — lors de la reprise, elles repassent par le civic linter et remplacent la solution du ticket.",
-    "merge": "Reprendre la demande",
-    "confirmMerge": "Remplacer la solution",
+    "staleWarning": "Le ticket a changé depuis cette demande — en la reprenant, la proposition remplacera entièrement les champs concernés.",
+    "merge": "Reprendre",
+    "confirmMerge": "Reprendre sans modification",
     "merging": "Reprise en cours…",
     "decline": "Refuser",
     "declining": "Refus en cours…",
@@ -263,8 +267,41 @@
       "no_changes": "Vous n'avez rien modifié. Adaptez au moins un champ.",
       "max_80": "80 caractères au maximum",
       "max_1500": "1'500 caractères au maximum",
-      "min_1": "Champ obligatoire"
-    }
+      "min_1": "Champ obligatoire",
+      "not_requester": "Seule la personne qui a soumis la demande peut la réviser ou la retirer.",
+      "awaiting_revision": "Cette demande a été renvoyée pour révision et attend une nouvelle version."
+    },
+    "confirmMergeIntro": "La proposition est reprise telle quelle et remplace les champs concernés dans les trois langues. @{handle} sera listé comme co-auteur.",
+    "adjust": "Adapter et reprendre",
+    "adjustIntro": "Adaptez la proposition de @{handle} dans votre langue. Les deux autres langues seront ensuite retraduites. La demande indiquera que vous l'avez adaptée.",
+    "adjustPreviewIntro": "Voici la version adaptée dans les deux autres langues nationales. Vous pouvez encore modifier les deux versions — elles passent aussi par le civic linter.",
+    "backToAdjust": "Retour à l'adaptation",
+    "confirmAdjustedMerge": "Reprendre la version adaptée",
+    "adjustedBy": "Avec adaptations de @{handle}",
+    "diffLegendAdjusted": "Adaptations de @{handle} : rouge barré = retiré de la proposition · vert = ajouté",
+    "return": "Renvoyer pour révision",
+    "returnIntro": "Pour quelle raison renvoyer la demande à @{handle} ?",
+    "confirmReturn": "Renvoyer pour révision",
+    "returning": "Renvoi en cours…",
+    "returnReasons": {
+      "ZU_WENIG_KONKRET": "Pas assez concret",
+      "WEICHT_VOM_PROBLEM_AB": "S'écarte du problème",
+      "FINANZIERUNG_UNKLAR": "Financement manquant ou peu clair",
+      "ZU_UMFANGREICH": "Trop vaste, à scinder",
+      "UEBERSETZUNG_FEHLERHAFT": "Traduction erronée"
+    },
+    "returnedBecause": "Renvoyée pour révision : {reason}",
+    "awaitingRevision": "En révision chez @{handle}. Vous pouvez toujours la refuser.",
+    "editButton": "Réviser la demande",
+    "revisionHint": "Les champs contiennent votre proposition. Modifiez ce que vous voulez améliorer — seul ce qui diffère du ticket actuel est soumis.",
+    "ownOpenHint": "Vous avez une demande de modification ouverte sur ce ticket. Vous pouvez la réviser ou la retirer ci-dessous.",
+    "ownReturnedHint": "Votre demande de modification a été renvoyée pour révision. Vous trouverez la raison et la révision ci-dessous.",
+    "revised": "Révisée le {date}",
+    "withdraw": "Retirer",
+    "withdrawConfirmText": "Une fois retirée, la demande ne peut plus être reprise par l'auteur. Vous pourrez ensuite en soumettre une nouvelle.",
+    "confirmWithdraw": "Retirer la demande",
+    "withdrawing": "Retrait en cours…",
+    "withdrawnOn": "Retirée le {date}"
   },
   "profile": {
     "memberSince": "Membre depuis le {date}",

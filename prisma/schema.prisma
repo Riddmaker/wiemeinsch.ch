@@ -65,8 +65,21 @@ enum EducationLevel {
 
 enum ChangeRequestStatus {
   OPEN
+  CHANGES_REQUESTED // vom Ticket-Autor zur Überarbeitung zurückgegeben (E15)
   MERGED
   DECLINED
+  WITHDRAWN // vom Antragsteller zurückgezogen (E15)
+}
+
+// Fester Katalog für «Zur Überarbeitung zurückgeben» (E15) — bewusst kein
+// Freitext: Das Manifest schliesst Reply-Kanäle aus, und ein Freitext wäre
+// eine Fläche für Beschimpfungen, die niemand moderiert.
+enum ChangeRequestReturnReason {
+  ZU_WENIG_KONKRET
+  WEICHT_VOM_PROBLEM_AB
+  FINANZIERUNG_UNKLAR
+  ZU_UMFANGREICH
+  UEBERSETZUNG_FEHLERHAFT
 }
 
 enum ModerationCaseType {
@@ -90,15 +103,15 @@ model User {
   emailVerified DateTime?
   image         String?
 
-  handle          String? @unique // öffentlicher @handle (wird bei Registrierung gesetzt, P4)
+  handle String? @unique // öffentlicher @handle (wird bei Registrierung gesetzt, P4)
 
   // Benachrichtigungen (E14): EIN Zeitstempel statt einer Ereignistabelle.
   // Alles, was danach passiert ist, gilt als ungelesen; angezeigt werden
   // dann die aktuellen GESAMTZAHLEN, nicht Deltas — deshalb muss nichts
   // pro Ereignis nachgehalten werden. NULL = noch nie gelesen.
   notificationsReadAt DateTime?
-  preferredLocale Locale  @default(DE)
-  isAdmin         Boolean @default(false)
+  preferredLocale     Locale    @default(DE)
+  isAdmin             Boolean   @default(false)
 
   // Demografie — serverseitig PRIVAT (nDSG).
   // Verlässt den Server NIE pro User; einziger erlaubter Lesepfad nach aussen
@@ -212,13 +225,13 @@ model Ticket {
   originalLocale Locale
 
   // Denormalisierte Zähler & Scores (Berechnung).
-  upvotes          Int   @default(0)
-  downvotes        Int   @default(0)
-  statementCount   Int   @default(0)
-  changeRequestCount Int @default(0)
-  scoreConsensus   Float @default(0) @map("score_consensus")
-  scoreControversy Float @default(0) @map("score_controversy")
-  scoreTrending    Float @default(0) @map("score_trending")
+  upvotes            Int   @default(0)
+  downvotes          Int   @default(0)
+  statementCount     Int   @default(0)
+  changeRequestCount Int   @default(0)
+  scoreConsensus     Float @default(0) @map("score_consensus")
+  scoreControversy   Float @default(0) @map("score_controversy")
+  scoreTrending      Float @default(0) @map("score_trending")
 
   // Erhöht sich bei jeder Lösungsänderung (PPR-Merge) — Stale-Erkennung (P10.4).
   contentRevision Int @default(0)
@@ -226,15 +239,15 @@ model Ticket {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  author         User                @relation("TicketAuthor", fields: [authorId], references: [id], onDelete: Restrict)
-  coAuthors      User[]              @relation("TicketCoAuthors")
-  canton         Canton?             @relation(fields: [cantonId], references: [id], onDelete: Restrict)
-  municipality   Municipality?       @relation(fields: [municipalityId], references: [id], onDelete: Restrict)
-  translations   TicketTranslation[]
-  hashtags       Hashtag[]
-  statements     Statement[]
-  votes          TicketVote[]
-  changeRequests ChangeRequest[]
+  author          User                @relation("TicketAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  coAuthors       User[]              @relation("TicketCoAuthors")
+  canton          Canton?             @relation(fields: [cantonId], references: [id], onDelete: Restrict)
+  municipality    Municipality?       @relation(fields: [municipalityId], references: [id], onDelete: Restrict)
+  translations    TicketTranslation[]
+  hashtags        Hashtag[]
+  statements      Statement[]
+  votes           TicketVote[]
+  changeRequests  ChangeRequest[]
   moderationCases ModerationCase[]
 
   // Board-Sortierung = indexierter ORDER BY auf den Score-Spalten (P8.4).
@@ -373,7 +386,22 @@ model ChangeRequest {
   // und hängen deshalb am Antrag, nicht an der Sprachfassung.
   hashtags Json?
 
+  // Rückgabe zur Überarbeitung (E15). Beim erneuten Einreichen geleert —
+  // danach ist der Antrag wieder ein gewöhnlicher offener Antrag.
+  returnReason ChangeRequestReturnReason?
+  returnedAt   DateTime?
+  // Letzte Überarbeitung durch den Antragsteller (E15).
+  revisedAt    DateTime?
+
+  // Attribution (E15): true, wenn der Ticket-Autor den Vorschlag vor der
+  // Übernahme angepasst hat. Serverseitig durch Vergleich ermittelt, nie vom
+  // Client behauptet. Die übernommene Fassung steht dann in den `merged*`-
+  // Spalten der Sprachfassungen bzw. in `mergedHashtags`.
+  mergedWithEdits Boolean @default(false)
+  mergedHashtags  Json?
+
   createdAt DateTime  @default(now())
+  // Abschluss: gemergt, abgelehnt oder zurückgezogen.
   decidedAt DateTime?
 
   ticket          Ticket                     @relation(fields: [ticketId], references: [id], onDelete: Cascade)
@@ -382,6 +410,8 @@ model ChangeRequest {
   moderationCases ModerationCase[]
 
   @@index([ticketId, status])
+  // «Wurde mein Antrag zurückgegeben?» läuft im Header bei jedem Seitenaufruf.
+  @@index([authorId, status])
 }
 
 model ChangeRequestTranslation {
@@ -398,6 +428,15 @@ model ChangeRequestTranslation {
   solution Json?
   funding  Json?
 
+  // Vom Ticket-Autor angepasste, tatsächlich übernommene Fassung (E15) —
+  // nur gesetzt bei `ChangeRequest.mergedWithEdits`. Der Vorschlag oben
+  // bleibt unverändert stehen, damit sichtbar bleibt, was vom Antragsteller
+  // stammt.
+  mergedTitle    String?
+  mergedProblem  Json?
+  mergedSolution Json?
+  mergedFunding  Json?
+
   changeRequest ChangeRequest @relation(fields: [changeRequestId], references: [id], onDelete: Cascade)
 
   @@unique([changeRequestId, locale])
@@ -412,7 +451,7 @@ model ModerationCase {
   type   ModerationCaseType
   status ModerationCaseStatus @default(OPEN)
 
-  reporterId String
+  reporterId      String
   // Ziel: genau eines der drei (per Anwendungslogik/Action validiert, P12).
   ticketId        String?
   statementId     String?

@@ -18,6 +18,12 @@ import { pickTranslation } from "@/lib/translations";
  * Auslöser sind Reaktionen auf eigene Tickets UND eigene Statements sowie
  * Statements und Änderungsanträge auf eigene Tickets (User-Entscheid).
  * Eigene Beiträge zählen nie — sonst benachrichtigte die eigene Stimme.
+ *
+ * E15 (14.09.2026): Ein überarbeiteter Antrag zählt für den Ticket-Autor wie
+ * ein neu eingereichter (er wartet wieder auf seinen Entscheid). Der
+ * Antragsteller wird benachrichtigt, wenn sein Antrag zur Überarbeitung
+ * zurückgegeben wurde — und NUR dann, nicht bei Übernahme oder Ablehnung
+ * (User-Entscheid).
  */
 
 export type NotificationSummary = {
@@ -27,6 +33,8 @@ export type NotificationSummary = {
   statements: Record<"PRO" | "CONTRA" | "ERWEITERUNG" | "FRAGE", number> | null;
   /** Offene Änderungsanträge auf eigenen Tickets. */
   changeRequests: number | null;
+  /** Eigene Anträge, die zur Überarbeitung zurückgegeben wurden (E15). */
+  returnedChangeRequests: number | null;
   /** Betroffene Tickets (Titel in der Lese-Sprache) für die Sprungliste. */
   tickets: { id: string; title: string }[];
 };
@@ -39,13 +47,14 @@ const NOTHING: NotificationSummary = {
   reactions: null,
   statements: null,
   changeRequests: null,
+  returnedChangeRequests: null,
   tickets: [],
 };
 
 /**
  * Gibt es seit der letzten Lesemarke irgendein Ereignis?
  *
- * Läuft im Header bei JEDEM Seitenaufruf, deshalb vier schlanke
+ * Läuft im Header bei JEDEM Seitenaufruf, deshalb fünf schlanke
  * Existenz-Abfragen mit `take: 1` statt Zählungen — die Antwort ist ein
  * Boolean, die genaue Zahl interessiert hier niemanden.
  */
@@ -61,7 +70,7 @@ export async function hasUnreadNotifications(userId: string): Promise<boolean> {
   const since = user.notificationsReadAt ?? new Date(0);
   const newer = { gt: since };
 
-  const [ticketVote, statementVote, statement, changeRequest] =
+  const [ticketVote, statementVote, statement, changeRequest, returned] =
     await Promise.all([
       prisma.ticketVote.findFirst({
         where: {
@@ -90,14 +99,24 @@ export async function hasUnreadNotifications(userId: string): Promise<boolean> {
       }),
       prisma.changeRequest.findFirst({
         where: {
-          createdAt: newer,
+          OR: [{ createdAt: newer }, { revisedAt: newer }],
           ticket: { authorId: userId },
+        },
+        select: { id: true },
+      }),
+      prisma.changeRequest.findFirst({
+        where: {
+          authorId: userId,
+          status: "CHANGES_REQUESTED",
+          returnedAt: newer,
         },
         select: { id: true },
       }),
     ]);
 
-  return Boolean(ticketVote ?? statementVote ?? statement ?? changeRequest);
+  return Boolean(
+    ticketVote ?? statementVote ?? statement ?? changeRequest ?? returned,
+  );
 }
 
 /**
@@ -132,6 +151,7 @@ export async function loadNotifications(
     newStatementVotes,
     newStatements,
     newChangeRequests,
+    newReturned,
     myStatements,
   ] = await Promise.all([
     // `distinct` statt `findFirst`: Für die Sprungliste zählt JEDES
@@ -165,7 +185,18 @@ export async function loadNotifications(
       select: { ticketId: true },
     }),
     prisma.changeRequest.findMany({
-      where: { createdAt: newer, ticketId: { in: myTicketIds } },
+      where: {
+        OR: [{ createdAt: newer }, { revisedAt: newer }],
+        ticketId: { in: myTicketIds },
+      },
+      select: { ticketId: true },
+    }),
+    prisma.changeRequest.findMany({
+      where: {
+        authorId: userId,
+        status: "CHANGES_REQUESTED",
+        returnedAt: newer,
+      },
       select: { ticketId: true },
     }),
     prisma.statement.findMany({
@@ -178,8 +209,14 @@ export async function loadNotifications(
     newTicketVotes.length > 0 || newStatementVotes.length > 0;
   const hasNewStatements = newStatements.length > 0;
   const hasNewChangeRequests = newChangeRequests.length > 0;
+  const hasNewReturned = newReturned.length > 0;
 
-  if (!hasNewReaction && !hasNewStatements && !hasNewChangeRequests) {
+  if (
+    !hasNewReaction &&
+    !hasNewStatements &&
+    !hasNewChangeRequests &&
+    !hasNewReturned
+  ) {
     return NOTHING;
   }
 
@@ -217,12 +254,21 @@ export async function loadNotifications(
       })
     : null;
 
+  // Gesamtstand wie bei den anderen Kategorien: alle eigenen Anträge, die
+  // gerade auf eine Überarbeitung warten.
+  const returnedChangeRequests = hasNewReturned
+    ? await prisma.changeRequest.count({
+        where: { authorId: userId, status: "CHANGES_REQUESTED" },
+      })
+    : null;
+
   // Betroffene Tickets: alles, worauf sich eine der Neuigkeiten bezieht.
   const affected = new Set<string>();
   for (const row of [
     ...newTicketVotes,
     ...newStatements,
     ...newChangeRequests,
+    ...newReturned,
   ]) {
     affected.add(row.ticketId);
   }
@@ -249,5 +295,11 @@ export async function loadNotifications(
         }))
       : [];
 
-  return { reactions, statements, changeRequests, tickets };
+  return {
+    reactions,
+    statements,
+    changeRequests,
+    returnedChangeRequests,
+    tickets,
+  };
 }

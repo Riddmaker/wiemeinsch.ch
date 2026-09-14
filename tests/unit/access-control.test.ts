@@ -121,13 +121,22 @@ const txMock = vi.hoisted(() => ({
     update: vi.fn(),
     updateMany: vi.fn(),
   },
+  changeRequestTranslation: {
+    deleteMany: vi.fn(),
+    createMany: vi.fn(),
+    updateMany: vi.fn(),
+  },
   moderationCase: { update: vi.fn() },
 }));
 
 const prismaMock = vi.hoisted(() => ({
   ticket: { findUnique: vi.fn(), findFirst: vi.fn() },
   statement: { findUnique: vi.fn(), findFirst: vi.fn() },
-  changeRequest: { findUnique: vi.fn(), findFirst: vi.fn() },
+  changeRequest: {
+    findUnique: vi.fn(),
+    findFirst: vi.fn(),
+    updateMany: vi.fn(),
+  },
   // E12: Der Antrag wird gegen die aktuelle Ticket-Fassung verglichen.
   ticketTranslation: { findUnique: vi.fn() },
   moderationCase: {
@@ -146,9 +155,13 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import {
   declineChangeRequest,
+  mergeAdjustedChangeRequest,
   mergeChangeRequest,
+  prepareAdjustedMerge,
   prepareChangeRequest,
+  returnChangeRequest,
   submitChangeRequest,
+  withdrawChangeRequest,
 } from "@/actions/change-requests";
 import {
   appealLinterDecision,
@@ -232,13 +245,41 @@ const submitChangeRequestInput = {
   },
 };
 
-const mergeInput = {
+// E15: «Übernehmen» ist 1:1 — nur die Id, der Text kommt aus der DB.
+const mergeInput = { changeRequestId: "cr-1" };
+
+/** Die gespeicherten Fassungen von cr-1 (Antrag auf die Lösung). */
+const storedChangeRequestRow = {
+  hashtags: null,
+  translations: (["DE", "FR", "IT"] as const).map((locale) => ({
+    locale,
+    title: null,
+    problem: null,
+    solution: richDoc(250),
+    funding: null,
+  })),
+};
+
+/** Guard-Sicht auf cr-1: von STRANGER, auf dem Ticket von OWNER. */
+const guardChangeRequestRow = {
+  status: "OPEN",
+  authorId: STRANGER,
+  ticketId: "ticket-1",
+  ticket: { authorId: OWNER, status: "PUBLISHED" },
+};
+
+// «Anpassen & übernehmen» (E15): der Ticket-Autor ändert die Lösung.
+const adjustInput = {
   changeRequestId: "cr-1",
   locale: "de" as const,
-  versions: {
-    de: { solution: richDoc(250) },
-    fr: { solution: richDoc(250) },
-    it: { solution: richDoc(250) },
+  solution: richDoc(270),
+};
+
+const mergeAdjustedInput = {
+  ...adjustInput,
+  translations: {
+    fr: { solution: richDoc(270) },
+    it: { solution: richDoc(270) },
   },
 };
 
@@ -322,6 +363,19 @@ function writeSpies(): [string, ReturnType<typeof vi.fn>][] {
     ["tx.changeRequest.create", txMock.changeRequest.create],
     ["tx.changeRequest.update", txMock.changeRequest.update],
     ["tx.changeRequest.updateMany", txMock.changeRequest.updateMany],
+    ["prisma.changeRequest.updateMany", prismaMock.changeRequest.updateMany],
+    [
+      "tx.changeRequestTranslation.deleteMany",
+      txMock.changeRequestTranslation.deleteMany,
+    ],
+    [
+      "tx.changeRequestTranslation.createMany",
+      txMock.changeRequestTranslation.createMany,
+    ],
+    [
+      "tx.changeRequestTranslation.updateMany",
+      txMock.changeRequestTranslation.updateMany,
+    ],
     ["tx.moderationCase.update", txMock.moderationCase.update],
     ["createTicket", publishMocks.createTicket],
     ["createStatement", publishMocks.createStatement],
@@ -345,9 +399,10 @@ function expectNoMutation(): void {
  *   user          — jede eingeloggte Person
  *   non-author    — jede eingeloggte Person ausser dem Ticket-Autor (PPR)
  *   ticket-author — nur der Autor des betroffenen Tickets
+ *   requester     — nur wer den Änderungsantrag gestellt hat (E15)
  *   admin         — nur Admins
  */
-type Scope = "user" | "non-author" | "ticket-author" | "admin";
+type Scope = "user" | "non-author" | "ticket-author" | "requester" | "admin";
 
 type ActionCell = {
   name: string;
@@ -435,10 +490,38 @@ const MATRIX: ActionCell[] = [
     allowedAs: () => asUser(OWNER),
   },
   {
+    name: "prepareAdjustedMerge",
+    scope: "ticket-author",
+    run: () => prepareAdjustedMerge(adjustInput),
+    allowedAs: () => asUser(OWNER),
+  },
+  {
+    name: "mergeAdjustedChangeRequest",
+    scope: "ticket-author",
+    run: () => mergeAdjustedChangeRequest(mergeAdjustedInput),
+    allowedAs: () => asUser(OWNER),
+  },
+  {
+    name: "returnChangeRequest",
+    scope: "ticket-author",
+    run: () =>
+      returnChangeRequest({
+        changeRequestId: "cr-1",
+        reason: "ZU_WENIG_KONKRET",
+      }),
+    allowedAs: () => asUser(OWNER),
+  },
+  {
     name: "declineChangeRequest",
     scope: "ticket-author",
     run: () => declineChangeRequest({ changeRequestId: "cr-1" }),
     allowedAs: () => asUser(OWNER),
+  },
+  {
+    name: "withdrawChangeRequest",
+    scope: "requester",
+    run: () => withdrawChangeRequest({ changeRequestId: "cr-1" }),
+    allowedAs: () => asUser(STRANGER),
   },
   {
     name: "dismissCase",
@@ -499,14 +582,16 @@ beforeEach(() => {
   prismaMock.statement.findUnique.mockResolvedValue({ status: "PUBLISHED" });
   prismaMock.statement.findFirst.mockResolvedValue(null);
 
-  // `cr-1` stammt von STRANGER und liegt auf dem Ticket von OWNER.
-  prismaMock.changeRequest.findUnique.mockResolvedValue({
-    status: "OPEN",
-    authorId: STRANGER,
-    ticketId: "ticket-1",
-    ticket: { authorId: OWNER, status: "PUBLISHED" },
-  });
+  // `cr-1` stammt von STRANGER und liegt auf dem Ticket von OWNER. Die
+  // Merge-Wege lesen danach die gespeicherten Fassungen (E15).
+  prismaMock.changeRequest.findUnique.mockImplementation(
+    async (args: { select?: { translations?: unknown } }) =>
+      args.select?.translations
+        ? storedChangeRequestRow
+        : guardChangeRequestRow,
+  );
   prismaMock.changeRequest.findFirst.mockResolvedValue(null);
+  prismaMock.changeRequest.updateMany.mockResolvedValue({ count: 1 });
   // Aktueller Stand unterscheidet sich vom Antrag (sonst: no_changes).
   prismaMock.ticketTranslation.findUnique.mockResolvedValue({
     title: "Anderer Titel",
@@ -557,6 +642,9 @@ beforeEach(() => {
   txMock.changeRequest.create.mockResolvedValue({ id: "cr-new" });
   txMock.changeRequest.update.mockResolvedValue({ id: "cr-1" });
   txMock.changeRequest.updateMany.mockResolvedValue({ count: 1 });
+  txMock.changeRequestTranslation.deleteMany.mockResolvedValue({ count: 3 });
+  txMock.changeRequestTranslation.createMany.mockResolvedValue({ count: 3 });
+  txMock.changeRequestTranslation.updateMany.mockResolvedValue({ count: 1 });
   txMock.moderationCase.update.mockResolvedValue({ id: "case-1" });
   publishMocks.refreshStatementAggregates.mockResolvedValue(undefined);
 });
@@ -565,7 +653,7 @@ beforeEach(() => {
 // Zeile 1 — Gast: JEDE Action abgelehnt, keine einzige Mutation
 // ---------------------------------------------------------------------------
 
-describe("Rolle Gast (keine Session) — 16/16 Actions abgelehnt", () => {
+describe(`Rolle Gast (keine Session) — ${MATRIX.length}/${MATRIX.length} Actions abgelehnt`, () => {
   for (const cell of MATRIX) {
     it(`${cell.name}: unauthorized ohne jede Mutation`, async () => {
       asGuest();
@@ -595,6 +683,15 @@ describe("Rolle eingeloggt-fremd — Berechtigung entscheidet, nicht die Session
       asUser(OWNER);
       const result = await cell.run();
       expect(result).toEqual({ ok: false, error: "own_ticket" });
+      expectNoMutation();
+    });
+  }
+
+  for (const cell of MATRIX.filter((c) => c.scope === "requester")) {
+    it(`${cell.name}: der Ticket-Autor bekommt not_requester, ohne Mutation`, async () => {
+      asUser(OWNER);
+      const result = await cell.run();
+      expect(result).toEqual({ ok: false, error: "not_requester" });
       expectNoMutation();
     });
   }
@@ -637,6 +734,21 @@ describe("Rolle Admin", () => {
     expect(await declineChangeRequest({ changeRequestId: "cr-1" })).toEqual({
       ok: false,
       error: "not_author",
+    });
+    expect(await mergeAdjustedChangeRequest(mergeAdjustedInput)).toEqual({
+      ok: false,
+      error: "not_author",
+    });
+    expect(
+      await returnChangeRequest({
+        changeRequestId: "cr-1",
+        reason: "ZU_UMFANGREICH",
+      }),
+    ).toEqual({ ok: false, error: "not_author" });
+    // Zurückziehen darf auch ein Admin nicht — nur der Antragsteller (E15).
+    expect(await withdrawChangeRequest({ changeRequestId: "cr-1" })).toEqual({
+      ok: false,
+      error: "not_requester",
     });
     expectNoMutation();
   });
@@ -707,6 +819,41 @@ describe("IDOR — fremde/erfundene Ids in jede Action mit Id-Parameter", () => 
     const result = await submitChangeRequest(submitChangeRequestInput);
     expect(result).toEqual({ ok: false, error: "invalid_input" });
     expect(txMock.changeRequest.create).not.toHaveBeenCalled();
+  });
+
+  it("submitChangeRequest überarbeitet einen FREMDEN Antrag: not_requester, keine Mutation", async () => {
+    // E15: cr-1 stammt von STRANGER — ein dritter User darf ihn nicht ersetzen.
+    asUser("dritter-1");
+    const result = await submitChangeRequest({
+      ...submitChangeRequestInput,
+      changeRequestId: "cr-1",
+    });
+    expect(result).toEqual({ ok: false, error: "not_requester" });
+    expectNoMutation();
+  });
+
+  it("submitChangeRequest überarbeitet einen Antrag eines ANDEREN Tickets: invalid_input", async () => {
+    asUser(STRANGER);
+    const result = await submitChangeRequest({
+      ...submitChangeRequestInput,
+      ticketId: "ticket-2",
+      changeRequestId: "cr-1",
+    });
+    expect(result).toEqual({ ok: false, error: "invalid_input" });
+    expectNoMutation();
+  });
+
+  it("prepareAdjustedMerge mit einem Feld, das der Antrag nicht betrifft: invalid_input, kein AI-Call", async () => {
+    // Sonst änderte der Autor über einen fremden Antrag beliebige Felder und
+    // schriebe die Änderung dem Antragsteller zu (E15).
+    asUser(OWNER);
+    const result = await prepareAdjustedMerge({
+      ...adjustInput,
+      title: "Ganz anderer Titel",
+    });
+    expect(result).toEqual({ ok: false, error: "invalid_input" });
+    expect(lintFieldsMock).not.toHaveBeenCalled();
+    expect(translateProposalMock).not.toHaveBeenCalled();
   });
 
   it("mergeChangeRequest auf einen Antrag an einem FREMDEN Ticket: not_author", async () => {
@@ -860,7 +1007,9 @@ const AI_BACKED = new Set([
   "publishStatement",
   "prepareChangeRequest",
   "submitChangeRequest",
-  "mergeChangeRequest",
+  // E15: «Übernehmen» ist 1:1 und AI-frei; nur das Anpassen übersetzt neu.
+  "prepareAdjustedMerge",
+  "mergeAdjustedChangeRequest",
   "appealLinterDecision",
   "approveAppeal",
 ]);

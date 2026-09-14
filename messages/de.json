@@ -24,7 +24,9 @@
     "statements": "Statements",
     "changeRequests": "Änderungsanträge",
     "changeRequestCount": "{count, plural, one {# offener Antrag} other {# offene Anträge}}",
-    "affected": "Betroffene Tickets"
+    "affected": "Betroffene Tickets",
+    "returnedChangeRequests": "Zur Überarbeitung",
+    "returnedChangeRequestCount": "{count, plural, one {# Antrag wartet auf deine Überarbeitung} other {# Anträge warten auf deine Überarbeitung}}"
   },
   "localeSwitcher": {
     "label": "Sprache wählen",
@@ -172,7 +174,8 @@
     "problem": "Problem",
     "solution": "Lösung",
     "funding": "Finanzierung / Trade-off",
-    "coAuthor": "Co-Autor: @{handle} (Änderungsantrag #{number}, gemergt {date})"
+    "coAuthor": "Co-Autor: @{handle} (Änderungsantrag #{number}, gemergt {date})",
+    "coAuthorAdjusted": "Co-Autor: @{handle} (Änderungsantrag #{number}, angepasst übernommen {date})"
   },
   "statements": {
     "heading": "{count, plural, =0 {Statements} one {# Statement} other {# Statements}}",
@@ -208,7 +211,7 @@
   },
   "changeRequests": {
     "heading": "{count, plural, =0 {Änderungsanträge} one {# Änderungsantrag} other {# Änderungsanträge}}",
-    "intro": "Statt zu kritisieren: Übernimm den Lösungstext, ändere ihn ab und reiche ihn als Antrag ein. Nimmt der Autor an, wirst du als Co-Autor gelistet.",
+    "intro": "Statt zu kritisieren: Übernimm den Inhalt des Tickets, ändere ihn ab und reiche ihn als Antrag ein. Nimmt der Autor an, wirst du als Co-Autor gelistet.",
     "newButton": "Änderungsantrag stellen",
     "prefillHint": "Die Felder enthalten den aktuellen Stand. Ändere, was du verbessern willst — eingereicht wird nur, was du tatsächlich änderst.",
     "cancel": "Abbrechen",
@@ -228,7 +231,9 @@
     "status": {
       "OPEN": "Offen",
       "MERGED": "Gemergt",
-      "DECLINED": "Abgelehnt"
+      "DECLINED": "Abgelehnt",
+      "CHANGES_REQUESTED": "In Überarbeitung",
+      "WITHDRAWN": "Zurückgezogen"
     },
     "by": "Von @{handle}",
     "submitted": "Eingereicht {date}",
@@ -242,10 +247,9 @@
     "diffLegend": "Rot durchgestrichen = entfällt · Grün = neu",
     "authorOpenHint": "{count, plural, one {# offener Änderungsantrag wartet auf deinen Entscheid.} other {# offene Änderungsanträge warten auf deinen Entscheid.}}",
     "authorEmptyHint": "Auf dein eigenes Ticket kannst du keinen Änderungsantrag stellen.",
-    "staleWarning": "Die Lösung hat sich seit diesem Antrag geändert — beim Übernehmen ersetzt der Antrag die aktuelle Fassung vollständig.",
-    "mergeIntro": "Prüfe alle drei Sprachfassungen. Du kannst sie anpassen — beim Übernehmen durchlaufen sie erneut den Civic-Linter und ersetzen die Lösung des Tickets.",
-    "merge": "Antrag übernehmen",
-    "confirmMerge": "Lösung ersetzen",
+    "staleWarning": "Das Ticket hat sich seit diesem Antrag geändert — beim Übernehmen ersetzt der Vorschlag die betroffenen Felder vollständig.",
+    "merge": "Übernehmen",
+    "confirmMerge": "Unverändert übernehmen",
     "merging": "Wird übernommen…",
     "decline": "Ablehnen",
     "declining": "Wird abgelehnt…",
@@ -263,8 +267,41 @@
       "no_changes": "Du hast nichts geändert. Passe mindestens ein Feld an.",
       "max_80": "Maximal 80 Zeichen",
       "max_1500": "Maximal 1'500 Zeichen",
-      "min_1": "Pflichtfeld"
-    }
+      "min_1": "Pflichtfeld",
+      "not_requester": "Nur wer den Antrag gestellt hat, kann ihn überarbeiten oder zurückziehen.",
+      "awaiting_revision": "Dieser Antrag wurde zur Überarbeitung zurückgegeben und wartet auf eine neue Fassung."
+    },
+    "confirmMergeIntro": "Der Vorschlag wird unverändert übernommen und ersetzt die betroffenen Felder in allen drei Sprachen. @{handle} wird als Co-Autor gelistet.",
+    "adjust": "Anpassen & übernehmen",
+    "adjustIntro": "Passe den Vorschlag von @{handle} in deiner Sprache an. Die anderen zwei Sprachen werden danach neu übersetzt. Auf dem Antrag steht anschliessend, dass du ihn angepasst hast.",
+    "adjustPreviewIntro": "So erscheint die angepasste Fassung in den zwei anderen Landessprachen. Du kannst beide Fassungen noch anpassen — auch sie durchlaufen den Civic-Linter.",
+    "backToAdjust": "Zurück zur Anpassung",
+    "confirmAdjustedMerge": "Angepasst übernehmen",
+    "adjustedBy": "Mit Anpassungen von @{handle}",
+    "diffLegendAdjusted": "Anpassungen von @{handle}: rot durchgestrichen = aus dem Vorschlag entfernt · grün = ergänzt",
+    "return": "Zur Überarbeitung",
+    "returnIntro": "Warum soll @{handle} den Antrag überarbeiten?",
+    "confirmReturn": "Zur Überarbeitung zurückgeben",
+    "returning": "Wird zurückgegeben…",
+    "returnReasons": {
+      "ZU_WENIG_KONKRET": "Zu wenig konkret",
+      "WEICHT_VOM_PROBLEM_AB": "Weicht vom Problem ab",
+      "FINANZIERUNG_UNKLAR": "Finanzierung fehlt oder ist unklar",
+      "ZU_UMFANGREICH": "Zu umfangreich, bitte aufteilen",
+      "UEBERSETZUNG_FEHLERHAFT": "Übersetzung fehlerhaft"
+    },
+    "returnedBecause": "Zur Überarbeitung zurückgegeben: {reason}",
+    "awaitingRevision": "Liegt zur Überarbeitung bei @{handle}. Ablehnen ist weiterhin möglich.",
+    "editButton": "Antrag überarbeiten",
+    "revisionHint": "Die Felder enthalten deinen Vorschlag. Ändere, was du verbessern willst — eingereicht wird wieder nur, was vom aktuellen Ticket abweicht.",
+    "ownOpenHint": "Du hast einen offenen Änderungsantrag auf dieses Ticket. Du kannst ihn unten überarbeiten oder zurückziehen.",
+    "ownReturnedHint": "Dein Änderungsantrag wurde zur Überarbeitung zurückgegeben. Den Grund und die Bearbeitung findest du unten.",
+    "revised": "Überarbeitet {date}",
+    "withdraw": "Zurückziehen",
+    "withdrawConfirmText": "Ziehst du den Antrag zurück, kann ihn der Autor nicht mehr übernehmen. Du kannst danach einen neuen Antrag stellen.",
+    "confirmWithdraw": "Antrag zurückziehen",
+    "withdrawing": "Wird zurückgezogen…",
+    "withdrawnOn": "Zurückgezogen {date}"
   },
   "profile": {
     "memberSince": "Dabei seit {date}",

@@ -69,7 +69,8 @@ export default async function TicketDetailPage({
     ticketId: ticket.id,
     contentRevision: ticket.contentRevision,
     displayLocale,
-    includeVersions: isTicketAuthor,
+    viewerId: userId,
+    isTicketAuthor,
   });
   const coAuthorships = changeRequests.filter(
     (entry) => entry.status === "MERGED" && entry.authorHandle,
@@ -157,7 +158,8 @@ export default async function TicketDetailPage({
             data-testid="co-author"
             className="underline underline-offset-2 hover:text-ink"
           >
-            {t("coAuthor", {
+            {/* E15: Die Attribution nennt auch, ob angepasst übernommen wurde. */}
+            {t(entry.mergedWithEdits ? "coAuthorAdjusted" : "coAuthor", {
               handle: entry.authorHandle ?? "",
               number: entry.number,
               date: dateFormat.format(entry.decidedAt ?? entry.createdAt),
@@ -232,6 +234,7 @@ export default async function TicketDetailPage({
         routeLocale={locale as AppLocale}
         isAuthor={isTicketAuthor}
         viewerId={userId}
+        ticketAuthorHandle={ticket.author.handle}
       />
 
       {/* Statement-Dashboard (P9): Formular über der Liste — keine Antworten. */}

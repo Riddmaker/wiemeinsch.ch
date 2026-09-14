@@ -8,6 +8,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  *    eigene Stimme «du hast eine Reaktion erhalten».
  * 2. Ohne Lesemarke (`null`) zählt alles bisher Passierte als ungelesen,
  *    statt dass ein neuer User nie etwas sieht.
+ * 3. E15: Der Antragsteller erfährt NUR von einer Rückgabe zur Überarbeitung
+ *    (nicht von Übernahme oder Ablehnung); für den Ticket-Autor zählt eine
+ *    Überarbeitung wie ein neuer Antrag.
  *
  * DB ist gemockt.
  */
@@ -95,6 +98,39 @@ describe("hasUnreadNotifications", () => {
     expect(where.where.updatedAt.gt.getTime()).toBe(0);
   });
 
+  it("E15: zurückgegebener eigener Antrag löst den Punkt aus", async () => {
+    prismaMock.changeRequest.findFirst.mockImplementation(
+      async (args: { where: { authorId?: string } }) =>
+        args.where.authorId === "user-1" ? { id: "cr-1" } : null,
+    );
+    expect(await hasUnreadNotifications("user-1")).toBe(true);
+  });
+
+  it("E15: nur die RÜCKGABE zählt für den Antragsteller — nicht Übernahme oder Ablehnung", async () => {
+    await hasUnreadNotifications("user-1");
+    const wheres = prismaMock.changeRequest.findFirst.mock.calls.map(
+      (call) => (call[0] as { where: Record<string, unknown> }).where,
+    );
+    const requester = wheres.find((where) => where.authorId === "user-1");
+    expect(requester).toEqual({
+      authorId: "user-1",
+      status: "CHANGES_REQUESTED",
+      returnedAt: { gt: READ_AT },
+    });
+  });
+
+  it("E15: eine Überarbeitung zählt für den Ticket-Autor wie ein neuer Antrag", async () => {
+    await hasUnreadNotifications("user-1");
+    const wheres = prismaMock.changeRequest.findFirst.mock.calls.map(
+      (call) => (call[0] as { where: Record<string, unknown> }).where,
+    );
+    const author = wheres.find((where) => "ticket" in where);
+    expect(author).toEqual({
+      OR: [{ createdAt: { gt: READ_AT } }, { revisedAt: { gt: READ_AT } }],
+      ticket: { authorId: "user-1" },
+    });
+  });
+
   it("unbekannter User: kein Punkt, keine weiteren Abfragen", async () => {
     prismaMock.user.findUnique.mockResolvedValue(null);
     expect(await hasUnreadNotifications("weg")).toBe(false);
@@ -109,6 +145,7 @@ describe("loadNotifications", () => {
       reactions: null,
       statements: null,
       changeRequests: null,
+      returnedChangeRequests: null,
       tickets: [],
     });
   });
@@ -173,7 +210,11 @@ describe("loadNotifications", () => {
   });
 
   it("zählt offene Änderungsanträge", async () => {
-    prismaMock.changeRequest.findMany.mockResolvedValue([{ ticketId: "t1" }]);
+    // Nur Anträge auf eigene Tickets sind neu — keine eigene Rückgabe.
+    prismaMock.changeRequest.findMany.mockImplementation(
+      async (args: { where: { authorId?: string } }) =>
+        args.where.authorId ? [] : [{ ticketId: "t1" }],
+    );
     prismaMock.changeRequest.count.mockResolvedValue(2);
     prismaMock.ticket.findMany
       .mockResolvedValueOnce([{ id: "t1", upvotes: 0, downvotes: 0 }])
@@ -189,6 +230,33 @@ describe("loadNotifications", () => {
     const result = await loadNotifications("user-1", "de");
 
     expect(result.changeRequests).toBe(2);
+    expect(result.returnedChangeRequests).toBeNull();
     expect(result.tickets).toHaveLength(1);
+  });
+
+  it("E15: zählt eigene zurückgegebene Anträge und verlinkt deren Ticket", async () => {
+    // user-1 hat selbst kein Ticket — die Rückgabe betrifft ein fremdes.
+    prismaMock.changeRequest.findMany.mockImplementation(
+      async (args: { where: { authorId?: string } }) =>
+        args.where.authorId === "user-1" ? [{ ticketId: "t7" }] : [],
+    );
+    prismaMock.changeRequest.count.mockResolvedValue(1);
+    prismaMock.ticket.findMany.mockResolvedValueOnce([]).mockResolvedValueOnce([
+      {
+        id: "t7",
+        translations: [
+          { locale: "DE", title: "Fremdes Ticket", isOriginal: true },
+        ],
+      },
+    ]);
+
+    const result = await loadNotifications("user-1", "de");
+
+    expect(result.returnedChangeRequests).toBe(1);
+    expect(result.changeRequests).toBeNull();
+    expect(result.tickets).toEqual([{ id: "t7", title: "Fremdes Ticket" }]);
+    expect(prismaMock.changeRequest.count).toHaveBeenCalledWith({
+      where: { authorId: "user-1", status: "CHANGES_REQUESTED" },
+    });
   });
 });

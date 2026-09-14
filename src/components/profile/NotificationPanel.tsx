@@ -25,7 +25,8 @@ export async function NotificationPanel({
   const hasAnything =
     summary.reactions !== null ||
     summary.statements !== null ||
-    summary.changeRequests !== null;
+    summary.changeRequests !== null ||
+    summary.returnedChangeRequests !== null;
   if (!hasAnything) {
     return null;
   }
@@ -62,6 +63,16 @@ export async function NotificationPanel({
       key: "changeRequests",
       label: t("changeRequests"),
       value: t("changeRequestCount", { count: summary.changeRequests }),
+    });
+  }
+
+  if (summary.returnedChangeRequests !== null) {
+    rows.push({
+      key: "returnedChangeRequests",
+      label: t("returnedChangeRequests"),
+      value: t("returnedChangeRequestCount", {
+        count: summary.returnedChangeRequests,
+      }),
     });
   }
 
