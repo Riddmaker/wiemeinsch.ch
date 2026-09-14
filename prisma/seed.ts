@@ -92,12 +92,26 @@ async function seedMunicipalities() {
       return { id: Number(r[1]), name: r[6] as string, cantonId };
     });
 
-  // Snapshot-Update (E7): Namen/Zuordnungen bestehender Gemeinden nachführen.
   await prisma.municipality.createMany({
     data: municipalities,
     skipDuplicates: true,
   });
-  for (const m of municipalities) {
+  // Snapshot-Update (E7): Namen/Zuordnungen bestehender Gemeinden nachführen —
+  // aber nur, wo sie abweichen. Der Seed läuft seit dem 14.09.2026 bei JEDEM
+  // Container-Start; 2110 Einzel-Updates ohne Änderung kosteten dort rund
+  // 20 Sekunden Startzeit pro Deploy.
+  const existing = new Map(
+    (
+      await prisma.municipality.findMany({
+        select: { id: true, name: true, cantonId: true },
+      })
+    ).map((m) => [m.id, m]),
+  );
+  const changed = municipalities.filter((m) => {
+    const current = existing.get(m.id);
+    return current?.name !== m.name || current?.cantonId !== m.cantonId;
+  });
+  for (const m of changed) {
     await prisma.municipality.update({
       where: { id: m.id },
       data: { name: m.name, cantonId: m.cantonId },
