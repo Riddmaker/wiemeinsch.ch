@@ -134,9 +134,10 @@ den OWASP-Empfehlungen für generative KI. Umgesetzt sind unter anderem:
 - Serverseitige Berechtigungsprüfung in jeder Server Action, abgesichert durch
   eine vollständige Access-Control-Testmatrix.
 
-**Schwachstellen bitte nicht als öffentliches Issue melden**, sondern über die
-im Impressum der Website genannte Kontaktadresse — mit Beschreibung, Weg zur
-Reproduktion und, wenn möglich, einer Einschätzung der Auswirkung.
+**Schwachstellen bitte nicht als öffentliches Issue melden**, sondern
+vertraulich über [Report a vulnerability](https://github.com/Riddmaker/wiemeinsch.ch/security/advisories/new)
+— Ablauf und Geltungsbereich stehen in der [Sicherheitsrichtlinie](SECURITY.md).
+Abhängigkeiten und gepinnte Actions hält Dependabot aktuell.
 
 Der Betrieb der Zielumgebung (Topologie, Secrets, Backup und Wiederherstellung)
 ist bewusst nicht Teil dieses Repositories.
