@@ -16,6 +16,9 @@ import { login, loginAs } from "./helpers";
  *   B = seed-user-2 (luc_test)  — stellt den Antrag, der gemergt wird
  *   C = Wegwerf-User            — stellt den Antrag, der veraltet und abgelehnt wird
  *
+ * E15 (14.09.2026) ergänzt einen zweiten Zyklus: Zurückgeben → Überarbeiten →
+ * Anpassen & übernehmen, plus Zurückziehen.
+ *
  * Der Server-Bypass (fremder User ruft Merge auf, eigener Antrag, 199/3001
  * Zeichen) ist in tests/unit/change-request-actions abgedeckt — Server Actions
  * sind aus dem Browser nur über die build-spezifische Next-Action-Id aufrufbar
@@ -42,6 +45,8 @@ const BASE_URL = "http://localhost:3000";
 
 const AUTHOR_EMAIL = "anna_test@example.com";
 const PROPOSER_EMAIL = "luc_test@example.com";
+/** Profil von luc_test — dort erscheint die Rückgabe-Benachrichtigung (E15). */
+const PROPOSER_PROFILE = "/fr/profil/seed-user-2";
 
 /**
  * Alle Tests mit Seed-Rollen-Login laufen NUR auf chromium: Magic-Links sind
@@ -84,22 +89,26 @@ function cardWithProposal(page: Page, marker: string): Locator {
   });
 }
 
-/** Laufende Nummer einer Karte, z.B. 50 aus «Änderungsantrag #50». */
+/**
+ * Laufende Nummer einer Karte — sprachunabhängig: «Änderungsantrag #50»,
+ * «Demande de modification n° 50», «Richiesta di modifica n. 50».
+ */
 async function cardNumber(card: Locator): Promise<number> {
   const label = await card.getByTestId("change-request-number").innerText();
-  const match = /#(\d+)/.exec(label);
+  const match = /(\d+)\s*$/.exec(label);
   expect(match, `Kartennummer nicht lesbar: ${label}`).not.toBeNull();
   return Number(match![1]);
 }
 
 /**
- * Karte über ihre Nummer — stabil auch nach einem Merge. Der Anker am Ende
- * verhindert, dass «#5» auch «#50» trifft.
+ * Karte über ihre Nummer — stabil auch nach einem Merge und in jeder
+ * Profilsprache (E15: der Antragsteller luc_test liest Französisch). Die
+ * Anker verhindern, dass «5» auch «50» oder «15» trifft.
  */
 function cardByNumber(page: Page, number: number): Locator {
   return page.locator('[data-testid="change-request-card"]').filter({
     has: page.locator('[data-testid="change-request-number"]', {
-      hasText: new RegExp(`#${String(number)}$`),
+      hasText: new RegExp(`(?:^|\\D)${String(number)}$`),
     }),
   });
 }
@@ -178,9 +187,10 @@ async function fillEditor(scope: Locator, index: number, text: string) {
 }
 
 /**
- * Vorbedingung herstellen: Der Autor lehnt alle noch offenen Anträge aus
- * früheren Läufen ab. Ohne das blendet die Seite das Antragsformular für einen
- * Antragsteller mit offenem Antrag aus (eine Regel, die der Test selbst prüft).
+ * Vorbedingung herstellen: Der Autor lehnt alle noch laufenden Anträge aus
+ * früheren Läufen ab — offene UND zur Überarbeitung zurückgegebene (E15).
+ * Ohne das blendet die Seite das Antragsformular für einen Antragsteller mit
+ * laufendem Antrag aus (eine Regel, die der Test selbst prüft).
  */
 async function declineAllOpen(page: Page) {
   await openAllCards(page);
@@ -273,7 +283,11 @@ test(
     // Diff: der Vorschlag steht als Hinzufügung, die alte Fassung als
     // Streichung — beides im selben Block (E13).
     const diffB = cardB.getByTestId("change-request-diff-solution");
-    await expect(diffB.locator("ins")).toContainText(`${stamp}-B`);
+    // Über das `<ins>` MIT dem Marker: Ähnelt der Ticket-Text dem Vorschlag,
+    // zerfällt die Hinzufügung in viele Stücke (Strict-Mode-Verletzung).
+    await expect(diffB.locator("ins", { hasText: `${stamp}-B` })).toHaveCount(
+      1,
+    );
     await expect(diffB.locator("del")).not.toHaveCount(0);
 
     // Nummern festhalten: Nach dem Merge trägt der Diff jeder Karte den
@@ -282,9 +296,10 @@ test(
     const numberC = await cardNumber(cardC);
 
     // --- A merged den Antrag von B ------------------------------------------
+    // E15: «Übernehmen» ist 1:1 — eine Bestätigung, keine Editoren.
     await cardB.getByTestId("change-request-review").click();
-    // Merge-Preview: alle drei Sprachfassungen, editierbar.
-    await expect(cardB.locator(EDITOR)).toHaveCount(3);
+    await expect(cardB.getByTestId("change-request-merge")).toBeVisible();
+    await expect(cardB.locator(EDITOR)).toHaveCount(0);
     await cardB.getByTestId("change-request-merge").click();
 
     // Lösungstext des Tickets ist ersetzt, B als CO_AUTHOR vermerkt.
@@ -296,6 +311,10 @@ test(
     await expect(
       cardByNumber(pageA, numberB).getByTestId("change-request-status"),
     ).toHaveText("Gemergt");
+    // Unverändert übernommen: kein Anpassungs-Vermerk (Attribution, E15).
+    await expect(
+      cardByNumber(pageA, numberB).getByTestId("change-request-adjusted"),
+    ).toHaveCount(0);
 
     // --- Der Antrag von C ist jetzt veraltet (10.4) --------------------------
     await pageA.reload();
@@ -319,6 +338,154 @@ test(
         `${stamp}-B`,
       );
     }
+
+    await pageA.context().close();
+    await pageB.context().close();
+    await pageC.context().close();
+  },
+);
+
+test(
+  "E15: Zurückgeben → Überarbeiten → Anpassen & übernehmen, und Zurückziehen",
+  { tag: "@ai" },
+  async ({ browser }) => {
+    chromiumOnly();
+    // 3 × (Linter + Übersetzung + 3 Linter) + Anpassung (Linter + Übersetzung
+    // + 3 Linter).
+    test.setTimeout(1_200_000);
+
+    const stamp = `REV-${Date.now() % 100000}`;
+
+    const pageA = await newPage(browser, authorState);
+    await pageA.goto(TICKET);
+    await declineAllOpen(pageA);
+
+    // --- B stellt einen Antrag ----------------------------------------------
+    const pageB = await newPage(browser, proposerState);
+    await pageB.goto(TICKET);
+    await submitProposal(pageB, proposalFr(`${stamp}-1`));
+
+    // --- A gibt ihn mit einem Grund aus dem Katalog zurück ------------------
+    await pageA.reload();
+    const card = cardWithProposal(pageA, `${stamp}-1`);
+    await expect(card).toHaveCount(1);
+    const number = await cardNumber(card);
+    await openCard(card);
+    await card.getByTestId("change-request-return").click();
+    // Ohne Grund kein Zurückgeben — es gibt kein Freitextfeld.
+    await expect(
+      card.getByTestId("change-request-return-confirm"),
+    ).toBeDisabled();
+    await expect(card.locator("textarea")).toHaveCount(0);
+    await card.getByTestId("change-request-reason-ZU_WENIG_KONKRET").check();
+    await card.getByTestId("change-request-return-confirm").click();
+
+    const returned = cardByNumber(pageA, number);
+    await expect(returned.getByTestId("change-request-status")).toHaveText(
+      "In Überarbeitung",
+      { timeout: 60_000 },
+    );
+    await expect(
+      returned.getByTestId("change-request-return-reason"),
+    ).toContainText("Zu wenig konkret");
+    // Solange der Antrag beim Antragsteller liegt: nur noch Ablehnen.
+    await openCard(returned);
+    await expect(returned.getByTestId("change-request-awaiting")).toBeVisible();
+    await expect(returned.getByTestId("change-request-review")).toHaveCount(0);
+
+    // --- B wird benachrichtigt und sieht den Grund --------------------------
+    await pageB.goto(PROPOSER_PROFILE);
+    await expect(
+      pageB.getByTestId("notification-returnedChangeRequests"),
+    ).toBeVisible();
+    await pageB.goto(TICKET);
+    await expect(pageB.getByTestId("change-request-own-open")).toBeVisible();
+    const own = cardByNumber(pageB, number);
+    // Für den Antragsteller klappt die zurückgegebene Karte von selbst auf.
+    await expect(own).toHaveAttribute("open", "");
+    await expect(own.getByTestId("change-request-return-reason")).toContainText(
+      "Pas assez concret",
+    );
+
+    // --- B überarbeitet ------------------------------------------------------
+    await own.getByTestId("change-request-edit").click();
+    await fillEditor(own, SOLUTION_EDITOR, proposalFr(`${stamp}-2`));
+    await own.getByTestId("change-request-prepare").click();
+    await expect(own.getByTestId("change-request-submit")).toBeVisible({
+      timeout: 180_000,
+    });
+    await own.getByTestId("change-request-submit").click();
+    const revised = cardByNumber(pageB, number);
+    await expect(revised.getByTestId("change-request-status")).toHaveText(
+      "Ouverte",
+      { timeout: 240_000 },
+    );
+    await expect(revised.getByTestId("change-request-revised")).toBeVisible();
+    // Überarbeitet wurde DERSELBE Antrag — keine zweite Karte.
+    await expect(cardByNumber(pageB, number)).toHaveCount(1);
+
+    // --- A passt an und übernimmt ------------------------------------------
+    await pageA.reload();
+    const toAdjust = cardByNumber(pageA, number);
+    await openCard(toAdjust);
+    await expect(
+      toAdjust
+        .getByTestId("change-request-diff-solution")
+        .locator("ins", { hasText: `${stamp}-2` }),
+    ).toHaveCount(1);
+    await toAdjust.getByTestId("change-request-adjust").click();
+    // Genau ein Editor: A passt nur das Feld an, das der Antrag betrifft,
+    // und nur in der eigenen Sprache.
+    await expect(toAdjust.locator(EDITOR)).toHaveCount(1);
+    await fillEditor(toAdjust, 0, proposalDe(`${stamp}-3`));
+    await toAdjust.getByTestId("change-request-adjust-prepare").click();
+    await expect(
+      toAdjust.getByTestId("change-request-adjust-merge"),
+    ).toBeVisible({ timeout: 180_000 });
+    // Preview: die zwei anderen Sprachen, neu übersetzt.
+    await expect(toAdjust.locator(EDITOR)).toHaveCount(2);
+    await toAdjust.getByTestId("change-request-adjust-merge").click();
+
+    await expect(pageA.getByTestId("ticket-solution")).toContainText(
+      `${stamp}-3`,
+      { timeout: 240_000 },
+    );
+    const merged = cardByNumber(pageA, number);
+    await expect(merged.getByTestId("change-request-status")).toHaveText(
+      "Gemergt",
+    );
+    // Attribution: die Anpassung ist auf der Karte UND im Co-Autor-Vermerk
+    // sichtbar; der Diff zeigt, was A am Vorschlag geändert hat.
+    await expect(merged.getByTestId("change-request-adjusted")).toContainText(
+      "@anna_test",
+    );
+    await expect(pageA.getByTestId("co-author").last()).toContainText(
+      "angepasst übernommen",
+    );
+    await openCard(merged);
+    const adjustments = merged.getByTestId("change-request-diff-solution");
+    await expect(
+      adjustments.locator("ins", { hasText: `${stamp}-3` }),
+    ).toHaveCount(1);
+    await expect(
+      adjustments.locator("del", { hasText: `${stamp}-2` }),
+    ).toHaveCount(1);
+
+    // --- C stellt einen Antrag und zieht ihn zurück --------------------------
+    const pageC = await newPage(browser);
+    await login(pageC, "e2e-withdraw");
+    await pageC.goto(TICKET);
+    await submitProposal(pageC, proposalDe(`${stamp}-4`));
+    const withdrawCard = cardWithProposal(pageC, `${stamp}-4`);
+    const withdrawNumber = await cardNumber(withdrawCard);
+    await openCard(withdrawCard);
+    await withdrawCard.getByTestId("change-request-withdraw").click();
+    await withdrawCard.getByTestId("change-request-withdraw-confirm").click();
+    await expect(
+      cardByNumber(pageC, withdrawNumber).getByTestId("change-request-status"),
+    ).toHaveText("Zurückgezogen", { timeout: 60_000 });
+    // Danach ist ein neuer Antrag wieder möglich.
+    await expect(pageC.getByTestId("change-request-open")).toBeVisible();
 
     await pageA.context().close();
     await pageB.context().close();

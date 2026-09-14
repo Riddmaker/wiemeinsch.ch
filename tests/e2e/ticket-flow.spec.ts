@@ -88,7 +88,12 @@ test(
     await page
       .getByRole("button", { name: "Publizieren", exact: true })
       .click();
-    await page.waitForURL(/\/de\/tickets\/[a-z0-9]+$/, { timeout: 240_000 });
+    // `new` ausschliessen: Das Formular liegt selbst unter /de/tickets/new und
+    // passt sonst auf das Muster — das Warten endete dann sofort, noch bevor
+    // der Publish (Linter über drei Fassungen) fertig war.
+    await page.waitForURL(/\/de\/tickets\/(?!new$)[a-z0-9]+$/, {
+      timeout: 240_000,
+    });
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
       "Vernehmlassungsfristen digital vereinheitlichen",
     );
