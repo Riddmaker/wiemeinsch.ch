@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="1024" height="1024">
+  <title>wiemeinsch.ch</title>
+  <circle cx="32" cy="32" r="32" fill="#E11A27"/>
+  <rect x="26" y="12" width="12" height="40" fill="#FFFFFF"/>
+  <rect x="12" y="26" width="40" height="12" fill="#FFFFFF"/>
+</svg>

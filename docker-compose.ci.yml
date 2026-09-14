@@ -1,0 +1,16 @@
+# Override NUR für den GitHub-Actions-Lauf:
+#   docker compose -f docker-compose.yml -f docker-compose.ci.yml --profile prod up -d
+#
+# Einziger Unterschied zur lokalen Topologie: die Datenbank veröffentlicht
+# einen Port auf dem Runner. Lokal bleibt sie bewusst ohne Host-Port (Least
+# Privilege) und Migration/Seed/Recompute
+# laufen in Wegwerf-Containern am Compose-Netz. Im Runner gibt es diesen
+# Umweg nicht: Node und die Abhängigkeiten liegen dort ohnehin schon (die
+# Playwright-Suite läuft direkt auf dem Runner), die Umgebung ist ephemer und
+# nach dem Job weg. Alles andere — Image, Env-Namen, Startreihenfolge — ist
+# identisch mit dem lokalen Prod-Profil; sonst prüfte die Pipeline etwas
+# anderes als der lokale Abnahmelauf.
+services:
+  db:
+    ports:
+      - "5432:5432"

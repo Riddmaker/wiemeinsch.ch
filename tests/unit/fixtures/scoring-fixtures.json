@@ -1,0 +1,92 @@
+{
+  "generatedWith": "PostgreSQL 18 (docker compose exec db psql), unabhängiger Rechenweg — SQL-Kommando dokumentiert in tests/unit/scoring.test.ts",
+  "generatedAt": "2026-08-29",
+  "wilsonControversy": [
+    { "up": 0, "down": 0, "wilson": 0.0, "controversy": 0.0 },
+    { "up": 0, "down": 5, "wilson": 0.0, "controversy": 0.0 },
+    { "up": 1, "down": 1, "wilson": 0.094528654801, "controversy": 2.0 },
+    {
+      "up": 3,
+      "down": 5,
+      "wilson": 0.136841759462,
+      "controversy": 3.482202253184
+    },
+    { "up": 5, "down": 0, "wilson": 0.565508505248, "controversy": 0.0 },
+    {
+      "up": 8,
+      "down": 2,
+      "wilson": 0.490156846721,
+      "controversy": 1.778279410039
+    },
+    { "up": 50, "down": 50, "wilson": 0.40382982859, "controversy": 100.0 },
+    {
+      "up": 85,
+      "down": 15,
+      "wilson": 0.767162666678,
+      "controversy": 2.253933904735
+    },
+    {
+      "up": 100,
+      "down": 1,
+      "wilson": 0.94603152539,
+      "controversy": 1.04723274599
+    },
+    {
+      "up": 425,
+      "down": 75,
+      "wilson": 0.81603824726,
+      "controversy": 2.994255281667
+    }
+  ],
+  "trending": [
+    {
+      "votes": 0,
+      "statements": 0,
+      "changeRequests": 0,
+      "ageHours": 0.0,
+      "trending": 0.0
+    },
+    {
+      "votes": 0,
+      "statements": 1,
+      "changeRequests": 0,
+      "ageHours": 2.5,
+      "trending": 0.133428151953
+    },
+    {
+      "votes": 1,
+      "statements": 0,
+      "changeRequests": 0,
+      "ageHours": 100.0,
+      "trending": 0.000242392786
+    },
+    {
+      "votes": 10,
+      "statements": 0,
+      "changeRequests": 0,
+      "ageHours": 0.0,
+      "trending": 2.871745887493
+    },
+    {
+      "votes": 10,
+      "statements": 2,
+      "changeRequests": 1,
+      "ageHours": 5.0,
+      "trending": 0.512002933614
+    },
+    {
+      "votes": 500,
+      "statements": 23,
+      "changeRequests": 4,
+      "ageHours": 48.0,
+      "trending": 0.488076829808
+    },
+    {
+      "votes": 500,
+      "statements": 23,
+      "changeRequests": 4,
+      "ageHours": 720.0,
+      "trending": 0.003992705181
+    }
+  ]
+}

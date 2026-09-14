@@ -1,0 +1,60 @@
+# Abhängigkeiten aktuell halten (14.09.2026).
+#
+# Versions-PRs gehen nach `dev`, nicht nach `main`: `main` nimmt nur geprüfte
+# PRs aus `dev` an, und jeder Merge dort ist ein Produktions-Deploy.
+# Sicherheits-PRs richtet GitHub unabhängig davon immer gegen den
+# Default-Branch — die sind dringlich und dürfen den Umweg nicht nehmen.
+version: 2
+updates:
+  # npm im Root und in ops/ (Prisma-CLI des Container-Starts). `group-by`
+  # fasst dasselbe Paket über beide Verzeichnisse in EINEM PR zusammen:
+  # prisma und dotenv müssen dort exakt gleich bleiben, sonst schlägt der
+  # Unit-Test ops-package fehl.
+  - package-ecosystem: npm
+    directories:
+      - "/"
+      - "/ops"
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday
+    # Frisch veröffentlichte Versionen erst nach einigen Tagen vorschlagen —
+    # kompromittierte Releases werden meist in dieser Zeit entdeckt und
+    # zurückgezogen.
+    cooldown:
+      default-days: 7
+    groups:
+      npm-minor-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+        group-by: dependency-name
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+
+  # Die Actions sind im Workflow exakt gepinnt; ohne Pflege veralten Pins.
+  - package-ecosystem: github-actions
+    directory: "/"
+    target-branch: dev
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "ci"
+
+  # Basis-Images im Dockerfile (node:24-alpine). Major-Sprünge sind ein
+  # bewusster Entscheid (Node-Major, siehe Dockerfile) und werden ignoriert.
+  - package-ecosystem: docker
+    directory: "/"
+    target-branch: dev
+    schedule:
+      interval: monthly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    commit-message:
+      prefix: "docker"

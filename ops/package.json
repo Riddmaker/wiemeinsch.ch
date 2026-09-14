@@ -1,0 +1,10 @@
+{
+  "name": "wiemeinsch-ops",
+  "private": true,
+  "description": "Nur die Werkzeuge, die das Laufzeit-Image beim Start braucht: Prisma-CLI für `migrate deploy`. Versionen exakt wie im Root-Lockfile (geprüft in tests/unit/ops-package.test.ts).",
+  "type": "module",
+  "dependencies": {
+    "dotenv": "17.4.2",
+    "prisma": "7.10.0"
+  }
+}
