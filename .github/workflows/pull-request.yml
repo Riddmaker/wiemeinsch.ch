@@ -1,0 +1,21 @@
+# Prüfungen für jeden Pull Request — nach `dev` (u.a. Dependabot) wie nach
+# `main`. Kein Build in die Registry, kein Deploy: Das passiert erst nach dem
+# Merge auf main (deploy.yml).
+name: Pull Request
+
+on:
+  pull_request:
+    branches: [dev, main]
+
+# Ein neuer Push auf denselben PR macht den laufenden Lauf wertlos.
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Qualität und E2E
+    uses: ./.github/workflows/checks.yml
