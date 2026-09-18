@@ -1,19 +1,24 @@
-# Abhängigkeiten aktuell halten (14.09.2026).
+# Abhängigkeiten aktuell halten.
 #
 # Versions-PRs gehen nach `dev`, nicht nach `main`: `main` nimmt nur geprüfte
 # PRs aus `dev` an, und jeder Merge dort ist ein Produktions-Deploy.
 # Sicherheits-PRs richtet GitHub unabhängig davon immer gegen den
 # Default-Branch — die sind dringlich und dürfen den Umweg nicht nehmen.
+# Jeder PR durchläuft den Workflow «Pull Request» (Qualität + E2E).
 version: 2
 updates:
-  # npm im Root und in ops/ (Prisma-CLI des Container-Starts). `group-by`
-  # fasst dasselbe Paket über beide Verzeichnisse in EINEM PR zusammen:
-  # prisma und dotenv müssen dort exakt gleich bleiben, sonst schlägt der
-  # Unit-Test ops-package fehl.
+  # npm im Root. Gruppen, damit zusammengehörige Pakete in EINEM PR kommen —
+  # die erste passende Gruppe gewinnt, die Reihenfolge ist also Absicht.
+  #
+  # ops/ (Prisma-CLI des Container-Starts) steht bewusst NICHT hier: Seine
+  # Versionen müssen exakt denen im Root entsprechen. Ein Prisma-PR aus dieser
+  # Gruppe wird deshalb im Unit-Test `ops-package` rot und nennt die Stelle;
+  # ops/package.json und ops/package-lock.json werden im selben PR nachgezogen.
+  # (Erster Versuch 14.09.2026: `directories` mit `group-by: dependency-name`
+  # erzeugte einen PR PRO Paket — auch für die TipTap-Pakete, die nur
+  # gemeinsam funktionieren.)
   - package-ecosystem: npm
-    directories:
-      - "/"
-      - "/ops"
+    directory: "/"
     target-branch: dev
     schedule:
       interval: weekly
@@ -24,10 +29,20 @@ updates:
     cooldown:
       default-days: 7
     groups:
-      npm-minor-patch:
+      # CLI, Client und Adapter müssen dieselbe Version tragen.
+      prisma:
+        patterns: ["prisma", "@prisma/*"]
+      # Editor-Kern und Erweiterungen sind nur gemeinsam kompatibel.
+      tiptap:
+        patterns: ["@tiptap/*"]
+      next:
+        patterns:
+          ["next", "@next/*", "eslint-config-next", "react", "react-dom"]
+      # Alles Übrige, sofern kein Major-Sprung — Majors kommen einzeln, weil
+      # sie eigene Aufmerksamkeit brauchen.
+      minor-patch:
         patterns: ["*"]
         update-types: ["minor", "patch"]
-        group-by: dependency-name
     open-pull-requests-limit: 5
     commit-message:
       prefix: "deps"
