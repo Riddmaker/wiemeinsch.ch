@@ -12,6 +12,7 @@ import {
   type ProfileTicketEntry,
   type ProfileVoteEntry,
 } from "@/lib/profile";
+import { dateFormatter } from "@/lib/format";
 
 /**
  * Öffentliches Profil (P11.4):
@@ -54,11 +55,7 @@ export default async function ProfilePage({
     ? await loadNotifications(profile.user.id, displayLocale)
     : null;
 
-  const dateFormat = new Intl.DateTimeFormat(`${locale}-CH`, {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  const dateFormat = dateFormatter(locale);
 
   const levelChip = (entry: ProfileTicketEntry): string =>
     entry.region

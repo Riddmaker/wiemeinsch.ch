@@ -6,6 +6,7 @@ import { VoteButtons } from "@/components/tickets/VoteButtons";
 import type { AppLocale } from "@/i18n/routing";
 import type { StatementCategory } from "@/lib/validation/statement";
 import type { VoteChoice } from "@/lib/validation/vote";
+import { dateFormatter } from "@/lib/format";
 
 /**
  * Statement-Card (P9.2, Styleguide Art. 7): Kategorie erscheint doppelt —
@@ -52,11 +53,7 @@ export async function StatementCard({
   const tRoot = await getTranslations();
   const styles = CATEGORY_STYLES[statement.category];
 
-  const dateFormat = new Intl.DateTimeFormat(`${locale}-CH`, {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  const dateFormat = dateFormatter(locale);
 
   return (
     <article

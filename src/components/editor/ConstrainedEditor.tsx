@@ -153,20 +153,29 @@ export function ConstrainedEditor({
             style={{ width: `${ratio * 100}%` }}
           />
         </div>
+        {/* Unter dem Minimum nennt der Zähler die Grenze (Review
+            25.09.2026): Vorher sahen «zu kurz» und «in Ordnung» identisch
+            aus — besonders in der Übersetzungs-Preview, wo eine KI-Fassung
+            unter 200 Zeichen erst beim Publizieren als Fehler auffiel. */}
         <span
           data-testid="editor-counter"
+          data-under-min={underMin || undefined}
           className={
             overMax
               ? "whitespace-nowrap font-mono text-[11.5px] text-signal"
-              : underMin
-                ? "whitespace-nowrap font-mono text-[11.5px] text-meta"
-                : "whitespace-nowrap font-mono text-[11.5px] text-meta"
+              : "whitespace-nowrap font-mono text-[11.5px] text-meta"
           }
         >
-          {t("counter", {
-            count: chNumber.format(length),
-            max: chNumber.format(maxChars),
-          })}
+          {underMin
+            ? t("counterWithMin", {
+                count: chNumber.format(length),
+                max: chNumber.format(maxChars),
+                min: chNumber.format(minChars),
+              })
+            : t("counter", {
+                count: chNumber.format(length),
+                max: chNumber.format(maxChars),
+              })}
         </span>
       </div>
     </div>

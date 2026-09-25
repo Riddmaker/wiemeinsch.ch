@@ -182,7 +182,8 @@
     "bold": "Grassetto",
     "italic": "Corsivo",
     "bulletList": "Elenco puntato",
-    "counter": "{count} / {max} caratteri"
+    "counter": "{count} / {max} caratteri",
+    "counterWithMin": "{count} / {max} caratteri · almeno {min}"
   },
   "levels": {
     "FEDERAL": "Nazionale",
@@ -229,8 +230,10 @@
       "duplicates": "Gli hashtag non devono ripetersi",
       "canton_required": "Scegli un cantone",
       "municipality_required": "Scegli un comune",
-      "federal_no_region": "Per «Nazionale» non serve una regione"
-    }
+      "federal_no_region": "Per «Nazionale» non serve una regione",
+      "too_complex": "Il testo è troppo annidato o contiene troppi paragrafi vuoti."
+    },
+    "translationInvalid": "Una traduzione non rispetta i limiti di caratteri. Correggi i campi segnalati prima di pubblicare."
   },
   "linter": {
     "chip": "CIVIC-LINTER · {reason}",
@@ -304,8 +307,10 @@
       "invalid_input": "I dati sono incompleti o non validi. Controlla il modulo.",
       "ai_unavailable": "La verifica IA non è raggiungibile al momento. La bozza resta salvata — riprova più tardi.",
       "min_50": "Almeno 50 caratteri",
-      "max_500": "Massimo 500 caratteri"
-    }
+      "max_500": "Massimo 500 caratteri",
+      "too_complex": "Il testo è troppo annidato o contiene troppi paragrafi vuoti."
+    },
+    "translationInvalid": "Una traduzione non rispetta i limiti di caratteri. Correggi i campi segnalati prima di pubblicare."
   },
   "changeRequests": {
     "heading": "{count, plural, =0 {Richieste di modifica} one {# richiesta di modifica} other {# richieste di modifica}}",

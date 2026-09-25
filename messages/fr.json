@@ -182,7 +182,8 @@
     "bold": "Gras",
     "italic": "Italique",
     "bulletList": "Liste à puces",
-    "counter": "{count} / {max} caractères"
+    "counter": "{count} / {max} caractères",
+    "counterWithMin": "{count} / {max} caractères · au moins {min}"
   },
   "levels": {
     "FEDERAL": "National",
@@ -229,8 +230,10 @@
       "duplicates": "Les hashtags ne doivent pas se répéter",
       "canton_required": "Veuillez choisir un canton",
       "municipality_required": "Veuillez choisir une commune",
-      "federal_no_region": "Aucune région n'est nécessaire pour «National»"
-    }
+      "federal_no_region": "Aucune région n'est nécessaire pour «National»",
+      "too_complex": "Le texte est trop imbriqué ou contient trop de paragraphes vides."
+    },
+    "translationInvalid": "Une traduction ne respecte pas les limites de caractères. Veuillez corriger les champs signalés avant de publier."
   },
   "linter": {
     "chip": "CIVIC-LINTER · {reason}",
@@ -304,8 +307,10 @@
       "invalid_input": "Les données sont incomplètes ou invalides. Veuillez vérifier le formulaire.",
       "ai_unavailable": "La vérification par IA est momentanément indisponible. Votre brouillon est conservé — veuillez réessayer plus tard.",
       "min_50": "Au moins 50 caractères",
-      "max_500": "500 caractères au maximum"
-    }
+      "max_500": "500 caractères au maximum",
+      "too_complex": "Le texte est trop imbriqué ou contient trop de paragraphes vides."
+    },
+    "translationInvalid": "Une traduction ne respecte pas les limites de caractères. Veuillez corriger les champs signalés avant de publier."
   },
   "changeRequests": {
     "heading": "{count, plural, =0 {Demandes de modification} one {# demande de modification} other {# demandes de modification}}",

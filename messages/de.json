@@ -182,7 +182,8 @@
     "bold": "Fett",
     "italic": "Kursiv",
     "bulletList": "Aufzählung",
-    "counter": "{count} / {max} Zeichen"
+    "counter": "{count} / {max} Zeichen",
+    "counterWithMin": "{count} / {max} Zeichen · mindestens {min}"
   },
   "levels": {
     "FEDERAL": "Schweizweit",
@@ -229,8 +230,10 @@
       "duplicates": "Hashtags dürfen sich nicht wiederholen",
       "canton_required": "Bitte einen Kanton wählen",
       "municipality_required": "Bitte eine Gemeinde wählen",
-      "federal_no_region": "Bei «Schweizweit» ist keine Region nötig"
-    }
+      "federal_no_region": "Bei «Schweizweit» ist keine Region nötig",
+      "too_complex": "Der Text ist zu stark verschachtelt oder enthält zu viele leere Absätze."
+    },
+    "translationInvalid": "Eine Übersetzung hält die Zeichenlimiten nicht ein. Bitte korrigiere die markierten Felder, bevor du publizierst."
   },
   "linter": {
     "chip": "CIVIC-LINTER · {reason}",
@@ -304,8 +307,10 @@
       "invalid_input": "Die Eingaben sind unvollständig oder ungültig. Bitte prüfe das Formular.",
       "ai_unavailable": "Die KI-Prüfung ist im Moment nicht erreichbar. Dein Entwurf bleibt gespeichert — bitte versuche es später erneut.",
       "min_50": "Mindestens 50 Zeichen",
-      "max_500": "Maximal 500 Zeichen"
-    }
+      "max_500": "Maximal 500 Zeichen",
+      "too_complex": "Der Text ist zu stark verschachtelt oder enthält zu viele leere Absätze."
+    },
+    "translationInvalid": "Eine Übersetzung hält die Zeichenlimiten nicht ein. Bitte korrigiere die markierten Felder, bevor du publizierst."
   },
   "changeRequests": {
     "heading": "{count, plural, =0 {Änderungsanträge} one {# Änderungsantrag} other {# Änderungsanträge}}",
