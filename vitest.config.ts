@@ -23,6 +23,11 @@ export default defineConfig({
      * Der leere Schlüssel macht daraus einen lauten Fehler: Jeder ungemockte
      * Pfad zur AI scheitert sofort mit MistralConfigError.
      */
-    env: { MISTRAL_API_KEY: "" },
+    env: {
+      MISTRAL_API_KEY: "",
+      // Keine Wartezeit vor dem einen Mistral-Retry (services/mistral.ts) —
+      // die Pause gehört in den Betrieb, nicht in die Testlaufzeit.
+      MISTRAL_RETRY_DELAY_MS: "0",
+    },
   },
 });

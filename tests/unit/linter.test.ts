@@ -405,8 +405,12 @@ describe("lintText — Stufe 2 (strukturiertes LLM-Feedback)", () => {
     const systemMessage = request.messages.find((m) => m.role === "system")!;
     const userMessage = request.messages.find((m) => m.role === "user")!;
     expect(systemMessage.content).toContain("DATA to analyse");
-    expect(userMessage.content).toBe(
-      `BEGIN_USER_CONTENT\n${text}\nEND_USER_CONTENT`,
+    expect(userMessage.content).toEqual(
+      expect.stringMatching(
+        new RegExp(
+          `^BEGIN_USER_CONTENT_([0-9a-f-]{36})\\n${text}\\nEND_USER_CONTENT_\\1$`,
+        ),
+      ),
     );
     expect(request.responseFormat).toBeDefined();
     expect(request.temperature).toBe(0);
