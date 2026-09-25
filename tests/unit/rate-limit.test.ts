@@ -1,4 +1,4 @@
-import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "@/lib/prisma";
 import {
   checkClientIpRateLimit,
@@ -21,15 +21,24 @@ describe.skipIf(!process.env.DATABASE_URL)(
     });
 
     it("erlaubt bis zum Limit, blockt danach mit Retry-After", async () => {
-      const opts = { scope: "test", identifier, limit: 3, windowSeconds: 60 };
-      for (let i = 0; i < 3; i++) {
-        expect((await checkRateLimit(opts)).ok).toBe(true);
-      }
-      const blocked = await checkRateLimit(opts);
-      expect(blocked.ok).toBe(false);
-      if (!blocked.ok) {
-        expect(blocked.retryAfterSeconds).toBeGreaterThanOrEqual(1);
-        expect(blocked.retryAfterSeconds).toBeLessThanOrEqual(60);
+      // Uhr mitten im Fenster anhalten: Die Fenster sind an die volle Minute
+      // gebunden, und fielen die vier Aufrufe über eine Minutengrenze, zählte
+      // der vierte in einem neuen Fenster — der Test war so gelegentlich rot
+      // (25.09.2026 beobachtet). Nur `Date`, damit die DB-I/O weiterläuft.
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-09-25T12:00:30Z"));
+      try {
+        const opts = { scope: "test", identifier, limit: 3, windowSeconds: 60 };
+        for (let i = 0; i < 3; i++) {
+          expect((await checkRateLimit(opts)).ok).toBe(true);
+        }
+        const blocked = await checkRateLimit(opts);
+        expect(blocked.ok).toBe(false);
+        if (!blocked.ok) {
+          expect(blocked.retryAfterSeconds).toBe(30);
+        }
+      } finally {
+        vi.useRealTimers();
       }
     });
 

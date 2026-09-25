@@ -58,6 +58,8 @@ vi.mock("@/services/translation", () => ({
 }));
 
 const txMock = vi.hoisted(() => ({
+  // Zeilensperre (lib/db-locks.ts) — `SELECT … FOR UPDATE`.
+  $queryRaw: vi.fn(),
   ticket: { findUnique: vi.fn(), update: vi.fn() },
   statement: { create: vi.fn(), count: vi.fn() },
 }));

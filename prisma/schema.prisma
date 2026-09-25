@@ -376,6 +376,10 @@ model ChangeRequest {
   authorId String
 
   status         ChangeRequestStatus @default(OPEN)
+  // Moderation (Code-Review 25.09.2026): Anträge sind öffentlich und lassen
+  // sich melden; depubliziert verschwindet die Karte, die Zeile bleibt zur
+  // Nachvollziehbarkeit. Unabhängig vom Entscheid-Status oben.
+  contentStatus  ContentStatus       @default(PUBLISHED)
   originalLocale Locale
 
   // Wert von Ticket.contentRevision bei Antragstellung — Stale-Warnung beim Merge (P10.4).

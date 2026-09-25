@@ -4,6 +4,7 @@ import { Prisma } from "@/generated/prisma/client";
 import type { AppLocale } from "@/i18n/routing";
 import { routing } from "@/i18n/routing";
 import { storedHashtags, storedProposal } from "@/lib/change-requests";
+import { lockTicketRow } from "@/lib/db-locks";
 import { toAppLocale, toDbLocale } from "@/lib/locale";
 import { prisma } from "@/lib/prisma";
 import { checkAiBudget, checkRateLimit } from "@/lib/rate-limit";
@@ -23,6 +24,7 @@ import {
 } from "@/lib/validation/change-request";
 import {
   constrainedDocSchema,
+  isEmptyDoc,
   type ConstrainedDoc,
 } from "@/lib/validation/tiptap";
 import {
@@ -32,7 +34,7 @@ import {
 } from "@/services/content-flow";
 import { lintFields, type BlockedFields } from "@/services/content-pipeline";
 import { MistralUnavailableError } from "@/services/mistral";
-import { computeTicketScores } from "@/services/scoring";
+import { refreshTicketCounters } from "@/services/change-request-counters";
 
 /**
  * Political Pull Request (P10) — Änderungsanträge auf ein fremdes Ticket.
@@ -76,6 +78,7 @@ export type ChangeRequestActionErrorCode =
   | "not_requester"
   | "not_open"
   | "awaiting_revision"
+  | "revised"
   | "no_changes";
 
 export type PrepareChangeRequestResult =
@@ -114,9 +117,6 @@ export type SimpleChangeRequestResult =
 
 export type DeclineChangeRequestResult = SimpleChangeRequestResult;
 
-/** Status, die als konstruktive Arbeit in den Trending-Score zählen. */
-const COUNTED_STATUSES = [...ACTIVE_CHANGE_REQUEST_STATUSES, "MERGED"] as const;
-
 /**
  * Vorprüfung für Antragsteller: Ticket muss publiziert und fremd sein.
  *
@@ -145,7 +145,12 @@ async function checkSubmitPreconditions(
   if (changeRequestId !== undefined) {
     const own = await prisma.changeRequest.findUnique({
       where: { id: changeRequestId },
-      select: { ticketId: true, authorId: true, status: true },
+      select: {
+        ticketId: true,
+        authorId: true,
+        status: true,
+        contentStatus: true,
+      },
     });
     if (!own || own.ticketId !== ticketId) {
       return "invalid_input";
@@ -153,13 +158,17 @@ async function checkSubmitPreconditions(
     if (own.authorId !== userId) {
       return "not_requester";
     }
-    return isActive(own.status) ? null : "not_open";
+    // Ein depublizierter Antrag (Moderation) lässt sich nicht überarbeiten.
+    return isActive(own.status) && own.contentStatus !== "DEPUBLISHED"
+      ? null
+      : "not_open";
   }
   const open = await prisma.changeRequest.findFirst({
     where: {
       ticketId,
       authorId: userId,
       status: { in: [...ACTIVE_CHANGE_REQUEST_STATUSES] },
+      contentStatus: "PUBLISHED",
     },
     select: { id: true },
   });
@@ -168,6 +177,39 @@ async function checkSubmitPreconditions(
 
 function isActive(status: string): boolean {
   return (ACTIVE_CHANGE_REQUEST_STATUSES as readonly string[]).includes(status);
+}
+
+/** Revisionsstand aus dem Input → Wert für die DB-Bedingung. */
+function revisionValue(revisedAt: string | null): Date | null {
+  return revisedAt === null ? null : new Date(revisedAt);
+}
+
+/** Hat der Antragsteller seit dem angezeigten Stand überarbeitet? */
+function isRevisedSince(
+  stored: Date | null,
+  seenRevisedAt: string | null,
+): boolean {
+  return (
+    (stored?.getTime() ?? null) !==
+    (revisionValue(seenRevisedAt)?.getTime() ?? null)
+  );
+}
+
+/**
+ * Warum ein Claim nichts beansprucht hat: Ist der Antrag noch offen, wurde er
+ * in der Zwischenzeit überarbeitet (`revised`), sonst ist er entschieden.
+ */
+async function claimFailure(
+  client: Pick<Prisma.TransactionClient, "changeRequest">,
+  changeRequestId: string,
+): Promise<ChangeRequestActionErrorCode> {
+  const current = await client.changeRequest.findUnique({
+    where: { id: changeRequestId },
+    select: { status: true, contentStatus: true },
+  });
+  return current?.status === "OPEN" && current.contentStatus !== "DEPUBLISHED"
+    ? "revised"
+    : "not_open";
 }
 
 /**
@@ -311,7 +353,14 @@ async function proposalChangesAnything(
   }
   for (const field of ["problem", "solution", "funding"] as const) {
     const proposed = proposal[field];
-    if (proposed !== undefined && !sameDoc(proposed, current[field])) {
+    if (proposed === undefined) {
+      continue;
+    }
+    // Eine leere Finanzierung auf einem Ticket ohne Finanzierung ändert nichts.
+    if (field === "funding" && isEmptyDoc(proposed) && !current.funding) {
+      continue;
+    }
+    if (!sameDoc(proposed, current[field])) {
       return true;
     }
   }
@@ -331,38 +380,6 @@ async function proposalChangesAnything(
     }
   }
   return false;
-}
-
-/**
- * Zähler + Scores des Tickets neu denormalisieren (Faktor 3 in E). Wird nach
- * jedem PPR-Ereignis in derselben Transaktion aufgerufen.
- */
-async function refreshTicketCounters(
-  tx: Prisma.TransactionClient,
-  ticketId: string,
-): Promise<void> {
-  const ticket = await tx.ticket.findUnique({
-    where: { id: ticketId },
-    select: {
-      upvotes: true,
-      downvotes: true,
-      statementCount: true,
-      createdAt: true,
-    },
-  });
-  if (!ticket) {
-    return;
-  }
-  const changeRequestCount = await tx.changeRequest.count({
-    where: { ticketId, status: { in: [...COUNTED_STATUSES] } },
-  });
-  await tx.ticket.update({
-    where: { id: ticketId },
-    data: {
-      changeRequestCount,
-      ...computeTicketScores({ ...ticket, changeRequestCount }),
-    },
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -485,34 +502,36 @@ export async function submitChangeRequest(
     userId,
     revisionId,
   );
-  // Ein bereits offener Antrag mit identischem Text ist ein Doppel-Submit
+  // Ein bereits offener Antrag mit identischem Inhalt ist ein Doppel-Submit
   // (Doppelklick) — dann die bestehende Id zurückgeben statt zu meckern.
+  // Identisch heisst: ALLE Felder und die Hashtags. Vorher verglich die
+  // Prüfung nur Titel, Problem und Lösung; ein anderer zweiter Antrag (etwa
+  // aus einem alten Tab) meldete dann «ok» mit der alten Id, und der Client
+  // verwarf den neuen Text samt Entwurf (Code-Review 25.09.2026).
   if (blockedBy === "duplicate_open") {
-    // Doppelklick-Erkennung: gleicher offener Antrag mit identischer
-    // Original-Fassung. Verglichen wird über die Felder, die der Antrag
-    // überhaupt setzt.
-    const identical = await prisma.changeRequest.findFirst({
-      where: {
-        ticketId: data.ticketId,
-        authorId: userId,
-        status: "OPEN",
+    const open = await prisma.changeRequest.findFirst({
+      where: { ticketId: data.ticketId, authorId: userId, status: "OPEN" },
+      select: {
+        id: true,
+        originalLocale: true,
+        hashtags: true,
         translations: {
-          some: {
-            isOriginal: true,
-            title: data.title ?? null,
-            ...(data.problem !== undefined
-              ? { problem: { equals: data.problem as Prisma.InputJsonValue } }
-              : {}),
-            ...(data.solution !== undefined
-              ? { solution: { equals: data.solution as Prisma.InputJsonValue } }
-              : {}),
-          },
+          where: { isOriginal: true },
+          select: { title: true, problem: true, solution: true, funding: true },
         },
       },
-      select: { id: true },
     });
-    if (identical) {
-      return { ok: true, changeRequestId: identical.id };
+    const storedOriginal = open?.translations[0];
+    const storedTags = open ? storedHashtags(open.hashtags) : undefined;
+    if (
+      open &&
+      storedOriginal &&
+      toAppLocale(open.originalLocale) === data.locale &&
+      sameProposal(storedProposal(storedOriginal), toProposal(data)) &&
+      (storedTags === undefined) === (data.hashtags === undefined) &&
+      sameHashtags(storedTags ?? [], data.hashtags ?? [])
+    ) {
+      return { ok: true, changeRequestId: open.id };
     }
   }
   if (blockedBy) {
@@ -562,6 +581,8 @@ export async function submitChangeRequest(
   }
 
   const changeRequestId = await prisma.$transaction(async (tx) => {
+    // Sperre zuerst (Ticket vor Antrag, lib/db-locks.ts).
+    await lockTicketRow(tx, data.ticketId);
     // Innerhalb der Transaktion erneut prüfen: zwischen Linter und Commit
     // kann sich der Ticket-Status oder die Lösung geändert haben.
     const ticket = await tx.ticket.findUnique({
@@ -588,6 +609,7 @@ export async function submitChangeRequest(
           ticketId: data.ticketId,
           authorId: userId,
           status: { in: [...ACTIVE_CHANGE_REQUEST_STATUSES] },
+          contentStatus: "PUBLISHED",
         },
         data: {
           status: "OPEN",
@@ -621,6 +643,7 @@ export async function submitChangeRequest(
         ticketId: data.ticketId,
         authorId: userId,
         status: { in: [...ACTIVE_CHANGE_REQUEST_STATUSES] },
+        contentStatus: "PUBLISHED",
       },
     });
     if (openCount > 0) {
@@ -666,6 +689,8 @@ async function loadDecidableChangeRequest(
   changeRequestId: string,
   userId: string,
   allowed: readonly DecidableStatus[],
+  /** Gesehener Revisionsstand; `undefined` = Entscheid ohne Inhaltsbezug. */
+  seenRevisedAt?: string | null,
 ): Promise<
   | { ok: true; ticketId: string; authorId: string }
   | { ok: false; error: ChangeRequestActionErrorCode }
@@ -676,10 +701,16 @@ async function loadDecidableChangeRequest(
       status: true,
       authorId: true,
       ticketId: true,
+      revisedAt: true,
+      contentStatus: true,
       ticket: { select: { authorId: true, status: true } },
     },
   });
-  if (!changeRequest || changeRequest.ticket.status !== "PUBLISHED") {
+  if (
+    !changeRequest ||
+    changeRequest.ticket.status !== "PUBLISHED" ||
+    changeRequest.contentStatus === "DEPUBLISHED"
+  ) {
     return { ok: false, error: "invalid_input" };
   }
   if (changeRequest.ticket.authorId !== userId) {
@@ -694,6 +725,13 @@ async function loadDecidableChangeRequest(
           ? "awaiting_revision"
           : "not_open",
     };
+  }
+  if (
+    seenRevisedAt !== undefined &&
+    isRevisedSince(changeRequest.revisedAt ?? null, seenRevisedAt)
+  ) {
+    // Der Autor würde über eine Fassung entscheiden, die er nicht gesehen hat.
+    return { ok: false, error: "revised" };
   }
   return {
     ok: true,
@@ -749,11 +787,14 @@ async function loadStoredVersions(changeRequestId: string): Promise<{
 async function applyMerge(args: {
   changeRequestId: string;
   userId: string;
+  /** Revisionsstand, den der Autor gesehen hat — Teil des Claims. */
+  seenRevisedAt: string | null;
   versions: Record<AppLocale, ChangeRequestProposal>;
   hashtags: string[] | undefined;
   edited: boolean;
-}): Promise<boolean> {
-  const { changeRequestId, userId, versions, hashtags, edited } = args;
+}): Promise<ChangeRequestActionErrorCode | null> {
+  const { changeRequestId, userId, seenRevisedAt, versions, hashtags, edited } =
+    args;
 
   return prisma.$transaction(async (tx) => {
     const changeRequest = await tx.changeRequest.findUnique({
@@ -771,14 +812,25 @@ async function applyMerge(args: {
       changeRequest.ticket.status !== "PUBLISHED" ||
       changeRequest.ticket.authorId !== userId
     ) {
-      return false;
+      return "invalid_input";
     }
+    // Ticket vor Antrag sperren — dieselbe Reihenfolge wie beim Einreichen
+    // einer Überarbeitung, sonst könnten sich beide gegenseitig blockieren.
+    await lockTicketRow(tx, changeRequest.ticketId);
 
-    // Atomar beanspruchen, BEVOR das Ticket angefasst wird: Ein parallel
-    // eingereichte Überarbeitung (E15) oder ein zweiter Klick findet den
-    // Antrag danach nicht mehr offen vor.
+    // Atomar beanspruchen, BEVOR das Ticket angefasst wird — und nur, wenn
+    // der Antrag noch die Fassung trägt, die der Autor gesehen hat. Eine
+    // zwischenzeitliche Überarbeitung (E15) setzt `revisedAt` neu und lässt
+    // den Claim leer ausgehen; ein zweiter Klick findet den Antrag nicht mehr
+    // offen vor. Erst diese Bedingung macht das Lesen der Fassungen vor der
+    // Transaktion sicher: Ändern kann sie nur eine Überarbeitung.
     const claimed = await tx.changeRequest.updateMany({
-      where: { id: changeRequestId, status: "OPEN" },
+      where: {
+        id: changeRequestId,
+        status: "OPEN",
+        contentStatus: "PUBLISHED",
+        revisedAt: revisionValue(seenRevisedAt),
+      },
       data: {
         status: "MERGED",
         decidedAt: new Date(),
@@ -789,7 +841,7 @@ async function applyMerge(args: {
       },
     });
     if (claimed.count === 0) {
-      return false;
+      return claimFailure(tx, changeRequestId);
     }
 
     // Nur die Felder ersetzen, die der Antrag tatsächlich vorschlägt (E12) —
@@ -799,6 +851,13 @@ async function applyMerge(args: {
         proposalRow(versions[locale]);
       if (Object.keys(patch).length === 0) {
         continue;
+      }
+      // Ein leeres Finanzierungsfeld im Antrag heisst «Finanzierung
+      // entfernen». Am Antrag bleibt das leere Dokument als Markierung stehen
+      // (NULL hiesse dort «unverändert»); am Ticket wird daraus NULL wie beim
+      // Erstellen — sonst zeigte die Seite eine leere Überschrift.
+      if (versions[locale].funding && isEmptyDoc(versions[locale].funding)) {
+        patch.funding = Prisma.DbNull;
       }
       await tx.ticketTranslation.updateMany({
         where: { ticketId: changeRequest.ticketId, locale: toDbLocale(locale) },
@@ -857,7 +916,7 @@ async function applyMerge(args: {
     });
 
     await refreshTicketCounters(tx, changeRequest.ticketId);
-    return true;
+    return null;
   });
 }
 
@@ -887,11 +946,14 @@ export async function mergeChangeRequest(
   if (!parsed.success) {
     return { ok: false, error: "invalid_input" };
   }
-  const { changeRequestId } = parsed.data;
+  const { changeRequestId, revisedAt } = parsed.data;
 
-  const guard = await loadDecidableChangeRequest(changeRequestId, userId, [
-    "OPEN",
-  ]);
+  const guard = await loadDecidableChangeRequest(
+    changeRequestId,
+    userId,
+    ["OPEN"],
+    revisedAt,
+  );
   if (!guard.ok) {
     return guard;
   }
@@ -901,14 +963,15 @@ export async function mergeChangeRequest(
     return { ok: false, error: "invalid_input" };
   }
 
-  const merged = await applyMerge({
+  const failure = await applyMerge({
     changeRequestId,
     userId,
+    seenRevisedAt: revisedAt,
     versions: stored.versions,
     hashtags: stored.hashtags,
     edited: false,
   });
-  return merged ? { ok: true } : { ok: false, error: "invalid_input" };
+  return failure ? { ok: false, error: failure } : { ok: true };
 }
 
 /**
@@ -959,9 +1022,12 @@ export async function prepareAdjustedMerge(
   }
   const data = parsed.data;
 
-  const guard = await loadDecidableChangeRequest(data.changeRequestId, userId, [
-    "OPEN",
-  ]);
+  const guard = await loadDecidableChangeRequest(
+    data.changeRequestId,
+    userId,
+    ["OPEN"],
+    data.revisedAt,
+  );
   if (!guard.ok) {
     return guard;
   }
@@ -1042,9 +1108,12 @@ export async function mergeAdjustedChangeRequest(
   }
   const data = parsed.data;
 
-  const guard = await loadDecidableChangeRequest(data.changeRequestId, userId, [
-    "OPEN",
-  ]);
+  const guard = await loadDecidableChangeRequest(
+    data.changeRequestId,
+    userId,
+    ["OPEN"],
+    data.revisedAt,
+  );
   if (!guard.ok) {
     return guard;
   }
@@ -1096,14 +1165,15 @@ export async function mergeAdjustedChangeRequest(
     (data.hashtags !== undefined &&
       !sameHashtags(data.hashtags, stored.hashtags ?? []));
 
-  const merged = await applyMerge({
+  const failure = await applyMerge({
     changeRequestId: data.changeRequestId,
     userId,
+    seenRevisedAt: data.revisedAt,
     versions,
     hashtags: data.hashtags,
     edited,
   });
-  return merged ? { ok: true } : { ok: false, error: "invalid_input" };
+  return failure ? { ok: false, error: failure } : { ok: true };
 }
 
 /** Zur Überarbeitung zurückgeben (E15) — Grund aus dem festen Katalog. */
@@ -1134,22 +1204,36 @@ export async function returnChangeRequest(
     parsed.data.changeRequestId,
     userId,
     ["OPEN"],
+    parsed.data.revisedAt,
   );
   if (!guard.ok) {
     return guard;
   }
 
   // Kein Zähler-Refresh: Ein Antrag in Überarbeitung zählt weiter wie ein
-  // offener (er ist weiterhin konstruktive Arbeit am Ticket).
+  // offener (er ist weiterhin konstruktive Arbeit am Ticket). Der Grund
+  // bezieht sich auf die gesehene Fassung — deshalb derselbe Revisions-Claim
+  // wie beim Übernehmen.
   const updated = await prisma.changeRequest.updateMany({
-    where: { id: parsed.data.changeRequestId, status: "OPEN" },
+    where: {
+      id: parsed.data.changeRequestId,
+      status: "OPEN",
+      contentStatus: "PUBLISHED",
+      revisedAt: revisionValue(parsed.data.revisedAt),
+    },
     data: {
       status: "CHANGES_REQUESTED",
       returnReason: parsed.data.reason,
       returnedAt: new Date(),
     },
   });
-  return updated.count === 0 ? { ok: false, error: "not_open" } : { ok: true };
+  if (updated.count === 0) {
+    return {
+      ok: false,
+      error: await claimFailure(prisma, parsed.data.changeRequestId),
+    };
+  }
+  return { ok: true };
 }
 
 export async function declineChangeRequest(
@@ -1187,10 +1271,12 @@ export async function declineChangeRequest(
   }
 
   const declined = await prisma.$transaction(async (tx) => {
+    await lockTicketRow(tx, guard.ticketId);
     const updated = await tx.changeRequest.updateMany({
       where: {
         id: parsed.data.changeRequestId,
         status: { in: [...ACTIVE_CHANGE_REQUEST_STATUSES] },
+        contentStatus: "PUBLISHED",
       },
       data: { status: "DECLINED", decidedAt: new Date() },
     });
@@ -1239,9 +1325,14 @@ export async function withdrawChangeRequest(
 
   const changeRequest = await prisma.changeRequest.findUnique({
     where: { id: changeRequestId },
-    select: { authorId: true, status: true, ticketId: true },
+    select: {
+      authorId: true,
+      status: true,
+      ticketId: true,
+      contentStatus: true,
+    },
   });
-  if (!changeRequest) {
+  if (!changeRequest || changeRequest.contentStatus === "DEPUBLISHED") {
     return { ok: false, error: "invalid_input" };
   }
   if (changeRequest.authorId !== userId) {
@@ -1253,11 +1344,13 @@ export async function withdrawChangeRequest(
   }
 
   const withdrawn = await prisma.$transaction(async (tx) => {
+    await lockTicketRow(tx, changeRequest.ticketId);
     const updated = await tx.changeRequest.updateMany({
       where: {
         id: changeRequestId,
         authorId: userId,
         status: { in: [...ACTIVE_CHANGE_REQUEST_STATUSES] },
+        contentStatus: "PUBLISHED",
       },
       data: { status: "WITHDRAWN", decidedAt: new Date() },
     });

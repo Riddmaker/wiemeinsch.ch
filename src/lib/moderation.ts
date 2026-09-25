@@ -34,7 +34,7 @@ export type CaseSummary = {
   reporterHandle: string | null;
   /** Kurzbezeichnung des betroffenen Inhalts (Titel bzw. Textanfang). */
   headline: string;
-  targetKind: "ticket" | "statement" | "draft";
+  targetKind: "ticket" | "statement" | "changeRequest" | "draft";
   /** Nur gesetzt, wenn der Inhalt publiziert existiert (verlinkbar). */
   ticketId: string | null;
   contentStatus: "PUBLISHED" | "DEPUBLISHED" | null;
@@ -59,6 +59,17 @@ export type ReportedStatement = {
   status: "PUBLISHED" | "DEPUBLISHED";
 };
 
+/** Gemeldeter Änderungsantrag (Review 25.09.2026): nur seine Felder. */
+export type ReportedChangeRequest = {
+  kind: "changeRequest";
+  id: string;
+  ticketId: string;
+  title: string | null;
+  docs: { label: string; doc: unknown }[];
+  hashtags: string[];
+  status: "PUBLISHED" | "DEPUBLISHED";
+};
+
 export type AppealedDraft = {
   kind: "draft";
   draftKind: "ticket" | "statement";
@@ -71,7 +82,12 @@ export type AppealedDraft = {
 };
 
 export type CaseDetail = CaseSummary & {
-  target: ReportedTicket | ReportedStatement | AppealedDraft | null;
+  target:
+    | ReportedTicket
+    | ReportedStatement
+    | ReportedChangeRequest
+    | AppealedDraft
+    | null;
 };
 
 const TITLE_FALLBACK = "—";
@@ -136,6 +152,24 @@ const caseSelect = {
       },
     },
   },
+  changeRequest: {
+    select: {
+      id: true,
+      contentStatus: true,
+      ticketId: true,
+      hashtags: true,
+      translations: {
+        select: {
+          locale: true,
+          isOriginal: true,
+          title: true,
+          problem: true,
+          solution: true,
+          funding: true,
+        },
+      },
+    },
+  },
 } as const;
 
 type CaseRow = {
@@ -168,7 +202,35 @@ type CaseRow = {
       isOriginal: boolean;
     }[];
   } | null;
+  changeRequest: {
+    id: string;
+    contentStatus: "PUBLISHED" | "DEPUBLISHED";
+    ticketId: string;
+    hashtags: unknown;
+    translations: {
+      locale: "DE" | "FR" | "IT";
+      isOriginal: boolean;
+      title: string | null;
+      problem: unknown;
+      solution: unknown;
+      funding: unknown;
+    }[];
+  } | null;
 };
+
+/** Felder eines Antrags in der Lese-Sprache — nur die, die er ändert. */
+function changeRequestFields(
+  row: NonNullable<CaseRow["changeRequest"]>,
+  displayLocale: AppLocale,
+): { title: string | null; docs: { label: string; doc: unknown }[] } {
+  const version = pickTranslation(row.translations, displayLocale);
+  const docs = (["problem", "solution", "funding"] as const)
+    .filter(
+      (field) => version?.[field] !== null && version?.[field] !== undefined,
+    )
+    .map((field) => ({ label: field, doc: version?.[field] }));
+  return { title: version?.title ?? null, docs };
+}
 
 function toSummary(row: CaseRow, displayLocale: AppLocale): CaseSummary {
   const { decision, note } = parseResolutionNote(row.resolutionNote);
@@ -188,6 +250,13 @@ function toSummary(row: CaseRow, displayLocale: AppLocale): CaseSummary {
       firstText(
         pickTranslation(row.statement.translations, displayLocale)?.content,
       ),
+    );
+  } else if (row.type === "REPORT" && row.changeRequest) {
+    targetKind = "changeRequest";
+    contentStatus = row.changeRequest.contentStatus;
+    const fields = changeRequestFields(row.changeRequest, displayLocale);
+    headline = shorten(
+      fields.title ?? firstText(fields.docs[0]?.doc) ?? TITLE_FALLBACK,
     );
   } else if (row.type === "REPORT" && row.ticket) {
     targetKind = "ticket";
@@ -217,7 +286,11 @@ function toSummary(row: CaseRow, displayLocale: AppLocale): CaseSummary {
     reporterHandle: row.reporter.handle,
     headline: headline || TITLE_FALLBACK,
     targetKind,
-    ticketId: row.ticket?.id ?? row.statement?.ticketId ?? null,
+    ticketId:
+      row.ticket?.id ??
+      row.statement?.ticketId ??
+      row.changeRequest?.ticketId ??
+      null,
     contentStatus,
   };
 }
@@ -269,6 +342,27 @@ export async function loadModerationCase(
         doc: pickTranslation(row.statement.translations, displayLocale)
           ?.content,
         status: row.statement.status,
+      },
+    };
+  }
+
+  if (row.type === "REPORT" && row.changeRequest) {
+    const fields = changeRequestFields(row.changeRequest, displayLocale);
+    const hashtags = Array.isArray(row.changeRequest.hashtags)
+      ? row.changeRequest.hashtags.filter(
+          (tag): tag is string => typeof tag === "string",
+        )
+      : [];
+    return {
+      ...summary,
+      target: {
+        kind: "changeRequest",
+        id: row.changeRequest.id,
+        ticketId: row.changeRequest.ticketId,
+        title: fields.title,
+        docs: fields.docs,
+        hashtags,
+        status: row.changeRequest.contentStatus,
       },
     };
   }

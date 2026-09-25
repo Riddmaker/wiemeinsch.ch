@@ -20,10 +20,15 @@ import { routing, type AppLocale } from "@/i18n/routing";
 import {
   CHANGE_REQUEST_RETURN_REASONS,
   CHANGE_REQUEST_TEXT_FIELDS,
+  changeRequestProposalSchema,
   type ChangeRequestProposal,
   type ChangeRequestReturnReason,
   type ChangeRequestTextField,
 } from "@/lib/validation/change-request";
+import {
+  hasTranslationIssues,
+  translationIssues,
+} from "@/lib/validation/translation-check";
 import type { ConstrainedDoc } from "@/lib/validation/tiptap";
 
 /**
@@ -70,6 +75,7 @@ export function ChangeRequestDecision({
   changedFields,
   proposedHashtags,
   isStale,
+  revisedAt,
 }: {
   changeRequestId: string;
   /** Nur laufende Anträge haben einen Entscheid (E15). */
@@ -85,6 +91,12 @@ export function ChangeRequestDecision({
   proposedHashtags?: string[];
   /** true, wenn der Ticket-Inhalt seit Antragstellung geändert wurde (P10.4). */
   isStale: boolean;
+  /**
+   * Revisionsstand der angezeigten Fassung (ISO, `null` = nie überarbeitet).
+   * Jeder Entscheid über den Inhalt schickt ihn mit; hat der Antragsteller
+   * inzwischen überarbeitet, lehnt der Server mit `revised` ab.
+   */
+  revisedAt: string | null;
 }) {
   const t = useTranslations("changeRequests");
   const tRoot = useTranslations();
@@ -122,11 +134,18 @@ export function ChangeRequestDecision({
   const [translationFindings, setTranslationFindings] = useState<
     Partial<Record<AppLocale, ChangeRequestLinterFields>>
   >({});
+  const [translationErrors, setTranslationErrors] = useState<
+    Partial<Record<AppLocale, Partial<Record<ChangeRequestTextField, string>>>>
+  >({});
 
   const handle = requesterHandle ?? "";
 
   const errorText = (code: string): string =>
-    t.has(`errors.${code}`) ? t(`errors.${code}`) : t("errors.invalid_input");
+    code === "translationInvalid"
+      ? t("translationInvalid")
+      : t.has(`errors.${code}`)
+        ? t(`errors.${code}`)
+        : t("errors.invalid_input");
 
   const clearAdjustDrafts = () => {
     setEdits({});
@@ -151,6 +170,12 @@ export function ChangeRequestDecision({
       if (!result.ok) {
         if (result.error && result.error !== "linter") {
           setErrorCode(result.error);
+        }
+        if (result.error === "revised") {
+          // Neue Fassung holen; die Meldung bleibt stehen und erklärt, warum
+          // sich der Text unter dem Knopf gerade geändert hat.
+          setMode("idle");
+          router.refresh();
         }
         return false;
       }
@@ -182,6 +207,7 @@ export function ChangeRequestDecision({
 
   const adjustInput = () => ({
     changeRequestId,
+    revisedAt,
     locale: contentLocale,
     ...adjustedVersion(),
     ...(hashtags !== undefined ? { hashtags } : {}),
@@ -200,6 +226,10 @@ export function ChangeRequestDecision({
           setFindings(result.fields);
         } else {
           setErrorCode(result.error);
+          if (result.error === "revised") {
+            setMode("idle");
+            router.refresh();
+          }
         }
         return;
       }
@@ -219,6 +249,16 @@ export function ChangeRequestDecision({
   };
 
   const handleMergeAdjusted = async () => {
+    // Zeichenlimiten der neu übersetzten Fassungen vorher prüfen.
+    const issues = translationIssues<ChangeRequestTextField>(
+      changeRequestProposalSchema,
+      translations,
+    );
+    setTranslationErrors(issues);
+    if (hasTranslationIssues(issues)) {
+      setErrorCode("translationInvalid");
+      return;
+    }
     // `.then` statt `await`: Der Aufruf läuft über `run` → `callAction`, und
     // der Wächter in tests/unit/call-action.test.ts verbietet ein direktes
     // `await` auf eine Action in Komponenten.
@@ -371,7 +411,9 @@ export function ChangeRequestDecision({
             type="button"
             data-testid="change-request-merge"
             onClick={() =>
-              void run("merge", () => mergeChangeRequest({ changeRequestId }))
+              void run("merge", () =>
+                mergeChangeRequest({ changeRequestId, revisedAt }),
+              )
             }
             disabled={busy !== null}
             className={BUTTON_PRIMARY}
@@ -417,7 +459,7 @@ export function ChangeRequestDecision({
             onClick={() =>
               reason &&
               void run("return", () =>
-                returnChangeRequest({ changeRequestId, reason }),
+                returnChangeRequest({ changeRequestId, revisedAt, reason }),
               )
             }
             disabled={busy !== null || reason === null}
@@ -524,8 +566,17 @@ export function ChangeRequestDecision({
                   delete nextFindings[target];
                   return nextFindings;
                 });
+                setTranslationErrors((prev) => {
+                  if (!prev[target]?.[field]) {
+                    return prev;
+                  }
+                  const nextFields = { ...prev[target] };
+                  delete nextFields[field];
+                  return { ...prev, [target]: nextFields };
+                });
               }}
               findings={translationFindings[target] ?? {}}
+              fieldErrors={translationErrors[target] ?? {}}
               draftKey={(field) =>
                 adjustDraftKey(changeRequestId, field, target, round)
               }

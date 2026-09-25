@@ -59,6 +59,8 @@ vi.mock("@/services/translation", () => ({
 }));
 
 const txMock = vi.hoisted(() => ({
+  // Zeilensperre (lib/db-locks.ts) — `SELECT … FOR UPDATE`.
+  $queryRaw: vi.fn(),
   ticket: { findUnique: vi.fn(), update: vi.fn() },
   ticketTranslation: { updateMany: vi.fn() },
   changeRequest: {
@@ -96,6 +98,7 @@ import {
   submitChangeRequest,
   withdrawChangeRequest,
 } from "@/actions/change-requests";
+import { Prisma } from "@/generated/prisma/client";
 import { UnauthorizedError } from "@/lib/require-user";
 import { plainText, type ConstrainedDoc } from "@/lib/validation/tiptap";
 import { MistralUnavailableError } from "@/services/mistral";
@@ -143,8 +146,9 @@ const submitInput = {
   translations: { fr: { solution: doc(400) }, it: { solution: doc(400) } },
 };
 
-// E15: «Übernehmen» schickt nur die Id — der Text kommt aus der DB.
-const mergeInput = { changeRequestId: "cr-1" };
+// E15: «Übernehmen» schickt nur die Id — der Text kommt aus der DB. Seit
+// dem Review 25.09.2026 dazu der gesehene Revisionsstand (nie überarbeitet).
+const mergeInput = { changeRequestId: "cr-1", revisedAt: null };
 
 type StoredVersion = {
   title?: string;
@@ -174,6 +178,30 @@ function storedRow(
 }
 
 const STORED_SOLUTION = storedRow(() => ({ solution: doc(400) }));
+
+/** Gespeicherter offener Antrag, wie ihn die Doppelklick-Prüfung liest. */
+function openRowLike(input: {
+  locale: "de" | "fr" | "it";
+  title?: string;
+  problem?: ConstrainedDoc;
+  solution?: ConstrainedDoc;
+  funding?: ConstrainedDoc;
+  hashtags?: string[];
+}) {
+  return {
+    id: "cr-1",
+    originalLocale: input.locale.toUpperCase(),
+    hashtags: input.hashtags ?? null,
+    translations: [
+      {
+        title: input.title ?? null,
+        problem: input.problem ?? null,
+        solution: input.solution ?? null,
+        funding: input.funding ?? null,
+      },
+    ],
+  };
+}
 
 /** Antrag auf einem fremden Ticket, offen, Autor des Tickets ist user-2. */
 const openChangeRequest = {
@@ -453,6 +481,7 @@ describe("submitChangeRequest (P10.1/10.4/10.5)", () => {
       where: {
         ticketId: "ticket-1",
         status: { in: ["OPEN", "CHANGES_REQUESTED", "MERGED"] },
+        contentStatus: "PUBLISHED",
       },
     });
 
@@ -476,8 +505,8 @@ describe("submitChangeRequest (P10.1/10.4/10.5)", () => {
     prismaMock.changeRequest.findFirst
       // Guard-Abfrage: es existiert bereits ein offener Antrag …
       .mockResolvedValueOnce({ id: "cr-1" })
-      // … mit exakt demselben Originaltext ⇒ Doppelklick.
-      .mockResolvedValueOnce({ id: "cr-1" });
+      // … mit exakt demselben Original in allen Feldern ⇒ Doppelklick.
+      .mockResolvedValueOnce(openRowLike(submitInput));
     expect(await submitChangeRequest(submitInput)).toEqual({
       ok: true,
       changeRequestId: "cr-1",
@@ -595,7 +624,12 @@ describe("mergeChangeRequest (P10.3, E15: 1:1) — nur der Original-Autor", () =
 
     // Atomar beansprucht, als 1:1-Übernahme markiert, keine merged*-Spalten.
     expect(txMock.changeRequest.updateMany).toHaveBeenCalledWith({
-      where: { id: "cr-1", status: "OPEN" },
+      where: {
+        id: "cr-1",
+        status: "OPEN",
+        contentStatus: "PUBLISHED",
+        revisedAt: null,
+      },
       data: expect.objectContaining({
         status: "MERGED",
         mergedWithEdits: false,
@@ -618,11 +652,13 @@ describe("mergeChangeRequest (P10.3, E15: 1:1) — nur der Original-Autor", () =
     expect(txMock.ticketTranslation.updateMany).not.toHaveBeenCalled();
   });
 
-  it("Wettlauf: Antrag wird zwischen Prüfung und Claim ersetzt ⇒ kein Schreibzugriff aufs Ticket", async () => {
+  it("Wettlauf: Antrag wird zwischen Prüfung und Claim ersetzt ⇒ revised, kein Schreibzugriff aufs Ticket", async () => {
+    // Der Claim verlangt den gesehenen Revisionsstand; eine Überarbeitung
+    // dazwischen lässt ihn leer ausgehen, der Antrag ist aber noch offen.
     txMock.changeRequest.updateMany.mockResolvedValue({ count: 0 });
     expect(await mergeChangeRequest(mergeInput)).toEqual({
       ok: false,
-      error: "invalid_input",
+      error: "revised",
     });
     expect(txMock.ticketTranslation.updateMany).not.toHaveBeenCalled();
     expect(txMock.ticket.update).not.toHaveBeenCalled();
@@ -670,6 +706,7 @@ describe("declineChangeRequest (P10.3)", () => {
         where: {
           id: "cr-1",
           status: { in: ["OPEN", "CHANGES_REQUESTED"] },
+          contentStatus: "PUBLISHED",
         },
         data: expect.objectContaining({ status: "DECLINED" }),
       }),
@@ -808,6 +845,7 @@ describe("Änderungsanträge über alle Felder (E12)", () => {
 describe("Anpassen & übernehmen (E15)", () => {
   const adjusted = {
     changeRequestId: "cr-1",
+    revisedAt: null,
     locale: "de" as const,
     solution: doc(450),
   };
@@ -866,7 +904,12 @@ describe("Anpassen & übernehmen (E15)", () => {
     expect(lintFieldsMock).toHaveBeenCalledTimes(3);
 
     expect(txMock.changeRequest.updateMany).toHaveBeenCalledWith({
-      where: { id: "cr-1", status: "OPEN" },
+      where: {
+        id: "cr-1",
+        status: "OPEN",
+        contentStatus: "PUBLISHED",
+        revisedAt: null,
+      },
       data: expect.objectContaining({
         status: "MERGED",
         mergedWithEdits: true,
@@ -973,11 +1016,17 @@ describe("Zur Überarbeitung zurückgeben (E15)", () => {
     expect(
       await returnChangeRequest({
         changeRequestId: "cr-1",
+        revisedAt: null,
         reason: "FINANZIERUNG_UNKLAR",
       }),
     ).toEqual({ ok: true });
     expect(prismaMock.changeRequest.updateMany).toHaveBeenCalledWith({
-      where: { id: "cr-1", status: "OPEN" },
+      where: {
+        id: "cr-1",
+        status: "OPEN",
+        contentStatus: "PUBLISHED",
+        revisedAt: null,
+      },
       data: {
         status: "CHANGES_REQUESTED",
         returnReason: "FINANZIERUNG_UNKLAR",
@@ -990,6 +1039,7 @@ describe("Zur Überarbeitung zurückgeben (E15)", () => {
     expect(
       await returnChangeRequest({
         changeRequestId: "cr-1",
+        revisedAt: null,
         reason: "Das ist Unsinn, du Idiot",
       }),
     ).toEqual({ ok: false, error: "invalid_input" });
@@ -1001,6 +1051,7 @@ describe("Zur Überarbeitung zurückgeben (E15)", () => {
     expect(
       await returnChangeRequest({
         changeRequestId: "cr-1",
+        revisedAt: null,
         reason: "ZU_UMFANGREICH",
       }),
     ).toEqual({ ok: false, error: "not_author" });
@@ -1012,6 +1063,7 @@ describe("Zur Überarbeitung zurückgeben (E15)", () => {
     expect(
       await returnChangeRequest({
         changeRequestId: "cr-1",
+        revisedAt: null,
         reason: "ZU_UMFANGREICH",
       }),
     ).toEqual({ ok: false, error: "awaiting_revision" });
@@ -1058,6 +1110,7 @@ describe("Antragsteller: überarbeiten und zurückziehen (E15)", () => {
         ticketId: "ticket-1",
         authorId: "user-1",
         status: { in: ["OPEN", "CHANGES_REQUESTED"] },
+        contentStatus: "PUBLISHED",
       },
       data: expect.objectContaining({
         status: "OPEN",
@@ -1119,6 +1172,7 @@ describe("Antragsteller: überarbeiten und zurückziehen (E15)", () => {
         id: "cr-1",
         authorId: "user-1",
         status: { in: ["OPEN", "CHANGES_REQUESTED"] },
+        contentStatus: "PUBLISHED",
       },
       data: { status: "WITHDRAWN", decidedAt: expect.any(Date) },
     });
@@ -1163,5 +1217,162 @@ describe("Antragsteller: überarbeiten und zurückziehen (E15)", () => {
       }
     ).where;
     expect(where.status).toEqual({ in: ["OPEN", "CHANGES_REQUESTED"] });
+  });
+});
+
+/**
+ * Code-Review 25.09.2026: Jeder Entscheid über den Inhalt ist an die Fassung
+ * gebunden, die der Autor gesehen hat. Vorher übernahm «Übernehmen» den Text,
+ * der im Moment des Klicks gespeichert war — auch einen, den der Antragsteller
+ * erst nach dem Laden der Seite eingesetzt hatte.
+ */
+describe("Revisionsbindung der Entscheide (Review 25.09.2026)", () => {
+  const REVISED = new Date("2026-09-25T08:00:00.000Z");
+
+  function revisedAfterPageLoad(): void {
+    const guard = {
+      ...openChangeRequest,
+      authorId: "user-2",
+      revisedAt: REVISED,
+      ticket: { authorId: "user-1", status: "PUBLISHED" },
+    };
+    prismaMock.changeRequest.findUnique.mockImplementation(
+      async (args: { select?: { translations?: unknown } }) =>
+        args.select?.translations ? STORED_SOLUTION : guard,
+    );
+    txMock.changeRequest.findUnique.mockResolvedValue(guard);
+  }
+
+  it("Übernehmen einer inzwischen überarbeiteten Fassung: revised, keine Mutation", async () => {
+    revisedAfterPageLoad();
+    expect(await mergeChangeRequest(mergeInput)).toEqual({
+      ok: false,
+      error: "revised",
+    });
+    expect(prismaMock.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("mit dem gesehenen Stand geht der Merge durch — und der Claim verlangt ihn", async () => {
+    revisedAfterPageLoad();
+    expect(
+      await mergeChangeRequest({
+        changeRequestId: "cr-1",
+        revisedAt: REVISED.toISOString(),
+      }),
+    ).toEqual({ ok: true });
+    expect(txMock.changeRequest.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          id: "cr-1",
+          status: "OPEN",
+          contentStatus: "PUBLISHED",
+          revisedAt: REVISED,
+        },
+      }),
+    );
+  });
+
+  it("Anpassen vorbereiten auf überarbeitetem Antrag: revised, kein AI-Aufruf", async () => {
+    revisedAfterPageLoad();
+    expect(
+      await prepareAdjustedMerge({
+        changeRequestId: "cr-1",
+        revisedAt: null,
+        locale: "de",
+        solution: doc(450),
+      }),
+    ).toEqual({ ok: false, error: "revised" });
+    expect(lintFieldsMock).not.toHaveBeenCalled();
+    expect(translateTextMock).not.toHaveBeenCalled();
+  });
+
+  it("Zurückgeben bezieht sich auf die gesehene Fassung: revised", async () => {
+    revisedAfterPageLoad();
+    expect(
+      await returnChangeRequest({
+        changeRequestId: "cr-1",
+        revisedAt: null,
+        reason: "ZU_WENIG_KONKRET",
+      }),
+    ).toEqual({ ok: false, error: "revised" });
+    expect(prismaMock.changeRequest.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("ohne Revisionsstand weist das Schema den Entscheid ab", async () => {
+    asTicketAuthor();
+    expect(await mergeChangeRequest({ changeRequestId: "cr-1" })).toEqual({
+      ok: false,
+      error: "invalid_input",
+    });
+  });
+});
+
+describe("Doppelklick-Erkennung vergleicht alle Felder (Review 25.09.2026)", () => {
+  it("offener Antrag mit gleicher Lösung, aber anderer Finanzierung: duplicate_open", async () => {
+    prismaMock.changeRequest.findFirst
+      .mockResolvedValueOnce({ id: "cr-1" })
+      .mockResolvedValueOnce(openRowLike({ ...submitInput, funding: doc(50) }));
+    expect(await submitChangeRequest(submitInput)).toEqual({
+      ok: false,
+      error: "duplicate_open",
+    });
+  });
+
+  it("offener Antrag mit anderen Hashtags: duplicate_open", async () => {
+    prismaMock.changeRequest.findFirst
+      .mockResolvedValueOnce({ id: "cr-1" })
+      .mockResolvedValueOnce(
+        openRowLike({ ...submitInput, hashtags: ["velo"] }),
+      );
+    expect(await submitChangeRequest(submitInput)).toEqual({
+      ok: false,
+      error: "duplicate_open",
+    });
+  });
+});
+
+describe("Finanzierung entfernen (Review 25.09.2026)", () => {
+  const emptyDoc: ConstrainedDoc = {
+    type: "doc",
+    content: [{ type: "paragraph" }],
+  };
+
+  it("leere Finanzierung wird ohne LLM-Aufruf in die anderen Sprachen übernommen", async () => {
+    prismaMock.ticketTranslation.findUnique.mockResolvedValue({
+      ...CURRENT_VERSION,
+      funding: doc(100),
+    });
+    const result = await prepareChangeRequest({
+      locale: "de",
+      ticketId: "ticket-1",
+      funding: emptyDoc,
+    });
+    expect(result).toEqual({
+      ok: true,
+      translations: { fr: { funding: emptyDoc }, it: { funding: emptyDoc } },
+    });
+    expect(translateTextMock).not.toHaveBeenCalled();
+  });
+
+  it("leere Finanzierung auf einem Ticket ohne Finanzierung ändert nichts", async () => {
+    expect(
+      await prepareChangeRequest({
+        locale: "de",
+        ticketId: "ticket-1",
+        funding: emptyDoc,
+      }),
+    ).toEqual({ ok: false, error: "no_changes" });
+  });
+
+  it("Merge setzt die Finanzierung am Ticket auf NULL statt auf ein leeres Dokument", async () => {
+    asTicketAuthor(storedRow(() => ({ funding: emptyDoc })));
+    expect(await mergeChangeRequest(mergeInput)).toEqual({ ok: true });
+    const patches = txMock.ticketTranslation.updateMany.mock.calls.map(
+      (call) => (call[0] as { data: { funding?: unknown } }).data.funding,
+    );
+    expect(patches).toHaveLength(3);
+    for (const funding of patches) {
+      expect(funding).toBe(Prisma.DbNull);
+    }
   });
 });

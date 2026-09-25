@@ -115,6 +115,7 @@ describe("hasUnreadNotifications", () => {
     expect(requester).toEqual({
       authorId: "user-1",
       status: "CHANGES_REQUESTED",
+      contentStatus: "PUBLISHED",
       returnedAt: { gt: READ_AT },
     });
   });
@@ -127,7 +128,8 @@ describe("hasUnreadNotifications", () => {
     const author = wheres.find((where) => "ticket" in where);
     expect(author).toEqual({
       OR: [{ createdAt: { gt: READ_AT } }, { revisedAt: { gt: READ_AT } }],
-      ticket: { authorId: "user-1" },
+      contentStatus: "PUBLISHED",
+      ticket: { authorId: "user-1", status: "PUBLISHED" },
     });
   });
 
@@ -256,7 +258,29 @@ describe("loadNotifications", () => {
     expect(result.changeRequests).toBeNull();
     expect(result.tickets).toEqual([{ id: "t7", title: "Fremdes Ticket" }]);
     expect(prismaMock.changeRequest.count).toHaveBeenCalledWith({
-      where: { authorId: "user-1", status: "CHANGES_REQUESTED" },
+      where: {
+        authorId: "user-1",
+        status: "CHANGES_REQUESTED",
+        contentStatus: "PUBLISHED",
+      },
     });
+  });
+});
+
+describe("roter Punkt und Übersicht zählen dieselben Tickets (Review 25.09.2026)", () => {
+  it("hasUnreadNotifications fragt nur nach PUBLIZIERTEN eigenen Tickets", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ notificationsReadAt: null });
+    await hasUnreadNotifications("user-1");
+    const ticketFilters = [
+      prismaMock.ticketVote.findFirst,
+      prismaMock.statement.findFirst,
+    ].map(
+      (mock) =>
+        (mock.mock.calls[0]?.[0] as { where: { ticket: unknown } }).where
+          .ticket,
+    );
+    for (const filter of ticketFilters) {
+      expect(filter).toEqual({ authorId: "user-1", status: "PUBLISHED" });
+    }
   });
 });

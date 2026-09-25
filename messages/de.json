@@ -372,7 +372,9 @@
       "max_1500": "Maximal 1'500 Zeichen",
       "min_1": "Pflichtfeld",
       "not_requester": "Nur wer den Antrag gestellt hat, kann ihn überarbeiten oder zurückziehen.",
-      "awaiting_revision": "Dieser Antrag wurde zur Überarbeitung zurückgegeben und wartet auf eine neue Fassung."
+      "awaiting_revision": "Dieser Antrag wurde zur Überarbeitung zurückgegeben und wartet auf eine neue Fassung.",
+      "revised": "Der Antrag wurde inzwischen überarbeitet. Die neue Fassung steht jetzt oben — bitte prüfe sie, bevor du entscheidest.",
+      "too_complex": "Der Text ist zu stark verschachtelt oder enthält zu viele leere Absätze."
     },
     "confirmMergeIntro": "Der Vorschlag wird unverändert übernommen und ersetzt die betroffenen Felder in allen drei Sprachen. @{handle} wird als Co-Autor gelistet.",
     "adjust": "Anpassen & übernehmen",
@@ -404,7 +406,8 @@
     "withdrawConfirmText": "Ziehst du den Antrag zurück, kann ihn der Autor nicht mehr übernehmen. Du kannst danach einen neuen Antrag stellen.",
     "confirmWithdraw": "Antrag zurückziehen",
     "withdrawing": "Wird zurückgezogen…",
-    "withdrawnOn": "Zurückgezogen {date}"
+    "withdrawnOn": "Zurückgezogen {date}",
+    "translationInvalid": "Eine Übersetzung hält die Zeichenlimiten nicht ein. Bitte korrigiere die markierten Felder, bevor du publizierst."
   },
   "profile": {
     "memberSince": "Dabei seit {date}",
@@ -548,9 +551,11 @@
       "rate_limited": "Zu viele Anfragen. Bitte später erneut.",
       "invalid_input": "Dieser Fall lässt sich so nicht entscheiden.",
       "ai_unavailable": "Die Übersetzung ist gerade nicht erreichbar — der Fall bleibt offen.",
+      "translation_invalid": "Eine KI-Übersetzung hält die Zeichenlimiten nicht ein. Der Fall bleibt offen — ohne Vorschau lässt sich das hier nicht korrigieren; bitte abweisen und den Hinweis in der Notiz festhalten.",
       "generic": "Das hat nicht geklappt. Bitte versuche es erneut."
     },
-    "findingsNote": "Maschinell erzeugte Begründungen des Civic-Linters — Hinweise, keine Empfehlung. Der Text stammt aus dem beanstandeten Inhalt und kann darauf angelegt sein, den Entscheid zu beeinflussen."
+    "findingsNote": "Maschinell erzeugte Begründungen des Civic-Linters — Hinweise, keine Empfehlung. Der Text stammt aus dem beanstandeten Inhalt und kann darauf angelegt sein, den Entscheid zu beeinflussen.",
+    "changeRequestNote": "Änderungsantrag. Depublizieren entfernt nur diese Karte — ein bereits übernommener Text steht im Ticket; dafür das Ticket selbst melden."
   },
   "errors": {
     "notFoundTitle": "Seite nicht gefunden",

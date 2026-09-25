@@ -372,7 +372,9 @@
       "max_1500": "Massimo 1'500 caratteri",
       "min_1": "Campo obbligatorio",
       "not_requester": "Solo chi ha inoltrato la richiesta può rivederla o ritirarla.",
-      "awaiting_revision": "Questa richiesta è stata rimandata in revisione e attende una nuova versione."
+      "awaiting_revision": "Questa richiesta è stata rimandata in revisione e attende una nuova versione.",
+      "revised": "Nel frattempo la richiesta è stata rielaborata. La nuova versione è ora visualizzata sopra — controllala prima di decidere.",
+      "too_complex": "Il testo è troppo annidato o contiene troppi paragrafi vuoti."
     },
     "confirmMergeIntro": "La proposta viene accettata senza modifiche e sostituisce i campi interessati in tutte e tre le lingue. @{handle} verrà elencato come co-autore.",
     "adjust": "Adatta e accetta",
@@ -404,7 +406,8 @@
     "withdrawConfirmText": "Una volta ritirata, l'autore non potrà più accettare la richiesta. Potrai poi inoltrarne una nuova.",
     "confirmWithdraw": "Ritira la richiesta",
     "withdrawing": "Ritiro in corso…",
-    "withdrawnOn": "Ritirata il {date}"
+    "withdrawnOn": "Ritirata il {date}",
+    "translationInvalid": "Una traduzione non rispetta i limiti di caratteri. Correggi i campi segnalati prima di pubblicare."
   },
   "profile": {
     "memberSince": "Iscritto dal {date}",
@@ -548,9 +551,11 @@
       "rate_limited": "Troppe richieste. Riprova più tardi.",
       "invalid_input": "Questo caso non può essere deciso così.",
       "ai_unavailable": "La traduzione non è raggiungibile — il caso resta aperto.",
+      "translation_invalid": "Una traduzione dell’IA non rispetta i limiti di caratteri. Il caso resta aperto — senza anteprima non si può correggere qui; respingilo e annotalo nella nota.",
       "generic": "Non ha funzionato. Riprova."
     },
-    "findingsNote": "Motivazioni generate automaticamente dal Civic-Linter — indicazioni, non una raccomandazione. Il testo deriva dal contenuto contestato e può mirare a influenzare la decisione."
+    "findingsNote": "Motivazioni generate automaticamente dal Civic-Linter — indicazioni, non una raccomandazione. Il testo deriva dal contenuto contestato e può mirare a influenzare la decisione.",
+    "changeRequestNote": "Richiesta di modifica. La depubblicazione rimuove solo questa scheda — un testo già ripreso resta nel ticket; per quello segnalare il ticket stesso."
   },
   "errors": {
     "notFoundTitle": "Pagina non trovata",

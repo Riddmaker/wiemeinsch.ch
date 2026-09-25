@@ -92,6 +92,7 @@ vi.mock("@/services/content-flow", async (importOriginal) => {
 const publishMocks = vi.hoisted(() => ({
   createTicket: vi.fn(),
   createStatement: vi.fn(),
+  createStatementInTx: vi.fn(),
   translateTicketDraft: vi.fn(),
   regionExists: vi.fn(),
   refreshStatementAggregates: vi.fn(),
@@ -99,6 +100,8 @@ const publishMocks = vi.hoisted(() => ({
 vi.mock("@/services/publish-content", () => publishMocks);
 
 const txMock = vi.hoisted(() => ({
+  // Zeilensperre (lib/db-locks.ts) — `SELECT … FOR UPDATE`.
+  $queryRaw: vi.fn(),
   ticket: { findUnique: vi.fn(), update: vi.fn() },
   ticketTranslation: { updateMany: vi.fn() },
   ticketVote: {
@@ -126,7 +129,7 @@ const txMock = vi.hoisted(() => ({
     createMany: vi.fn(),
     updateMany: vi.fn(),
   },
-  moderationCase: { update: vi.fn() },
+  moderationCase: { update: vi.fn(), updateMany: vi.fn() },
 }));
 
 const prismaMock = vi.hoisted(() => ({
@@ -245,8 +248,9 @@ const submitChangeRequestInput = {
   },
 };
 
-// E15: «Übernehmen» ist 1:1 — nur die Id, der Text kommt aus der DB.
-const mergeInput = { changeRequestId: "cr-1" };
+// E15: «Übernehmen» ist 1:1 — nur die Id (und der gesehene Revisionsstand),
+// der Text kommt aus der DB.
+const mergeInput = { changeRequestId: "cr-1", revisedAt: null };
 
 /** Die gespeicherten Fassungen von cr-1 (Antrag auf die Lösung). */
 const storedChangeRequestRow = {
@@ -271,6 +275,7 @@ const guardChangeRequestRow = {
 // «Anpassen & übernehmen» (E15): der Ticket-Autor ändert die Lösung.
 const adjustInput = {
   changeRequestId: "cr-1",
+  revisedAt: null,
   locale: "de" as const,
   solution: richDoc(270),
 };
@@ -354,6 +359,7 @@ function writeSpies(): [string, ReturnType<typeof vi.fn>][] {
     ["prisma.user.update", prismaMock.user.update],
     ["prisma.$transaction", prismaMock.$transaction],
     ["tx.ticket.update", txMock.ticket.update],
+    ["tx.moderationCase.updateMany", txMock.moderationCase.updateMany],
     ["tx.ticketTranslation.updateMany", txMock.ticketTranslation.updateMany],
     ["tx.ticketVote.upsert", txMock.ticketVote.upsert],
     ["tx.ticketVote.deleteMany", txMock.ticketVote.deleteMany],
@@ -379,6 +385,7 @@ function writeSpies(): [string, ReturnType<typeof vi.fn>][] {
     ["tx.moderationCase.update", txMock.moderationCase.update],
     ["createTicket", publishMocks.createTicket],
     ["createStatement", publishMocks.createStatement],
+    ["createStatementInTx", publishMocks.createStatementInTx],
   ];
 }
 
@@ -507,6 +514,7 @@ const MATRIX: ActionCell[] = [
     run: () =>
       returnChangeRequest({
         changeRequestId: "cr-1",
+        revisedAt: null,
         reason: "ZU_WENIG_KONKRET",
       }),
     allowedAs: () => asUser(OWNER),
@@ -568,6 +576,7 @@ beforeEach(() => {
   publishMocks.regionExists.mockResolvedValue(true);
   publishMocks.createTicket.mockResolvedValue("ticket-new");
   publishMocks.createStatement.mockResolvedValue("statement-new");
+  publishMocks.createStatementInTx.mockResolvedValue("statement-new");
   publishMocks.translateTicketDraft.mockResolvedValue({
     fr: ticketVersion,
     it: ticketVersion,
@@ -646,6 +655,7 @@ beforeEach(() => {
   txMock.changeRequestTranslation.createMany.mockResolvedValue({ count: 3 });
   txMock.changeRequestTranslation.updateMany.mockResolvedValue({ count: 1 });
   txMock.moderationCase.update.mockResolvedValue({ id: "case-1" });
+  txMock.moderationCase.updateMany.mockResolvedValue({ count: 1 });
   publishMocks.refreshStatementAggregates.mockResolvedValue(undefined);
 });
 
@@ -742,6 +752,7 @@ describe("Rolle Admin", () => {
     expect(
       await returnChangeRequest({
         changeRequestId: "cr-1",
+        revisedAt: null,
         reason: "ZU_UMFANGREICH",
       }),
     ).toEqual({ ok: false, error: "not_author" });

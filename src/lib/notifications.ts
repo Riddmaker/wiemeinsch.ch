@@ -42,6 +42,17 @@ export type NotificationSummary = {
 /** Obergrenze für die Sprungliste — sie soll orientieren, nicht erschlagen. */
 const MAX_AFFECTED = 20;
 
+/**
+ * Eigene Tickets, deren Ereignisse zählen: nur PUBLIZIERTE. Beide Funktionen
+ * unten nutzen denselben Filter — vorher prüfte der rote Punkt auch
+ * depublizierte Tickets mit, die Übersicht aber nicht. Der Punkt leuchtete
+ * dann, und das Panel samt «Alles als gelesen markieren» blieb leer
+ * (Code-Review 25.09.2026).
+ */
+function ownPublishedTickets(userId: string) {
+  return { authorId: userId, status: "PUBLISHED" as const };
+}
+
 /** Leeres Ergebnis — nichts anzuzeigen. */
 const NOTHING: NotificationSummary = {
   reactions: null,
@@ -75,7 +86,7 @@ export async function hasUnreadNotifications(userId: string): Promise<boolean> {
       prisma.ticketVote.findFirst({
         where: {
           updatedAt: newer,
-          ticket: { authorId: userId },
+          ticket: ownPublishedTickets(userId),
           userId: { not: userId },
         },
         select: { id: true },
@@ -93,14 +104,15 @@ export async function hasUnreadNotifications(userId: string): Promise<boolean> {
           createdAt: newer,
           status: "PUBLISHED",
           authorId: { not: userId },
-          ticket: { authorId: userId },
+          ticket: ownPublishedTickets(userId),
         },
         select: { id: true },
       }),
       prisma.changeRequest.findFirst({
         where: {
           OR: [{ createdAt: newer }, { revisedAt: newer }],
-          ticket: { authorId: userId },
+          contentStatus: "PUBLISHED",
+          ticket: ownPublishedTickets(userId),
         },
         select: { id: true },
       }),
@@ -108,6 +120,7 @@ export async function hasUnreadNotifications(userId: string): Promise<boolean> {
         where: {
           authorId: userId,
           status: "CHANGES_REQUESTED",
+          contentStatus: "PUBLISHED",
           returnedAt: newer,
         },
         select: { id: true },
@@ -141,7 +154,7 @@ export async function loadNotifications(
   const newer = { gt: since };
 
   const myTickets = await prisma.ticket.findMany({
-    where: { authorId: userId, status: "PUBLISHED" },
+    where: ownPublishedTickets(userId),
     select: { id: true, upvotes: true, downvotes: true },
   });
   const myTicketIds = myTickets.map((ticket) => ticket.id);
@@ -187,6 +200,7 @@ export async function loadNotifications(
     prisma.changeRequest.findMany({
       where: {
         OR: [{ createdAt: newer }, { revisedAt: newer }],
+        contentStatus: "PUBLISHED",
         ticketId: { in: myTicketIds },
       },
       select: { ticketId: true },
@@ -195,6 +209,7 @@ export async function loadNotifications(
       where: {
         authorId: userId,
         status: "CHANGES_REQUESTED",
+        contentStatus: "PUBLISHED",
         returnedAt: newer,
       },
       select: { ticketId: true },
@@ -250,7 +265,11 @@ export async function loadNotifications(
 
   const changeRequests = hasNewChangeRequests
     ? await prisma.changeRequest.count({
-        where: { ticketId: { in: myTicketIds }, status: "OPEN" },
+        where: {
+          ticketId: { in: myTicketIds },
+          status: "OPEN",
+          contentStatus: "PUBLISHED",
+        },
       })
     : null;
 
@@ -258,7 +277,11 @@ export async function loadNotifications(
   // gerade auf eine Überarbeitung warten.
   const returnedChangeRequests = hasNewReturned
     ? await prisma.changeRequest.count({
-        where: { authorId: userId, status: "CHANGES_REQUESTED" },
+        where: {
+          authorId: userId,
+          status: "CHANGES_REQUESTED",
+          contentStatus: "PUBLISHED",
+        },
       })
     : null;
 

@@ -372,7 +372,9 @@
       "max_1500": "1'500 caractères au maximum",
       "min_1": "Champ obligatoire",
       "not_requester": "Seule la personne qui a soumis la demande peut la réviser ou la retirer.",
-      "awaiting_revision": "Cette demande a été renvoyée pour révision et attend une nouvelle version."
+      "awaiting_revision": "Cette demande a été renvoyée pour révision et attend une nouvelle version.",
+      "revised": "La demande a été révisée entre-temps. La nouvelle version s’affiche maintenant ci-dessus — veuillez la vérifier avant de décider.",
+      "too_complex": "Le texte est trop imbriqué ou contient trop de paragraphes vides."
     },
     "confirmMergeIntro": "La proposition est reprise telle quelle et remplace les champs concernés dans les trois langues. @{handle} sera listé comme co-auteur.",
     "adjust": "Adapter et reprendre",
@@ -404,7 +406,8 @@
     "withdrawConfirmText": "Une fois retirée, la demande ne peut plus être reprise par l'auteur. Vous pourrez ensuite en soumettre une nouvelle.",
     "confirmWithdraw": "Retirer la demande",
     "withdrawing": "Retrait en cours…",
-    "withdrawnOn": "Retirée le {date}"
+    "withdrawnOn": "Retirée le {date}",
+    "translationInvalid": "Une traduction ne respecte pas les limites de caractères. Veuillez corriger les champs signalés avant de publier."
   },
   "profile": {
     "memberSince": "Membre depuis le {date}",
@@ -548,9 +551,11 @@
       "rate_limited": "Trop de requêtes. Merci de réessayer plus tard.",
       "invalid_input": "Ce cas ne peut pas être décidé ainsi.",
       "ai_unavailable": "La traduction n'est pas joignable — le cas reste ouvert.",
+      "translation_invalid": "Une traduction par IA ne respecte pas les limites de caractères. Le cas reste ouvert — sans aperçu, cela ne peut pas être corrigé ici ; veuillez le rejeter et le mentionner dans la note.",
       "generic": "Cela n'a pas fonctionné. Merci de réessayer."
     },
-    "findingsNote": "Justifications générées automatiquement par le Civic-Linter — des indications, pas une recommandation. Le texte provient du contenu contesté et peut viser à influencer la décision."
+    "findingsNote": "Justifications générées automatiquement par le Civic-Linter — des indications, pas une recommandation. Le texte provient du contenu contesté et peut viser à influencer la décision.",
+    "changeRequestNote": "Demande de modification. La dépublication ne retire que cette carte — un texte déjà repris figure dans le ticket ; pour cela, signaler le ticket lui-même."
   },
   "errors": {
     "notFoundTitle": "Page introuvable",
