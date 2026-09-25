@@ -1,0 +1,141 @@
+# Signatur prüfen und die Produktion auf einen Image-Tag umstellen.
+#
+# Wiederverwendbar (workflow_call), weil zwei Wege hierher führen:
+#   - deploy.yml nach einem frischen Build (mit dem gebauten Digest),
+#   - rollback.yml für ein früher gebautes Image (ohne Build).
+# Beide sollen durch GENAU dieselbe Prüfung — ein Rollback ist kein Anlass,
+# ein unsigniertes Image durchzuwinken.
+name: Redeploy
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Voller Commit-SHA, unter dem das Image in der GHCR liegt
+        required: true
+        type: string
+      expected-digest:
+        description: Nach einem Build der gebaute Digest; leer bei einem Rollback
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/riddmaker/wiemeinsch.ch
+
+jobs:
+  redeploy:
+    name: Signatur prüfen, Jelastic-Redeploy auslösen
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # Token und Zielangaben liegen NUR in dieser Environment, nicht repo-weit:
+    # Kein anderer Job (und kein Workflow aus einem anderen Branch, sofern die
+    # Environment auf `main` beschränkt ist) kommt an den Redeploy-Token.
+    environment: production
+    # Deploy und Rollback teilen EINE Gruppe: Zwei Redeploys derselben
+    # Umgebung wären ein Rennen — der zweite wartet, statt zu überholen.
+    concurrency:
+      group: production-redeploy
+      cancel-in-progress: false
+    env:
+      JELASTIC_API_URL: ${{ vars.JELASTIC_API_URL }}
+      JELASTIC_ENV_NAME: ${{ vars.JELASTIC_ENV_NAME }}
+      JELASTIC_NODE_GROUP: ${{ vars.JELASTIC_NODE_GROUP }}
+      PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
+      TAG: ${{ inputs.tag }}
+      EXPECTED_DIGEST: ${{ inputs.expected-digest }}
+    steps:
+      - name: Vorbedingungen prüfen
+        env:
+          JELASTIC_API_TOKEN: ${{ secrets.JELASTIC_API_TOKEN }}
+        run: |
+          # Nur der unveränderliche Commit-SHA-Tag ist deploybar — nie `latest`
+          # oder ein anderer beweglicher Name.
+          if ! printf '%s' "${TAG}" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "::error::Tag muss ein voller Commit-SHA sein (40 Hex-Zeichen)."
+            exit 1
+          fi
+          missing=""
+          [ -n "${JELASTIC_API_TOKEN}" ] || missing="${missing} secret:JELASTIC_API_TOKEN"
+          [ -n "${JELASTIC_API_URL}" ] || missing="${missing} var:JELASTIC_API_URL"
+          [ -n "${JELASTIC_ENV_NAME}" ] || missing="${missing} var:JELASTIC_ENV_NAME"
+          [ -n "${JELASTIC_NODE_GROUP}" ] || missing="${missing} var:JELASTIC_NODE_GROUP"
+          if [ -n "${missing}" ]; then
+            echo "::error::Environment 'production' unvollständig:${missing}"
+            exit 1
+          fi
+
+      - name: cosign installieren
+        uses: sigstore/cosign-installer@v4.1.2
+        with:
+          # Dieselbe Version wie beim Signieren (deploy.yml, build-push).
+          cosign-release: v3.0.6
+
+      - name: Signatur des Deploy-Tags prüfen
+        # Die Plattform zieht das Image selbst; auf dem Node gibt es keinen
+        # Einstiegspunkt vor dem Start. Deshalb wird HIER geprüft, unmittelbar
+        # vor dem API-Aufruf — und zwar der Tag, den Jelastic gleich zieht,
+        # nicht nur ein Digest. Signiert haben muss deploy.yml auf main, auch
+        # bei einem Rollback: Ein Image aus einem anderen Branch fällt durch.
+        env:
+          IDENTITY: ${{ github.server_url }}/${{ github.repository }}/.github/workflows/deploy.yml@refs/heads/main
+        run: |
+          verified=$(cosign verify "${IMAGE}:${TAG}" \
+            --certificate-identity "${IDENTITY}" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            | jq -r '[.[].critical.image["docker-manifest-digest"]] | unique | .[]')
+          if [ -z "${verified}" ] || [ "$(printf '%s\n' "${verified}" | wc -l)" -ne 1 ]; then
+            echo "::error::Kein eindeutig verifizierbares Image unter ${TAG} — kein Deploy."
+            exit 1
+          fi
+          # Nach einem Build muss der Tag exakt auf den gebauten Digest zeigen;
+          # ein nachträglich umgehängter Tag fällt so auf.
+          if [ -n "${EXPECTED_DIGEST}" ] && [ "${verified}" != "${EXPECTED_DIGEST}" ]; then
+            echo "::error::Tag ${TAG} zeigt auf ${verified}, gebaut wurde ${EXPECTED_DIGEST} — kein Deploy."
+            exit 1
+          fi
+          echo "Signatur gültig, ${IMAGE}:${TAG} = ${verified}"
+
+      - name: Redeploy über die Jelastic-API
+        # Eine Webhook-URL gibt es nicht: Redeploy ist die API-Methode
+        # RedeployContainersByGroup mit einem Personal Access Token.
+        # - Token über stdin in den POST-Body — nie in eine URL, nie in die
+        #   Prozessliste, nie ins Log (HABIT 1).
+        # - Die API meldet Fehler mit HTTP 200 und `result` ≠ 0; ein 2xx allein
+        #   ist KEIN Erfolg.
+        env:
+          JELASTIC_API_TOKEN: ${{ secrets.JELASTIC_API_TOKEN }}
+        run: |
+          response=$(mktemp)
+          status=$(printf '%s' "${JELASTIC_API_TOKEN}" | curl -sS \
+            -o "${response}" -w '%{http_code}' --max-time 900 \
+            -X POST "${JELASTIC_API_URL%/}/1.0/environment/control/rest/redeploycontainersbygroup" \
+            --data-urlencode "session@-" \
+            --data-urlencode "envName=${JELASTIC_ENV_NAME}" \
+            --data-urlencode "nodeGroup=${JELASTIC_NODE_GROUP}" \
+            --data-urlencode "tag=${TAG}")
+          result=$(jq -r '.result // "keine"' "${response}" 2>/dev/null || echo "kein JSON")
+          if [ "${status}" != "200" ] || [ "${result}" != "0" ]; then
+            error=$(jq -r '.error // empty' "${response}" 2>/dev/null || true)
+            echo "::error::Redeploy fehlgeschlagen: HTTP ${status}, result ${result}${error:+, ${error}}"
+            exit 1
+          fi
+          echo "Redeploy abgeschlossen: ${JELASTIC_NODE_GROUP} läuft auf ${TAG}"
+
+      - name: Öffentlichen Healthcheck abwarten
+        # Optional, solange die Domain noch nicht hinter Cloudflare hängt.
+        if: env.PUBLIC_BASE_URL != ''
+        run: |
+          url="${PUBLIC_BASE_URL%/}/api/health"
+          for _ in $(seq 1 60); do
+            if curl -fsS --max-time 10 "${url}" > /dev/null; then
+              echo "Healthcheck grün."
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::${url} antwortet nach 5 Minuten nicht mit 200."
+          exit 1
