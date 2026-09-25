@@ -15,6 +15,10 @@ import { assignHandle } from "@/lib/handle";
 import { toAppLocale } from "@/lib/locale";
 import { localeRedirectTarget } from "@/lib/locale-redirect";
 import { prisma } from "@/lib/prisma";
+import {
+  consentRedirectTarget,
+  hasCurrentConsent,
+} from "@/lib/privacy-consent";
 import "../globals.css";
 
 // Fallback-Stacks wie im Styleguide (globals.css @theme).
@@ -63,7 +67,11 @@ export default async function LocaleLayout({
   if (userId) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { preferredLocale: true, handle: true },
+      select: {
+        preferredLocale: true,
+        handle: true,
+        privacyConsentVersion: true,
+      },
     });
     if (user) {
       // Schlug die Handle-Vergabe bei der Registrierung fehl, schluckt
@@ -81,6 +89,20 @@ export default async function LocaleLayout({
         : null;
       if (target) {
         redirect(`${target}${search}`);
+      }
+      // Ohne Einwilligung in die aktuelle Datenschutzerklärung zuerst die
+      // Zustimmung (lib/privacy-consent.ts). Datenschutz, Impressum und FAQ
+      // sind ausgenommen, weil man sie zum Entscheiden braucht; wer nicht
+      // zustimmen will, meldet sich ab und liest als Gast weiter.
+      if (pathname && !hasCurrentConsent(user.privacyConsentVersion)) {
+        const consentTarget = consentRedirectTarget(
+          pathname,
+          search,
+          profileLocale,
+        );
+        if (consentTarget) {
+          redirect(consentTarget);
+        }
       }
     }
   }

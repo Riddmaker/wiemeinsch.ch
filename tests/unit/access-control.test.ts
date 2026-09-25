@@ -173,7 +173,8 @@ import {
   dismissCase,
   reportContent,
 } from "@/actions/moderation";
-import { updateProfile } from "@/actions/profile";
+import { acceptPrivacyPolicy, updateProfile } from "@/actions/profile";
+import { PRIVACY_POLICY_VERSION } from "@/lib/privacy-consent";
 import {
   prepareStatementPublish,
   publishStatement,
@@ -462,6 +463,12 @@ const MATRIX: ActionCell[] = [
     name: "updateProfile",
     scope: "user",
     run: () => updateProfile(profileInput),
+    allowedAs: () => asUser(STRANGER),
+  },
+  {
+    name: "acceptPrivacyPolicy",
+    scope: "user",
+    run: () => acceptPrivacyPolicy(PRIVACY_POLICY_VERSION),
     allowedAs: () => asUser(STRANGER),
   },
   {

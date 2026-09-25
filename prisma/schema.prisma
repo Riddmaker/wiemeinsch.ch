@@ -113,6 +113,12 @@ model User {
   preferredLocale     Locale    @default(DE)
   isAdmin             Boolean   @default(false)
 
+  // Einwilligung in die Datenschutzerklärung (25.09.2026): Version und
+  // Zeitpunkt als Beleg der ausdrücklichen Einwilligung (öffentliche
+  // Abstimmungen zeigen politische Ansichten). NULL = noch nicht gefragt.
+  privacyConsentVersion String?
+  privacyConsentAt      DateTime?
+
   // Demografie — serverseitig PRIVAT (nDSG).
   // Verlässt den Server NIE pro User; einziger erlaubter Lesepfad nach aussen
   // ist die öffentliche Projektion in src/lib/user-projection.ts (P2.5/P11).

@@ -50,7 +50,8 @@
   "footer": {
     "impressum": "Mentions légales",
     "license": "Open source sous licence PolyForm Noncommercial 1.0.0",
-    "faq": "FAQ & presse"
+    "faq": "FAQ & presse",
+    "privacy": "Protection des données"
   },
   "home": {
     "title": "Le backlog politique de la Suisse",
@@ -176,7 +177,8 @@
       "OAuthAccountNotLinked": "Un compte existe déjà pour cette adresse e-mail, avec une connexion par lien. Veuillez vous connecter avec votre adresse e-mail.",
       "Default": "La connexion a échoué. Veuillez réessayer."
     },
-    "backToLogin": "Retour à la connexion"
+    "backToLogin": "Retour à la connexion",
+    "privacyHint": "Vos votes deviennent publics sous votre @handle aléatoire. Après la connexion, nous vous demandons votre consentement. Plus de détails sous <link>Protection des données</link>."
   },
   "editor": {
     "bold": "Gras",
@@ -572,5 +574,100 @@
     "button": "Se connecter",
     "fallback": "Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :",
     "ignore": "Vous n’avez pas demandé de connexion ? Vous pouvez simplement ignorer cet e-mail."
+  },
+  "privacy": {
+    "metaTitle": "Protection des données — wiemeinsch.ch",
+    "title": "Protection des données",
+    "lead": "En bref : ce que vous publiez ici et la manière dont vous votez sont publics, sous un @handle aléatoire. Votre adresse e-mail et vos indications facultatives restent privées. Cette page explique entièrement ce que nous faisons de quelles données, qui les reçoit et ce que vous pouvez faire. Elle se fonde sur la loi suisse sur la protection des données (LPD).",
+    "updated": "Version du 25 septembre 2026",
+    "responsible": {
+      "title": "Responsable",
+      "body": "Le responsable du traitement de vos données est :",
+      "contact": "Pour toute question relative à la protection des données, un e-mail à cette adresse suffit."
+    },
+    "consent": {
+      "title": "Votre consentement",
+      "body": "Participer, c’est publier des opinions politiques, et les votes peuvent révéler des convictions politiques. Selon la LPD, ce sont des données sensibles. C’est pourquoi, après la première connexion, nous vous demandons expressément si vous acceptez les points de cette page. Sans consentement, vous pouvez tout lire en tant qu’invité, mais pas participer.\n\nNous enregistrons à quelle version de cette déclaration vous avez consenti et quand. Si nous la modifions de manière importante, nous vous redemandons votre consentement lors de votre prochaine visite.\n\nVous pouvez retirer votre consentement à tout moment par e-mail. Comme il est impossible de participer sans lui, nous fermons alors votre compte (voir « Combien de temps nous conservons les données »). Ce qui a eu lieu jusque-là reste licite."
+    },
+    "data": {
+      "title": "Quelles données nous traitons",
+      "body": "Compte : votre adresse e-mail, un @handle généré au hasard, votre langue, votre consentement et la date à laquelle vous avez lu vos notifications pour la dernière fois. Si vous vous connectez avec Google, nous enregistrons en outre l’identifiant du compte et les données de connexion techniques que Google transmet. Nous ne reprenons ni votre nom ni votre photo de profil.\n\nContributions : tickets, prises de position et demandes de modification avec leurs traductions, vos votes sur les tickets et les prises de position, vos signalements et vos recours. Si vous faites recours contre une décision du Civic-Linter, nous enregistrons le texte bloqué afin qu’une personne puisse l’examiner. Nous n’enregistrons pas les textes bloqués sans recours.\n\nFacultativement, dans les paramètres : année de naissance, genre, formation, code postal et profession. Vous pouvez les modifier ou les effacer à tout moment.\n\nDonnées techniques : chaque visite produit les données dont un serveur web a besoin, dont votre adresse IP. Les adresses IP et e-mail nous servent de compteurs pour freiner les abus, par exemple au plus cinq liens de connexion en 15 minutes. Nous supprimons ces compteurs au plus tard après deux heures. Nos propres journaux d’exploitation ne contiennent ni textes, ni adresses e-mail, ni adresses IP."
+    },
+    "public": {
+      "title": "Ce qui est public",
+      "body": "Votre @handle est public avec votre profil : vos tickets, prises de position, demandes de modification et co-autorats, ainsi que la manière dont vous avez voté sur les tickets. Vos votes sur les prises de position n’apparaissent que dans les totaux.\n\nLes votes n’apparaissent jamais sous votre nom ou votre adresse e-mail, mais uniquement sous le @handle aléatoire, que vous ne choisissez pas vous-même. Quiconque connaît votre @handle ou vous reconnaît à vos textes peut toutefois vous attribuer vos votes. N’écrivez donc rien que vous ne souhaitez pas défendre publiquement.\n\nLes pages publiques sont accessibles à tous, même sans compte. Les moteurs de recherche peuvent les indexer, d’autres peuvent les copier. Nous ne pouvons pas récupérer ce que d’autres ont copié.\n\nNe sont jamais publics votre adresse e-mail, vos indications facultatives, vos signalements et vos recours. Seuls les modératrices et modérateurs voient qui a signalé quelque chose, pas la personne signalée."
+    },
+    "reuse": {
+      "title": "Comment les contributions et les données sont réutilisées",
+      "body": "wiemeinsch.ch veut rendre le travail politique visible et utilisable. C’est pourquoi nous pouvons réutiliser tout ce qui est public et le transmettre à d’autres, y compris en grande quantité et sous forme lisible par machine : comme données ouvertes, pour la science et la recherche, pour les médias ainsi que pour la politique et l’administration, par exemple pour leur remettre les demandes les plus soutenues. Contributions et votes y apparaissent, comme sur le site, sous le @handle.\n\nNous pouvons aussi analyser les contributions et votes publics avec l’IA, par exemple pour des résumés, des vues d’ensemble thématiques ou pour identifier où des personnes s’accordent au-delà des clivages politiques.\n\nNous ne transmettons jamais vos indications facultatives individuellement. Nous ne les analysons que de manière agrégée, pour des groupes d’au moins 20 personnes, et pouvons publier et transmettre ces analyses. Nous omettons entièrement les groupes plus petits, afin que personne ne puisse en déduire quoi que ce soit sur une personne.\n\nNous ne vendons aucune donnée, n’affichons aucune publicité et ne créons aucun profil publicitaire."
+    },
+    "purposes": {
+      "title": "Dans quel but",
+      "body": "Nous traitons les données pour vous connecter, pour publier, traduire et classer vos contributions, pour vérifier avant publication que leur ton reste factuel, pour lutter contre les abus et les accès automatisés, pour traiter les signalements et les recours, pour exploiter et développer la plateforme et pour la réutilisation décrite ci-dessus.\n\nNous vous écrivons par e-mail pour la connexion et lorsqu’il s’agit de votre compte. Plus rarement, nous vous informons aussi des nouveautés importantes de la plateforme. Vous pouvez vous en désabonner à tout moment, une courte réponse suffit."
+    },
+    "recipients": {
+      "title": "Qui reçoit des données",
+      "body": "Infomaniak Network SA (Suisse) exploite les serveurs, la base de données, les copies de sauvegarde chiffrées et l’envoi des e-mails.\n\nCloudflare, Inc. (États-Unis) protège et diffuse le site et fournit la vérification de sécurité lors de la connexion. Chaque requête passe par Cloudflare, avec votre adresse IP et des données techniques de votre navigateur.\n\nMistral AI (France) vérifie que le ton des contributions reste factuel et les traduit dans les trois langues nationales. Mistral reçoit le texte des contributions, mais ni votre adresse e-mail, ni votre @handle, ni vos indications facultatives. Mistral n’utilise pas ces textes pour entraîner ses modèles et les conserve jusqu’à 30 jours afin de détecter les abus.\n\nGoogle LLC (États-Unis) ne reçoit des données que si vous vous connectez avec Google.\n\nSi nous changeons l’un de ces fournisseurs ou en ajoutons un, nous l’indiquons ici avant qu’il ne reçoive des données. Nous ne communiquons des données aux autorités que si la loi nous y oblige. Si la plateforme passe à un autre organisme responsable, par exemple une association, les données sont transférées avec elle et cette déclaration continue de s’appliquer."
+    },
+    "abroad": {
+      "title": "Communication à l’étranger",
+      "body": "Selon le Conseil fédéral, la France offre un niveau de protection des données adéquat. Les États-Unis ne sont considérés comme adéquats que pour les entreprises certifiées selon le Swiss-U.S. Data Privacy Framework. Lorsque ce n’est pas le cas pour Cloudflare ou Google, nous nous fondons sur leurs clauses contractuelles types. Les autorités américaines peuvent, dans certains cas, accéder aux données sans que vous en soyez informé. Par votre consentement, vous acceptez expressément cette communication."
+    },
+    "retention": {
+      "title": "Combien de temps nous conservons les données",
+      "body": "Les liens de connexion sont valables une heure, une session dure au plus 30 jours. Nous supprimons chaque heure les liens et les sessions expirés.\n\nVotre compte existe jusqu’à ce que vous en demandiez la suppression ou retiriez votre consentement. Nous supprimons alors votre adresse e-mail, vos indications facultatives et vos données de connexion. Vos contributions et vos votes restent en place, car d’autres s’appuient dessus, mais sans lien avec votre compte : votre @handle est remplacé par la mention d’un compte supprimé.\n\nNous conservons les contributions dépubliées et les cas de modération clos afin que les décisions restent compréhensibles. Nous supprimons les copies de sauvegarde chiffrées de la base de données après douze mois au plus. D’ici là, des données supprimées peuvent encore s’y trouver."
+    },
+    "storage": {
+      "title": "Cookies et stockage dans le navigateur",
+      "body": "Nous n’utilisons que les cookies nécessaires à la connexion et à sa protection : le cookie de session, un cookie contre les requêtes falsifiées et un cookie qui mémorise la page de retour. Cloudflare peut placer ses propres cookies techniquement nécessaires pour lutter contre les robots. Il n’y a ni cookies d’analyse ou de publicité, ni statistiques d’utilisation. Si nous en introduisons, ce sera sans cookies ni profils, et nous l’indiquerons ici au préalable.\n\nVotre navigateur enregistre localement les brouillons de vos textes, afin que rien ne se perde si vous fermez l’onglet. Ils ne quittent votre appareil que lorsque vous les faites vérifier ou les envoyez."
+    },
+    "rights": {
+      "title": "Vos droits",
+      "body": "Vous pouvez demander à accéder à vos données, faire rectifier des données inexactes, faire supprimer votre compte, retirer votre consentement et recevoir vos données dans un format courant et lisible par machine. Vous modifiez vous-même votre langue et vos indications facultatives dans les paramètres. Pour tout le reste, un e-mail à l’adresse indiquée ci-dessus suffit. Nous répondons dans les 30 jours.\n\nSi notre réponse ne vous satisfait pas, vous pouvez vous adresser au Préposé fédéral à la protection des données et à la transparence (PFPDT)."
+    },
+    "changes": {
+      "title": "Modifications",
+      "body": "Nous adaptons cette déclaration lorsque la plateforme évolue. La version en vigueur est toujours indiquée en haut. En cas de modification importante, par exemple une nouvelle finalité ou un nouveau destinataire dans un pays sans niveau de protection adéquat, nous vous redemandons votre consentement lors de votre prochaine visite."
+    }
+  },
+  "consent": {
+    "metaTitle": "Consentement — wiemeinsch.ch",
+    "title": "Avant de participer",
+    "lead": "wiemeinsch.ch est un backlog politique public. Pour que vous puissiez participer, nous avons besoin de votre consentement exprès sur les points suivants.",
+    "points": {
+      "votes": {
+        "title": "Vos votes sont publics",
+        "body": "La manière dont vous votez sur les tickets figure sur votre profil, avec vos contributions. Cela peut révéler des convictions politiques. Cela n’apparaît que sous votre @handle aléatoire, jamais sous votre nom ou votre adresse e-mail."
+      },
+      "reuse": {
+        "title": "Ce qui est public est réutilisé",
+        "body": "Nous et d’autres pouvons réutiliser les contributions et les votes : comme données ouvertes, pour la recherche, dans les médias et comme base pour la politique et l’administration."
+      },
+      "ai": {
+        "title": "L’IA vérifie, traduit et analyse",
+        "body": "Mistral AI, en France, vérifie que le ton de vos textes reste factuel et les traduit. Nous pouvons en outre analyser les contributions et votes publics avec l’IA."
+      },
+      "demographics": {
+        "title": "Les indications facultatives restent privées",
+        "body": "L’année de naissance, le genre, la formation, le code postal et la profession sont facultatifs. Nous ne les analysons que de manière agrégée pour des groupes d’au moins 20 personnes et pouvons publier ces analyses."
+      },
+      "email": {
+        "title": "Nos e-mails",
+        "body": "Nous vous écrivons pour la connexion, au sujet de votre compte et rarement sur des nouveautés importantes. Vous pouvez vous désabonner des nouveautés à tout moment."
+      },
+      "abroad": {
+        "title": "Des données vont aussi à l’étranger",
+        "body": "Cloudflare (États-Unis) diffuse le site, Mistral (France) traite vos textes, et Google (États-Unis) intervient si vous vous connectez avec Google."
+      }
+    },
+    "withdraw": "Vous pouvez retirer votre consentement à tout moment par e-mail. Nous fermons alors votre compte, et vos contributions et votes publics restent en place sans lien avec vous.",
+    "details": "Tous les détails figurent dans la <link>déclaration de protection des données</link>.",
+    "accept": "Je consens",
+    "decline": "Refuser et me déconnecter",
+    "declineNote": "Sans consentement, vous pouvez continuer à lire en tant qu’invité. Votre compte subsiste sans aucune donnée publique. Écrivez-nous si nous devons le supprimer.",
+    "errors": {
+      "outdated": "La déclaration de protection des données vient d’être modifiée. Rechargez la page et lisez la version actuelle.",
+      "generic": "Cela n’a pas fonctionné. Réessayez dans une minute."
+    }
   }
 }

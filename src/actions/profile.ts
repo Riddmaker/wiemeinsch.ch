@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { PRIVACY_POLICY_VERSION } from "@/lib/privacy-consent";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { requireUser, UnauthorizedError } from "@/lib/require-user";
 import {
@@ -89,7 +90,9 @@ export async function setPreferredLocale(
 ): Promise<ActionResult> {
   let userId: string;
   try {
-    ({ id: userId } = await requireUser());
+    // Ohne Einwilligung erlaubt: Die Sprache der Zustimmungsseite selbst
+    // muss sich wechseln lassen, veröffentlicht wird dabei nichts.
+    ({ id: userId } = await requireUser({ consent: false }));
   } catch (e) {
     if (e instanceof UnauthorizedError) {
       return { ok: false, error: "unauthorized" };
@@ -156,6 +159,53 @@ export async function markNotificationsRead(): Promise<ActionResult> {
   });
 
   // Der rote Punkt hängt im Header — der ist serverseitig gerendert.
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/**
+ * Einwilligung in die Datenschutzerklärung (25.09.2026).
+ *
+ * Der Client schickt die Version mit, die er ANGEZEIGT hat. Weicht sie von
+ * der aktuellen ab (Seite vor einer Änderung geladen), wird nichts
+ * gespeichert: Zugestimmt wird nur dem Text, den die Person gesehen hat.
+ * Version und Zeitpunkt sind der Beleg der ausdrücklichen Einwilligung.
+ */
+export async function acceptPrivacyPolicy(
+  version: unknown,
+): Promise<ActionResult> {
+  let userId: string;
+  try {
+    ({ id: userId } = await requireUser({ consent: false }));
+  } catch (e) {
+    if (e instanceof UnauthorizedError) {
+      return { ok: false, error: "unauthorized" };
+    }
+    throw e;
+  }
+
+  const limit = await checkRateLimit({
+    scope: "privacy-consent",
+    identifier: userId,
+    limit: 10,
+    windowSeconds: 900,
+  });
+  if (!limit.ok) {
+    return { ok: false, error: "rate_limited" };
+  }
+
+  if (version !== PRIVACY_POLICY_VERSION) {
+    return { ok: false, error: "outdated" };
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      privacyConsentVersion: PRIVACY_POLICY_VERSION,
+      privacyConsentAt: new Date(),
+    },
+  });
+
   revalidatePath("/", "layout");
   return { ok: true };
 }

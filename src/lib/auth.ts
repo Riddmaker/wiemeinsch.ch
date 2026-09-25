@@ -9,6 +9,7 @@ import { assignHandle } from "@/lib/handle";
 import { toDbLocale } from "@/lib/locale";
 import { sendMagicLink } from "@/lib/magic-link-mail";
 import { prisma } from "@/lib/prisma";
+import { hasCurrentConsent } from "@/lib/privacy-consent";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { signupLocaleContext } from "@/lib/signup-locale";
 
@@ -109,6 +110,13 @@ export const authOptions: NextAuthOptions = {
     session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;
+        // Datenbank-Sessions: `user` ist die ganze User-Zeile, frisch bei
+        // jedem Lesen (PrismaAdapter.getSessionAndUser) — eine Einwilligung
+        // oder eine neue Version wirkt sofort, ohne neues Login.
+        session.user.privacyConsent = hasCurrentConsent(
+          (user as { privacyConsentVersion?: string | null })
+            .privacyConsentVersion,
+        );
       }
       return session;
     },

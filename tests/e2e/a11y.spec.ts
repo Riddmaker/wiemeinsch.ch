@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { login, loginAs } from "./helpers";
+import { fetchMagicLink, login, loginAs, requestMagicLink } from "./helpers";
 
 /**
  * A11y-Abnahme (T14.2/T14.3) — axe-core über die Kernseiten.
@@ -90,6 +90,7 @@ const guestPages: [label: string, path: string][] = [
   ["Statement-Dashboard", `/de/tickets/${STATEMENT_TICKET}`],
   ["Login", "/de/login"],
   ["Impressum", "/de/impressum"],
+  ["Datenschutz", "/de/datenschutz"],
   ["FAQ & Presse", "/de/faq"],
   ["Öffentliches Profil", `/de/profil/${PROFILE_ID}`],
   ["404", "/de/diese-seite-gibt-es-nicht"],
@@ -133,6 +134,18 @@ test.describe("axe: Seiten hinter dem Login", () => {
       page,
       "Ticket-Detail eingeloggt (Statement-Formular)",
     );
+  });
+
+  test("Zustimmung nach dem ersten Login", async ({ page }) => {
+    flowOnly();
+    // Ohne den Login-Helfer, der die Zustimmung sonst durchklickt.
+    const email = `e2e-a11y-consent-${Date.now()}@example.com`;
+    const requestedAt = Date.now();
+    expect(await requestMagicLink(page, email)).toBe("sent");
+    await page.goto(await fetchMagicLink(page, email, requestedAt));
+    await page.waitForURL("**/de/zustimmung**");
+    await expect(page.getByTestId("consent-accept")).toBeVisible();
+    await expectAccessible(page, "Zustimmung");
   });
 
   test("Moderations-Queue", async ({ page }) => {

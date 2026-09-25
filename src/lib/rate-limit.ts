@@ -30,12 +30,9 @@ export async function checkRateLimit(opts: {
   });
 
   if (Math.random() < CLEANUP_PROBABILITY) {
-    // Opportunistisches Aufräumen alter Fenster — kein Cron nötig (80/20).
-    await prisma.rateLimitBucket.deleteMany({
-      where: {
-        windowStart: { lt: new Date(Date.now() - CLEANUP_OLDER_THAN_MS) },
-      },
-    });
+    // Opportunistisches Aufräumen unter Last; die Frist garantiert erst der
+    // stündliche Cron (purgeExpiredRateLimits).
+    await purgeExpiredRateLimits();
   }
 
   if (bucket.count > limit) {
@@ -46,6 +43,25 @@ export async function checkRateLimit(opts: {
     return { ok: false, retryAfterSeconds };
   }
   return { ok: true };
+}
+
+/**
+ * Abgelaufene Zählfenster löschen (25.09.2026).
+ *
+ * Die Schlüssel enthalten IP-Adressen und E-Mail-Adressen. Das zufällige
+ * Aufräumen oben läuft nur bei 2 % der Aufrufe — bei wenig Verkehr blieben
+ * die Zähler tagelang liegen, obwohl die Datenschutzerklärung eine kurze
+ * Frist nennt. Der stündliche Cron ruft deshalb auch diese Funktion auf:
+ * Kein Zähler überlebt so länger als sein längstes Fenster (1 h) plus
+ * einen Cron-Takt (1 h).
+ */
+export async function purgeExpiredRateLimits(): Promise<number> {
+  const { count } = await prisma.rateLimitBucket.deleteMany({
+    where: {
+      windowStart: { lt: new Date(Date.now() - CLEANUP_OLDER_THAN_MS) },
+    },
+  });
+  return count;
 }
 
 /**

@@ -12,7 +12,11 @@ vi.mock("@/services/scoring-recompute", () => ({
 }));
 
 const rateLimitMock = vi.hoisted(() => vi.fn());
+const purgeMock = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: rateLimitMock }));
+vi.mock("@/services/data-retention", () => ({
+  purgeExpiredData: purgeMock,
+}));
 
 import { GET, POST } from "@/app/api/cron/recompute/route";
 
@@ -34,6 +38,11 @@ describe("POST /api/cron/recompute", () => {
     vi.clearAllMocks();
     process.env.CRON_SECRET = VALID_KEY;
     rateLimitMock.mockResolvedValue({ ok: true });
+    purgeMock.mockResolvedValue({
+      rateLimits: 3,
+      verificationTokens: 1,
+      sessions: 2,
+    });
     recomputeMock.mockResolvedValue({ tickets: 28, updated: 28 });
   });
 
@@ -45,7 +54,12 @@ describe("POST /api/cron/recompute", () => {
     const response = await POST(post({ "x-cron-key": VALID_KEY }));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ tickets: 28, updated: 28 });
+    expect(await response.json()).toEqual({
+      tickets: 28,
+      updated: 28,
+      purged: { rateLimits: 3, verificationTokens: 1, sessions: 2 },
+    });
+    expect(purgeMock).toHaveBeenCalledOnce();
     expect(recomputeMock).toHaveBeenCalledTimes(1);
   });
 

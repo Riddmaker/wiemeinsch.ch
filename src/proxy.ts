@@ -12,6 +12,14 @@ import {
 const intlMiddleware = createMiddleware(routing);
 
 /**
+ * Next setzt für dynamische Seiten (alle, wegen der Nonce-CSP) genau diesen
+ * Wert — hier derselbe plus `no-transform`, damit sich am Caching nichts
+ * ändert.
+ */
+export const PAGE_CACHE_CONTROL =
+  "private, no-cache, no-store, max-age=0, must-revalidate, no-transform";
+
+/**
  * Ein Durchgang, zwei Aufgaben (P13.2):
  *   1. Locale-Routing (next-intl, seit P3).
  *   2. Security-Header inkl. Nonce-basierter CSP.
@@ -46,6 +54,11 @@ export default function proxy(request: NextRequest) {
   for (const [name, value] of Object.entries(staticSecurityHeaders(context))) {
     response.headers.set(name, value);
   }
+  // Cloudflare schreibt HTML sonst um (Email Obfuscation, standardmässig an):
+  // Die Adresse im Impressum würde durch ein Skript ohne Nonce ersetzt, das
+  // die CSP blockiert. `no-transform` verbietet das auch dann, wenn jemand
+  // den Schalter in der Zone wieder einschaltet (Code-Review 25.09.2026).
+  response.headers.set("Cache-Control", PAGE_CACHE_CONTROL);
 
   return response;
 }

@@ -114,4 +114,19 @@ export async function loginAs(
   if (page.url().includes("/login/error")) {
     throw new Error(`Magic-Link für ${email} wurde nicht akzeptiert`);
   }
+  await acceptConsentIfAsked(page);
+}
+
+/**
+ * Einwilligung in die Datenschutzerklärung (25.09.2026): Neue Konten und
+ * Konten mit veralteter Version landen nach dem Login auf `/zustimmung`.
+ * Die Rollen-Tests sollen testen, wofür sie da sind — sie willigen ein und
+ * landen dort, wohin der Login führte. Den Ablauf selbst prüft auth.spec.ts.
+ */
+export async function acceptConsentIfAsked(page: Page): Promise<void> {
+  if (!new URL(page.url()).pathname.endsWith("/zustimmung")) {
+    return;
+  }
+  await page.getByTestId("consent-accept").click();
+  await page.waitForURL((url) => !url.pathname.endsWith("/zustimmung"));
 }

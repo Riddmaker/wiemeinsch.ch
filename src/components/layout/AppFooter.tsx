@@ -23,6 +23,13 @@ export async function AppFooter() {
         >
           {t("impressum")}
         </Link>
+        <Link
+          href="/datenschutz"
+          data-testid="footer-privacy"
+          className="underline underline-offset-4 hover:text-ink"
+        >
+          {t("privacy")}
+        </Link>
         <span>{t("license")}</span>
       </div>
     </footer>

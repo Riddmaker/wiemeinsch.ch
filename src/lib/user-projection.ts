@@ -38,4 +38,8 @@ export const privateUserFields = [
   // bleiben für das NextAuth-Schema bestehen.
   "name",
   "image",
+  // Beleg der Einwilligung (25.09.2026): Wann jemand zugestimmt hat, ist
+  // Sache zwischen der Person und dem Betreiber.
+  "privacyConsentVersion",
+  "privacyConsentAt",
 ] as const satisfies readonly Prisma.UserScalarFieldEnum[];

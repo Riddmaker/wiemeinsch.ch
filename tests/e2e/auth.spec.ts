@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { requestMagicLink } from "./helpers";
+import { loginAs, requestMagicLink } from "./helpers";
 
 /**
  * E2E-Auth-Tests (T4) — laufen gegen die lokale Compose-Instanz
@@ -169,6 +169,58 @@ test("Registrierung über /fr bleibt französisch — samt Anmelde-Mail", async 
   await page.goto("/fr/faq");
   await expect(page).toHaveURL(/\/fr\/faq$/);
   await expect(page.locator("html")).toHaveAttribute("lang", "fr");
+});
+
+test("Einwilligung: erst zustimmen, dann mitmachen — ablehnen meldet ab", async ({
+  page,
+  request,
+}) => {
+  flowOnly();
+  const email = `e2e-consent-${Date.now()}@example.com`;
+  expect(await requestMagicLink(page, email, "/fr/tickets/new")).toBe("sent");
+  await page.goto(await fetchMagicLink(request, email));
+
+  // Neues Konto: zuerst die Zustimmung, in der Sprache der Anmeldung, mit
+  // dem ursprünglichen Ziel als `next`.
+  await page.waitForURL("**/fr/zustimmung**");
+  expect(new URL(page.url()).searchParams.get("next")).toBe("/fr/tickets/new");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Avant de participer",
+  );
+
+  // Ohne Einwilligung führt jede andere Seite zurück — ausser den Seiten,
+  // die man zum Entscheiden braucht.
+  await page.goto("/fr/einstellungen");
+  await page.waitForURL("**/fr/zustimmung**");
+  await page.goto("/fr/datenschutz");
+  await expect(page).toHaveURL(/\/fr\/datenschutz$/);
+
+  // Ablehnen meldet ab; als Gast ist das Board wieder lesbar.
+  await page.goto("/fr/zustimmung");
+  await page.getByTestId("consent-decline").click();
+  await page.waitForURL(/\/fr$/);
+  const guest = (await (
+    await page.request.get("/api/auth/session")
+  ).json()) as { user?: unknown };
+  expect(guest.user).toBeUndefined();
+
+  // Erneut anmelden und zustimmen: weiter zum ursprünglichen Ziel, und die
+  // Zustimmung bleibt — kein zweites Fragen.
+  await loginAs(page, email, "/fr/tickets/new");
+  await expect(page).toHaveURL(/\/fr\/tickets\/new$/);
+  await page.goto("/fr/einstellungen");
+  await expect(page).toHaveURL(/\/fr\/einstellungen$/);
+});
+
+test("Datenschutz: Footer-Link und Hinweis beim Login", async ({ page }) => {
+  await page.goto("/de/login");
+  const hint = page.getByTestId("login-privacy-hint");
+  await expect(hint).toContainText("@handle");
+  await page.getByTestId("footer-privacy").click();
+  await expect(page).toHaveURL(/\/de\/datenschutz$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Datenschutz",
+  );
 });
 
 test("FR-Login: «Envoyer le lien de connexion» nicht abgeschnitten", async ({

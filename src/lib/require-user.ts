@@ -9,14 +9,37 @@ export class UnauthorizedError extends Error {
 }
 
 /**
+ * Session vorhanden, aber keine Einwilligung in die aktuelle
+ * Datenschutzerklärung. Unterklasse, damit jede bestehende Action sie wie
+ * «unauthorized» behandelt; die Oberfläche leitet vorher auf die
+ * Zustimmungsseite um, diese Schicht ist die serverseitige Absicherung.
+ */
+export class ConsentRequiredError extends UnauthorizedError {
+  constructor() {
+    super();
+    this.name = "ConsentRequiredError";
+  }
+}
+
+/**
  * Einziger erlaubter Weg, Identität in Server Actions zu prüfen (P4.7).
  * Wirft VOR jeder Mutation — eine Action ohne gültige Session erreicht die DB nie.
+ *
+ * Seit 25.09.2026 verlangt sie auch die Einwilligung in die aktuelle
+ * Datenschutzerklärung: Ohne sie darf nichts öffentlich werden. Nur Actions,
+ * die nichts veröffentlichen (Zustimmung selbst, Sprachwechsel), rufen mit
+ * `{ consent: false }` auf.
  */
-export async function requireUser(): Promise<{ id: string }> {
+export async function requireUser(
+  options: { consent?: boolean } = {},
+): Promise<{ id: string }> {
   const session = await getServerSession(authOptions);
   const id = session?.user?.id;
   if (!id) {
     throw new UnauthorizedError();
+  }
+  if (options.consent !== false && session.user.privacyConsent !== true) {
+    throw new ConsentRequiredError();
   }
   return { id };
 }
