@@ -11,7 +11,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const requireUserMock = vi.fn();
 vi.mock("@/lib/require-user", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/require-user")>();
-  return { ...actual, requireUser: () => requireUserMock() };
+  return {
+    ...actual,
+    requireUser: (options?: unknown) => requireUserMock(options),
+  };
 });
 
 const checkRateLimitMock = vi.fn();
@@ -33,7 +36,12 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-import { setPreferredLocale, updateProfile } from "@/actions/profile";
+import {
+  acceptPrivacyPolicy,
+  setPreferredLocale,
+  updateProfile,
+} from "@/actions/profile";
+import { PRIVACY_POLICY_VERSION } from "@/lib/privacy-consent";
 import { UnauthorizedError } from "@/lib/require-user";
 import {
   BIRTH_YEAR_MIN,
@@ -285,6 +293,61 @@ describe("setPreferredLocale", () => {
     await expect(setPreferredLocale(input)).resolves.toEqual({
       ok: false,
       error: "invalid_input",
+    });
+    expect(prismaMock.user.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("Einwilligung und Guard-Optionen (25.09.2026)", () => {
+  beforeEach(() => {
+    requireUserMock.mockReset();
+    checkRateLimitMock.mockReset();
+    prismaMock.user.update.mockReset();
+    requireUserMock.mockResolvedValue({ id: "user-1" });
+    checkRateLimitMock.mockResolvedValue({ ok: true });
+    prismaMock.user.update.mockResolvedValue({ id: "user-1" });
+  });
+
+  it("updateProfile verlangt die Einwilligung (Standard des Guards)", async () => {
+    await updateProfile(VALID);
+    expect(requireUserMock).toHaveBeenCalledWith(undefined);
+  });
+
+  it("setPreferredLocale geht ohne Einwilligung — die Zustimmungsseite braucht den Sprachwechsel", async () => {
+    await setPreferredLocale("FR");
+    expect(requireUserMock).toHaveBeenCalledWith({ consent: false });
+  });
+
+  it("acceptPrivacyPolicy speichert Version und Zeitpunkt beim eigenen User", async () => {
+    expect(await acceptPrivacyPolicy(PRIVACY_POLICY_VERSION)).toEqual({
+      ok: true,
+    });
+    expect(requireUserMock).toHaveBeenCalledWith({ consent: false });
+    expect(prismaMock.user.update).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: {
+        privacyConsentVersion: PRIVACY_POLICY_VERSION,
+        privacyConsentAt: expect.any(Date),
+      },
+    });
+  });
+
+  it("acceptPrivacyPolicy mit veralteter Version: outdated, nichts gespeichert", async () => {
+    expect(await acceptPrivacyPolicy("2020-01-01")).toEqual({
+      ok: false,
+      error: "outdated",
+    });
+    expect(
+      await acceptPrivacyPolicy({ version: PRIVACY_POLICY_VERSION }),
+    ).toEqual({ ok: false, error: "outdated" });
+    expect(prismaMock.user.update).not.toHaveBeenCalled();
+  });
+
+  it("acceptPrivacyPolicy ohne Session: unauthorized", async () => {
+    requireUserMock.mockRejectedValue(new UnauthorizedError());
+    expect(await acceptPrivacyPolicy(PRIVACY_POLICY_VERSION)).toEqual({
+      ok: false,
+      error: "unauthorized",
     });
     expect(prismaMock.user.update).not.toHaveBeenCalled();
   });

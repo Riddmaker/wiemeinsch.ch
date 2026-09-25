@@ -212,6 +212,7 @@ export async function loadOpenChangeRequestsForAuthor(
   const rows = await prisma.changeRequest.findMany({
     where: {
       status: "OPEN",
+      contentStatus: "PUBLISHED",
       ticket: { authorId: userId, status: "PUBLISHED" },
     },
     select: {

@@ -23,9 +23,14 @@ import { routing, type AppLocale } from "@/i18n/routing";
 import {
   CHANGE_REQUEST_TEXT_FIELDS,
   changeRequestDraftSchema,
+  changeRequestProposalSchema,
   type ChangeRequestProposal,
   type ChangeRequestTextField,
 } from "@/lib/validation/change-request";
+import {
+  hasTranslationIssues,
+  translationIssues,
+} from "@/lib/validation/translation-check";
 import { TITLE_MAX } from "@/lib/validation/limits";
 import { plainText, type ConstrainedDoc } from "@/lib/validation/tiptap";
 
@@ -157,6 +162,9 @@ export function ChangeRequestForm({
     Partial<Record<AppLocale, ChangeRequestLinterFields>>
   >({});
   const [fieldError, setFieldError] = useState<string | null>(null);
+  const [translationErrors, setTranslationErrors] = useState<
+    Partial<Record<AppLocale, Partial<Record<ChangeRequestTextField, string>>>>
+  >({});
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | "prepare" | "submit">(null);
   // Zähler im Draft-Key: nach dem Einreichen startet eine frische Instanz.
@@ -215,7 +223,11 @@ export function ChangeRequestForm({
   };
 
   const errorText = (code: string): string =>
-    t.has(`errors.${code}`) ? t(`errors.${code}`) : t("errors.invalid_input");
+    code === "translationInvalid"
+      ? t("translationInvalid")
+      : t.has(`errors.${code}`)
+        ? t(`errors.${code}`)
+        : t("errors.invalid_input");
 
   const changedTextFields = (): ChangeRequestTextField[] => {
     const proposal = buildProposal();
@@ -269,6 +281,16 @@ export function ChangeRequestForm({
       if (version) {
         translationsInput[target] = version;
       }
+    }
+    // Zeichenlimiten der Übersetzungen vorher prüfen (Review 25.09.2026).
+    const issues = translationIssues<ChangeRequestTextField>(
+      changeRequestProposalSchema,
+      translationsInput,
+    );
+    setTranslationErrors(issues);
+    if (hasTranslationIssues(issues)) {
+      setErrorCode("translationInvalid");
+      return;
     }
     setBusy("submit");
     try {
@@ -496,8 +518,17 @@ export function ChangeRequestForm({
                       delete nextFindings[target];
                       return nextFindings;
                     });
+                    setTranslationErrors((prev) => {
+                      if (!prev[target]?.[field]) {
+                        return prev;
+                      }
+                      const nextFields = { ...prev[target] };
+                      delete nextFields[field];
+                      return { ...prev, [target]: nextFields };
+                    });
                   }}
                   findings={versionFindings}
+                  fieldErrors={translationErrors[target] ?? {}}
                   draftKey={(field) =>
                     draftKey(draftBase, field, target, round)
                   }

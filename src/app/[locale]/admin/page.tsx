@@ -11,6 +11,7 @@ import {
 import { reasonLabels } from "@/lib/moderation-labels";
 import { adminUserId } from "@/lib/require-admin";
 import { queueFilterSchema } from "@/lib/validation/moderation";
+import { dateFormatter } from "@/lib/format";
 
 /**
  * Moderations-Queue (P12.3). Der Zugang wird serverseitig über
@@ -46,11 +47,7 @@ export default async function AdminQueuePage({
     cases.map((entry) => reasonLabels(entry.type, entry.reason)),
   );
 
-  const dateFormat = new Intl.DateTimeFormat(`${locale}-CH`, {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  const dateFormat = dateFormatter(locale);
 
   const filterLink = (patch: { status?: string; type?: string }) => ({
     pathname: "/admin" as const,

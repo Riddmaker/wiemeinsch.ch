@@ -17,10 +17,15 @@ import { LinterFeedback } from "@/components/tickets/LinterFeedback";
 import { useRouter } from "@/i18n/navigation";
 import { routing, type AppLocale } from "@/i18n/routing";
 import { STATEMENT_MAX, STATEMENT_MIN } from "@/lib/validation/limits";
+import { statementContentSchema } from "@/lib/validation/content";
 import {
   statementDraftSchema,
   type StatementCategory,
 } from "@/lib/validation/statement";
+import {
+  hasTranslationIssues,
+  translationIssues,
+} from "@/lib/validation/translation-check";
 import type { ConstrainedDoc } from "@/lib/validation/tiptap";
 
 /**
@@ -110,6 +115,9 @@ export function StatementForm({
     Partial<Record<AppLocale, StatementLinterFields>>
   >({});
   const [fieldError, setFieldError] = useState<string | null>(null);
+  const [translationErrors, setTranslationErrors] = useState<
+    Partial<Record<AppLocale, Partial<Record<"content", string>>>>
+  >({});
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | "prepare" | "publish">(null);
   // Zähler im Draft-Key: nach dem Publish rendert eine frische Editor-Instanz
@@ -171,6 +179,18 @@ export function StatementForm({
       if (version) {
         translationsInput[target] = version;
       }
+    }
+    // Dieselben 50–500 Zeichen wie auf dem Server — vorher prüfen, damit der
+    // User sieht, welche Übersetzung nicht passt.
+    const issues = translationIssues(
+      statementContentSchema,
+      translationsInput,
+      "content",
+    );
+    setTranslationErrors(issues);
+    if (hasTranslationIssues(issues)) {
+      setErrorCode("translationInvalid");
+      return;
     }
     setBusy("publish");
     try {
@@ -242,7 +262,12 @@ export function StatementForm({
 
   return (
     <div className="mt-4 flex max-w-[640px] flex-col gap-4">
-      {errorCode && banner(t(`errors.${errorCode}`))}
+      {errorCode &&
+        banner(
+          errorCode === "translationInvalid"
+            ? t("translationInvalid")
+            : t(`errors.${errorCode}`),
+        )}
       {step === "form" && hasFindings && (
         <div className="flex flex-col gap-2">
           {banner(t("linterBlocked"))}
@@ -355,9 +380,22 @@ export function StatementForm({
                       delete nextFindings[target];
                       return nextFindings;
                     });
+                    setTranslationErrors((prev) => {
+                      if (!prev[target]) {
+                        return prev;
+                      }
+                      const nextErrors = { ...prev };
+                      delete nextErrors[target];
+                      return nextErrors;
+                    });
                   }}
                   highlights={toHighlights(versionFindings)}
                 />
+                {translationErrors[target]?.content && (
+                  <p className="font-mono text-xs text-signal">
+                    {errorText(translationErrors[target]?.content ?? "")}
+                  </p>
+                )}
                 {versionFindings.content && (
                   <LinterFeedback findings={versionFindings.content} />
                 )}

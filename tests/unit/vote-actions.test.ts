@@ -43,6 +43,8 @@ vi.mock("@/lib/rate-limit", () => ({
 
 // Transaktions-Client: $transaction(fn) führt fn mit dem tx-Mock aus.
 const txMock = vi.hoisted(() => ({
+  // Zeilensperre (lib/db-locks.ts) — `SELECT … FOR UPDATE`.
+  $queryRaw: vi.fn(),
   ticket: { findUnique: vi.fn(), update: vi.fn() },
   ticketVote: {
     findUnique: vi.fn(),

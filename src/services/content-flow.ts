@@ -1,7 +1,11 @@
 import type { AppLocale } from "@/i18n/routing";
 import { routing } from "@/i18n/routing";
 import { docToMarkdown, markdownToDoc } from "@/lib/tiptap-markdown";
-import { plainText, type ConstrainedDoc } from "@/lib/validation/tiptap";
+import {
+  isEmptyDoc,
+  plainText,
+  type ConstrainedDoc,
+} from "@/lib/validation/tiptap";
 import { MistralUnavailableError } from "@/services/mistral";
 import { translateText } from "@/services/translation";
 
@@ -21,6 +25,18 @@ export async function translateDoc(
   doc: ConstrainedDoc,
   sourceLocale: AppLocale,
 ): Promise<Partial<Record<AppLocale, ConstrainedDoc>>> {
+  // Nichts zu übersetzen: Ein leeres Dokument (etwa «Finanzierung entfernen»
+  // im Änderungsantrag) ginge sonst als leerer Text ans LLM, dessen Antwort
+  // die Validierung verwirft — der User sähe «KI nicht verfügbar».
+  if (isEmptyDoc(doc)) {
+    const empty: Partial<Record<AppLocale, ConstrainedDoc>> = {};
+    for (const locale of routing.locales) {
+      if (locale !== sourceLocale) {
+        empty[locale] = doc;
+      }
+    }
+    return empty;
+  }
   const result = await translateText({
     text: docToMarkdown(doc),
     sourceLocale,

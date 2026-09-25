@@ -30,7 +30,14 @@ import {
   SOLUTION_MIN,
   TITLE_MAX,
 } from "@/lib/validation/limits";
-import { ticketDraftSchema } from "@/lib/validation/ticket";
+import {
+  ticketDraftSchema,
+  ticketTranslationVersionSchema,
+} from "@/lib/validation/ticket";
+import {
+  hasTranslationIssues,
+  translationIssues,
+} from "@/lib/validation/translation-check";
 import { graphemeLength } from "@/lib/validation/tiptap";
 import type { z } from "zod";
 
@@ -157,6 +164,10 @@ export function TicketForm({
   >({});
   const [translationFindings, setTranslationFindings] = useState<
     Partial<Record<AppLocale, TicketLinterFields>>
+  >({});
+  // Verletzte Zeichenlimiten in den Übersetzungen, je Sprache und Feld.
+  const [translationErrors, setTranslationErrors] = useState<
+    Partial<Record<AppLocale, Partial<Record<TicketField, string>>>>
   >({});
   const [busy, setBusy] = useState<null | "prepare" | "publish">(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
@@ -319,6 +330,17 @@ export function TicketForm({
         ...(version.funding ? { funding: version.funding } : {}),
       };
     }
+    // Dieselben Limiten wie auf dem Server — vorher prüfen, damit der User
+    // sieht, WELCHE Übersetzung in welchem Feld zu kurz oder zu lang ist.
+    const issues = translationIssues<TicketField>(
+      ticketTranslationVersionSchema,
+      translationsInput,
+    );
+    setTranslationErrors(issues);
+    if (hasTranslationIssues(issues)) {
+      setErrorCode("translationInvalid");
+      return;
+    }
     setBusy("publish");
     try {
       const result = await callAction(() =>
@@ -373,6 +395,13 @@ export function TicketForm({
       delete nextFields[editedField];
       return { ...prev, [target]: nextFields };
     });
+    setTranslationErrors((prev) => {
+      const current = prev[target];
+      if (!current?.[editedField]) return prev;
+      const nextFields = { ...current };
+      delete nextFields[editedField];
+      return { ...prev, [target]: nextFields };
+    });
   };
 
   const hasFindings = Object.keys(findings).length > 0;
@@ -402,7 +431,13 @@ export function TicketForm({
 
   return (
     <div className="flex flex-col gap-8">
-      {errorCode && banner(t(`errors.${errorCode}`), "error")}
+      {errorCode &&
+        banner(
+          errorCode === "translationInvalid"
+            ? t("translationInvalid")
+            : t(`errors.${errorCode}`),
+          "error",
+        )}
       {step === "form" && hasFindings && (
         <div className="flex flex-col gap-2">
           {banner(t("linterBlocked"), "error")}
@@ -668,6 +703,11 @@ export function TicketForm({
                       max: chNumber.format(TITLE_MAX),
                     })}
                   </span>
+                  {translationErrors[target]?.title && (
+                    <p className="font-mono text-xs text-signal">
+                      {errorText(translationErrors[target]?.title)}
+                    </p>
+                  )}
                   {versionFindings.title && (
                     <LinterFeedback findings={versionFindings.title} />
                   )}
@@ -708,6 +748,11 @@ export function TicketForm({
                         }
                         highlights={toHighlights(versionFindings, field)}
                       />
+                      {translationErrors[target]?.[field] && (
+                        <p className="font-mono text-xs text-signal">
+                          {errorText(translationErrors[target]?.[field])}
+                        </p>
+                      )}
                       {versionFindings[field] && (
                         <LinterFeedback findings={versionFindings[field]} />
                       )}

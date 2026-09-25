@@ -49,11 +49,21 @@ export async function GET(request: NextRequest) {
   }
   const q = parsed.data.q;
 
+  // Nur Tags, die noch an mindestens einem PUBLIZIERTEN Ticket hängen: Tags
+  // depublizierter Tickets oder per Merge entfernte blieben sonst als
+  // Vorschlag für alle sichtbar — ein Leck an der Moderation vorbei
+  // (Code-Review 25.09.2026). Implizite m:n-Tabelle: A = Hashtag, B = Ticket.
   const rows = await prisma.$queryRaw<{ tag: string }[]>`
-    SELECT tag
-    FROM "Hashtag"
-    WHERE tag LIKE ${`${q}%`} OR tag % ${q}
-    ORDER BY (tag LIKE ${`${q}%`}) DESC, similarity(tag, ${q}) DESC, tag ASC
+    SELECT h.tag
+    FROM "Hashtag" h
+    WHERE (h.tag LIKE ${`${q}%`} OR h.tag % ${q})
+      AND EXISTS (
+        SELECT 1
+        FROM "_HashtagToTicket" ht
+        JOIN "Ticket" t ON t.id = ht."B"
+        WHERE ht."A" = h.id AND t.status = 'PUBLISHED'
+      )
+    ORDER BY (h.tag LIKE ${`${q}%`}) DESC, similarity(h.tag, ${q}) DESC, h.tag ASC
     LIMIT 8
   `;
 

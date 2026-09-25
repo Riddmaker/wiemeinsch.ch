@@ -69,21 +69,32 @@ vi.mock("@/services/content-flow", async (importOriginal) => {
 const publishMocks = vi.hoisted(() => ({
   createTicket: vi.fn(),
   createStatement: vi.fn(),
+  createStatementInTx: vi.fn(),
   translateTicketDraft: vi.fn(),
   regionExists: vi.fn(),
   refreshStatementAggregates: vi.fn(),
 }));
 vi.mock("@/services/publish-content", () => publishMocks);
 
+const refreshTicketCountersMock = vi.fn();
+vi.mock("@/services/change-request-counters", () => ({
+  refreshTicketCounters: (...args: unknown[]) =>
+    refreshTicketCountersMock(...args),
+}));
+
 const txMock = vi.hoisted(() => ({
+  // Zeilensperre (lib/db-locks.ts) — `SELECT … FOR UPDATE`.
+  $queryRaw: vi.fn(),
   ticket: { update: vi.fn() },
-  statement: { update: vi.fn() },
-  moderationCase: { update: vi.fn() },
+  statement: { update: vi.fn(), findUnique: vi.fn() },
+  changeRequest: { update: vi.fn(), findUnique: vi.fn() },
+  moderationCase: { update: vi.fn(), updateMany: vi.fn() },
 }));
 
 const prismaMock = vi.hoisted(() => ({
   ticket: { findUnique: vi.fn() },
   statement: { findUnique: vi.fn() },
+  changeRequest: { findUnique: vi.fn() },
   moderationCase: {
     findFirst: vi.fn(),
     findUnique: vi.fn(),
@@ -160,6 +171,7 @@ beforeEach(() => {
   publishMocks.regionExists.mockResolvedValue(true);
   publishMocks.createTicket.mockResolvedValue("ticket-new");
   publishMocks.createStatement.mockResolvedValue("statement-new");
+  publishMocks.createStatementInTx.mockResolvedValue("statement-new");
   publishMocks.translateTicketDraft.mockResolvedValue({
     fr: { title: "FR", problem: richDoc(250), solution: richDoc(250) },
     it: { title: "IT", problem: richDoc(250), solution: richDoc(250) },
@@ -176,6 +188,8 @@ beforeEach(() => {
   txMock.statement.update.mockResolvedValue({ ticketId: "ticket-1" });
   txMock.ticket.update.mockResolvedValue({ id: "ticket-1" });
   txMock.moderationCase.update.mockResolvedValue({ id: "case-1" });
+  txMock.moderationCase.updateMany.mockResolvedValue({ count: 1 });
+  txMock.statement.findUnique.mockResolvedValue({ ticketId: "ticket-1" });
 });
 
 // ---------------------------------------------------------------------------
@@ -445,10 +459,27 @@ describe("Admin-Entscheide (P12.3)", () => {
       txMock,
       "ticket-1",
     );
-    const caseUpdate = txMock.moderationCase.update.mock.calls[0]?.[0] as {
-      data: Record<string, unknown>;
-    };
-    expect(caseUpdate.data.resolutionNote).toBe("DEPUBLISHED");
+    // Der Fall wird atomar beansprucht (nur aus OPEN) — ein zweiter Admin
+    // überschreibt den Entscheid nicht.
+    expect(txMock.moderationCase.updateMany).toHaveBeenCalledWith({
+      where: { id: "case-1", status: "OPEN", type: "REPORT" },
+      data: expect.objectContaining({ resolutionNote: "DEPUBLISHED" }),
+    });
+    // Das Ticket des Statements wird vor dem Neuzählen gesperrt.
+    expect(txMock.$queryRaw).toHaveBeenCalled();
+  });
+
+  it("Depublizieren eines inzwischen entschiedenen Falls: nichts depubliziert", async () => {
+    prismaMock.moderationCase.findUnique.mockResolvedValue({
+      type: "REPORT",
+      status: "OPEN",
+      ticketId: "ticket-1",
+      statementId: null,
+    });
+    txMock.moderationCase.updateMany.mockResolvedValue({ count: 0 });
+    const result = await depublishReportedContent(input);
+    expect(result).toEqual({ ok: false, error: "invalid_input" });
+    expect(txMock.ticket.update).not.toHaveBeenCalled();
   });
 
   it("Depublizieren greift nicht auf einen APPEAL-Fall", async () => {
@@ -478,12 +509,62 @@ describe("Admin-Entscheide (P12.3)", () => {
     expect(result).toEqual({ ok: true });
     expect(publishMocks.createTicket).toHaveBeenCalledTimes(1);
     expect(publishMocks.createTicket.mock.calls[0]?.[0]).toBe("user-1");
-    const caseUpdate = prismaMock.moderationCase.update.mock.calls[0]?.[0] as {
+    // Anlegen in derselben Transaktion wie der Claim.
+    expect(publishMocks.createTicket.mock.calls[0]?.[2]).toBe(txMock);
+    expect(txMock.moderationCase.updateMany).toHaveBeenCalledWith({
+      where: { id: "case-1", status: "OPEN", type: "APPEAL" },
+      data: expect.objectContaining({
+        status: "RESOLVED",
+        resolutionNote: "APPEAL_APPROVED",
+      }),
+    });
+    const caseUpdate = txMock.moderationCase.update.mock.calls[0]?.[0] as {
       data: Record<string, unknown>;
     };
-    expect(caseUpdate.data.status).toBe("RESOLVED");
-    expect(caseUpdate.data.resolutionNote).toBe("APPEAL_APPROVED");
     expect(caseUpdate.data.ticketId).toBe("ticket-new");
+  });
+
+  it("Freigabe, während ein anderer Admin den Fall abweist: nichts publiziert", async () => {
+    prismaMock.moderationCase.findUnique.mockResolvedValue({
+      type: "APPEAL",
+      status: "OPEN",
+      reporterId: "user-1",
+      blockedContent: {
+        kind: "ticket",
+        draft: ticketDraft,
+        findings: [{ field: "title", reason: "POLEMIK" }],
+      },
+    });
+    txMock.moderationCase.updateMany.mockResolvedValue({ count: 0 });
+    const result = await approveAppeal(input);
+    expect(result).toEqual({ ok: false, error: "invalid_input" });
+    expect(publishMocks.createTicket).not.toHaveBeenCalled();
+  });
+
+  it("Freigabe mit Übersetzung ausserhalb der Limiten: eigener Fehlercode", async () => {
+    prismaMock.moderationCase.findUnique.mockResolvedValue({
+      type: "APPEAL",
+      status: "OPEN",
+      reporterId: "user-1",
+      blockedContent: {
+        kind: "ticket",
+        draft: ticketDraft,
+        findings: [{ field: "title", reason: "POLEMIK" }],
+      },
+    });
+    publishMocks.translateTicketDraft.mockResolvedValue({
+      fr: {
+        title: "x".repeat(90),
+        problem: richDoc(250),
+        solution: richDoc(250),
+      },
+      it: { title: "IT", problem: richDoc(250), solution: richDoc(250) },
+    });
+    expect(await approveAppeal(input)).toEqual({
+      ok: false,
+      error: "translation_invalid",
+    });
+    expect(txMock.moderationCase.updateMany).not.toHaveBeenCalled();
   });
 
   it("Freigabe eines Statement-Entwurfs publiziert über denselben Weg", async () => {
@@ -499,8 +580,9 @@ describe("Admin-Entscheide (P12.3)", () => {
     });
     const result = await approveAppeal(input);
     expect(result).toEqual({ ok: true });
-    expect(publishMocks.createStatement.mock.calls[0]?.[0]).toBe("user-2");
-    const caseUpdate = prismaMock.moderationCase.update.mock.calls[0]?.[0] as {
+    expect(publishMocks.createStatementInTx.mock.calls[0]?.[0]).toBe(txMock);
+    expect(publishMocks.createStatementInTx.mock.calls[0]?.[1]).toBe("user-2");
+    const caseUpdate = txMock.moderationCase.update.mock.calls[0]?.[0] as {
       data: Record<string, unknown>;
     };
     expect(caseUpdate.data.statementId).toBe("statement-new");
@@ -578,5 +660,68 @@ describe("resolutionNote (Entscheid + Notiz in einer Spalte)", () => {
       decision: null,
       note: "nur eine Notiz",
     });
+  });
+});
+
+describe("Änderungsanträge melden und depublizieren (Review 25.09.2026)", () => {
+  it("Meldung eines publizierten Antrags erzeugt einen Fall mit changeRequestId", async () => {
+    prismaMock.changeRequest.findUnique.mockResolvedValue({
+      contentStatus: "PUBLISHED",
+      ticket: { status: "PUBLISHED" },
+    });
+    const result = await reportContent({
+      targetType: "CHANGE_REQUEST",
+      targetId: "cr-1",
+      reason: "BELEIDIGUNG",
+    });
+    expect(result).toEqual({ ok: true });
+    expect(prismaMock.moderationCase.create).toHaveBeenCalledWith({
+      data: {
+        type: "REPORT",
+        reporterId: "user-1",
+        reason: "BELEIDIGUNG",
+        changeRequestId: "cr-1",
+      },
+    });
+  });
+
+  it("depublizierter Antrag oder Antrag auf depubliziertem Ticket: nicht meldbar", async () => {
+    for (const row of [
+      { contentStatus: "DEPUBLISHED", ticket: { status: "PUBLISHED" } },
+      { contentStatus: "PUBLISHED", ticket: { status: "DEPUBLISHED" } },
+      null,
+    ]) {
+      prismaMock.changeRequest.findUnique.mockResolvedValue(row);
+      expect(
+        await reportContent({
+          targetType: "CHANGE_REQUEST",
+          targetId: "cr-1",
+          reason: "SPAM",
+        }),
+      ).toEqual({ ok: false, error: "invalid_input" });
+    }
+    expect(prismaMock.moderationCase.create).not.toHaveBeenCalled();
+  });
+
+  it("Depublizieren setzt nur den Antrag auf DEPUBLISHED und zählt die Anträge neu", async () => {
+    prismaMock.moderationCase.findUnique.mockResolvedValue({
+      type: "REPORT",
+      status: "OPEN",
+      ticketId: null,
+      statementId: null,
+      changeRequestId: "cr-1",
+    });
+    txMock.changeRequest.findUnique.mockResolvedValue({ ticketId: "ticket-1" });
+    txMock.changeRequest.update.mockResolvedValue({ ticketId: "ticket-1" });
+    const result = await depublishReportedContent({ caseId: "case-1" });
+    expect(result).toEqual({ ok: true });
+    expect(txMock.changeRequest.update).toHaveBeenCalledWith({
+      where: { id: "cr-1" },
+      data: { contentStatus: "DEPUBLISHED" },
+      select: { ticketId: true },
+    });
+    expect(refreshTicketCountersMock).toHaveBeenCalledWith(txMock, "ticket-1");
+    expect(txMock.ticket.update).not.toHaveBeenCalled();
+    expect(txMock.statement.update).not.toHaveBeenCalled();
   });
 });

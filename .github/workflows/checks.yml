@@ -38,6 +38,16 @@ jobs:
         # Typen des Clients nicht.
         run: npx prisma generate
 
+      - name: Abhängigkeiten auf bekannte Schwachstellen prüfen
+        # Blockierend für «high» und höher in LAUFZEIT-Abhängigkeiten (User-
+        # Entscheid 25.09.2026): Root-Projekt UND ops/ — die Prisma-CLI aus
+        # ops/ läuft im Produktions-Image beim Start. Dev-Werkzeuge (--omit=dev)
+        # landen nicht im Image. Eine bewusste Ausnahme gehört mit Begründung
+        # hierher, nie als stilles `|| true`.
+        run: |
+          npm audit --omit=dev --audit-level=high
+          npm audit --omit=dev --audit-level=high --prefix ops
+
       - name: Secret-Scan des Arbeitsbaums
         # Zweite Verteidigungslinie zum lokalen Pre-Push-Scan: was hier
         # anschlägt, darf nicht in ein Image wandern (HABIT 1).
@@ -56,9 +66,10 @@ jobs:
         run: npm run format:check
 
       - name: Unit-Tests
-        # Die DB-gebundenen Fälle überspringen sich ohne DATABASE_URL selbst
-        # (scoring-recompute.test.ts) — sie laufen im E2E-Job gegen die echte
-        # Compose-Datenbank.
+        # Die DB-gebundenen Fälle (db-constraints, db-concurrency, rate-limit,
+        # scoring-recompute) überspringen sich ohne DATABASE_URL selbst — sie
+        # laufen im E2E-Job gegen die echte Compose-Datenbank (Schritt
+        # «DB-gebundene Unit-Tests»).
         run: npx vitest run
 
   e2e:
@@ -127,6 +138,15 @@ jobs:
         env:
           DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
         run: npx prisma db seed
+
+      - name: DB-gebundene Unit-Tests
+        # Ohne diesen Schritt liefen sie in CI nie: Der Qualitäts-Job hat keine
+        # Datenbank. Vor Playwright, weil scoring-recompute mit einem festen
+        # Zeitpunkt rechnet — das Global-Setup der E2E-Suite bringt die Scores
+        # danach wieder auf «jetzt». Die Tests räumen ihre Zeilen selbst weg.
+        env:
+          DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+        run: npx vitest run tests/unit/db-constraints.test.ts tests/unit/db-concurrency.test.ts tests/unit/rate-limit.test.ts tests/unit/scoring-recompute.test.ts
 
       - name: Playwright-Browser installieren
         # Beide Projekte (chromium, mobile) sind Chromium-basiert.

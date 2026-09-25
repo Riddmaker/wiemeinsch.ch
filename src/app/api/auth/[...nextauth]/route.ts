@@ -1,20 +1,29 @@
 import NextAuth from "next-auth";
 import type { NextRequest } from "next/server";
 import { authOptions } from "@/lib/auth";
-import {
-  checkClientIpRateLimit,
-  checkRateLimit,
-  getClientIp,
-} from "@/lib/rate-limit";
+import { checkClientIpRateLimit, getClientIp } from "@/lib/rate-limit";
+import { resolveSignupLocale, signupLocaleContext } from "@/lib/signup-locale";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 
-// NextAuth v4 App-Router-Handler. POSTs laufen durch einen Guard:
-// Rate-Limit (IP, dann E-Mail) → Turnstile → NextAuth (Reihenfolge bewusst:
-// billige Checks zuerst, externer siteverify-Call zuletzt).
+// NextAuth v4 App-Router-Handler.
+//
+// POST läuft durch einen Guard: IP-Limit → Turnstile → NextAuth. Das Limit
+// pro Adresse zählt NICHT hier, sondern im `signIn`-Callback (lib/auth.ts):
+// erst nach der CSRF-Prüfung von NextAuth und auf genau die normalisierte
+// Adresse, an die gemailt wird.
+//
+// GET (Callbacks von Magic Link und Google) legt die Sprache der Anmeldung
+// in einen Kontext, den `events.createUser` liest (lib/signup-locale.ts).
 const handler = NextAuth(authOptions) as (
   req: NextRequest,
   ctx: { params: Promise<{ nextauth: string[] }> },
 ) => Promise<Response>;
+
+/** NextAuths Callback-Cookie — mit Präfix, sobald `NEXTAUTH_URL` https ist. */
+const CALLBACK_COOKIES = [
+  "__Secure-next-auth.callback-url",
+  "next-auth.callback-url",
+];
 
 function rejected(
   req: NextRequest,
@@ -36,7 +45,6 @@ async function guardedPost(
   ctx: { params: Promise<{ nextauth: string[] }> },
 ): Promise<Response> {
   const { nextauth } = await ctx.params;
-  const ip = getClientIp(req.headers);
 
   // Nur wirksam hinter einem vertrauenswürdigen Proxy (P13.3): ohne
   // Cloudflare gäbe es keine belastbare Client-IP, und ein gemeinsamer
@@ -52,24 +60,10 @@ async function guardedPost(
 
   if (nextauth[0] === "signin" && nextauth[1] === "email") {
     const form = await req.clone().formData();
-    const email = String(form.get("email") ?? "")
-      .trim()
-      .toLowerCase();
-
-    const emailLimit = await checkRateLimit({
-      scope: "auth-email",
-      identifier: email || "empty",
-      limit: 5,
-      windowSeconds: 900,
-    });
-    if (!emailLimit.ok) {
-      return rejected(req, "RateLimit", 429);
-    }
-
     const token = form.get("cf-turnstile-response");
     const human = await verifyTurnstileToken(
       typeof token === "string" ? token : null,
-      ip,
+      getClientIp(req.headers),
     );
     if (!human) {
       return rejected(req, "Turnstile", 400);
@@ -79,4 +73,20 @@ async function guardedPost(
   return handler(req, ctx);
 }
 
-export { handler as GET, guardedPost as POST };
+async function localizedGet(
+  req: NextRequest,
+  ctx: { params: Promise<{ nextauth: string[] }> },
+): Promise<Response> {
+  const callbackCookie = CALLBACK_COOKIES.map(
+    (name) => req.cookies.get(name)?.value,
+  ).find(Boolean);
+  const locale = resolveSignupLocale({
+    callbackUrl: req.nextUrl.searchParams.get("callbackUrl"),
+    callbackCookie,
+    acceptLanguage: req.headers.get("accept-language"),
+    base: req.url,
+  });
+  return signupLocaleContext.run(locale, () => handler(req, ctx));
+}
+
+export { localizedGet as GET, guardedPost as POST };

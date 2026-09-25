@@ -50,7 +50,8 @@
   "footer": {
     "impressum": "Impressum",
     "license": "Quelloffen unter PolyForm Noncommercial 1.0.0",
-    "faq": "FAQ & Presse"
+    "faq": "FAQ & Presse",
+    "privacy": "Datenschutz"
   },
   "home": {
     "title": "Das politische Backlog der Schweiz",
@@ -172,15 +173,19 @@
       "Turnstile": "Die Sicherheitsprüfung ist fehlgeschlagen. Bitte lade die Seite neu und versuche es noch einmal.",
       "RateLimit": "Zu viele Versuche in kurzer Zeit. Bitte warte einige Minuten und versuche es dann erneut.",
       "Verification": "Dieser Anmelde-Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.",
+      "EmailSignin": "Diese E-Mail-Adresse können wir nicht verwenden. Bitte prüfe die Schreibweise.",
+      "OAuthAccountNotLinked": "Zu dieser E-Mail-Adresse gibt es bereits ein Konto, das sich per Anmelde-Link anmeldet. Bitte melde dich mit deiner E-Mail-Adresse an.",
       "Default": "Die Anmeldung hat nicht geklappt. Bitte versuche es erneut."
     },
-    "backToLogin": "Zurück zur Anmeldung"
+    "backToLogin": "Zurück zur Anmeldung",
+    "privacyHint": "Wie du abstimmst, wird unter deinem zufälligen @handle öffentlich. Nach der Anmeldung fragen wir dich um deine Einwilligung. Mehr dazu unter <link>Datenschutz</link>."
   },
   "editor": {
     "bold": "Fett",
     "italic": "Kursiv",
     "bulletList": "Aufzählung",
-    "counter": "{count} / {max} Zeichen"
+    "counter": "{count} / {max} Zeichen",
+    "counterWithMin": "{count} / {max} Zeichen · mindestens {min}"
   },
   "levels": {
     "FEDERAL": "Schweizweit",
@@ -227,8 +232,10 @@
       "duplicates": "Hashtags dürfen sich nicht wiederholen",
       "canton_required": "Bitte einen Kanton wählen",
       "municipality_required": "Bitte eine Gemeinde wählen",
-      "federal_no_region": "Bei «Schweizweit» ist keine Region nötig"
-    }
+      "federal_no_region": "Bei «Schweizweit» ist keine Region nötig",
+      "too_complex": "Der Text ist zu stark verschachtelt oder enthält zu viele leere Absätze."
+    },
+    "translationInvalid": "Eine Übersetzung hält die Zeichenlimiten nicht ein. Bitte korrigiere die markierten Felder, bevor du publizierst."
   },
   "linter": {
     "chip": "CIVIC-LINTER · {reason}",
@@ -302,8 +309,10 @@
       "invalid_input": "Die Eingaben sind unvollständig oder ungültig. Bitte prüfe das Formular.",
       "ai_unavailable": "Die KI-Prüfung ist im Moment nicht erreichbar. Dein Entwurf bleibt gespeichert — bitte versuche es später erneut.",
       "min_50": "Mindestens 50 Zeichen",
-      "max_500": "Maximal 500 Zeichen"
-    }
+      "max_500": "Maximal 500 Zeichen",
+      "too_complex": "Der Text ist zu stark verschachtelt oder enthält zu viele leere Absätze."
+    },
+    "translationInvalid": "Eine Übersetzung hält die Zeichenlimiten nicht ein. Bitte korrigiere die markierten Felder, bevor du publizierst."
   },
   "changeRequests": {
     "heading": "{count, plural, =0 {Änderungsanträge} one {# Änderungsantrag} other {# Änderungsanträge}}",
@@ -365,7 +374,9 @@
       "max_1500": "Maximal 1'500 Zeichen",
       "min_1": "Pflichtfeld",
       "not_requester": "Nur wer den Antrag gestellt hat, kann ihn überarbeiten oder zurückziehen.",
-      "awaiting_revision": "Dieser Antrag wurde zur Überarbeitung zurückgegeben und wartet auf eine neue Fassung."
+      "awaiting_revision": "Dieser Antrag wurde zur Überarbeitung zurückgegeben und wartet auf eine neue Fassung.",
+      "revised": "Der Antrag wurde inzwischen überarbeitet. Die neue Fassung steht jetzt oben — bitte prüfe sie, bevor du entscheidest.",
+      "too_complex": "Der Text ist zu stark verschachtelt oder enthält zu viele leere Absätze."
     },
     "confirmMergeIntro": "Der Vorschlag wird unverändert übernommen und ersetzt die betroffenen Felder in allen drei Sprachen. @{handle} wird als Co-Autor gelistet.",
     "adjust": "Anpassen & übernehmen",
@@ -397,7 +408,8 @@
     "withdrawConfirmText": "Ziehst du den Antrag zurück, kann ihn der Autor nicht mehr übernehmen. Du kannst danach einen neuen Antrag stellen.",
     "confirmWithdraw": "Antrag zurückziehen",
     "withdrawing": "Wird zurückgezogen…",
-    "withdrawnOn": "Zurückgezogen {date}"
+    "withdrawnOn": "Zurückgezogen {date}",
+    "translationInvalid": "Eine Übersetzung hält die Zeichenlimiten nicht ein. Bitte korrigiere die markierten Felder, bevor du publizierst."
   },
   "profile": {
     "memberSince": "Dabei seit {date}",
@@ -541,9 +553,11 @@
       "rate_limited": "Zu viele Anfragen. Bitte später erneut.",
       "invalid_input": "Dieser Fall lässt sich so nicht entscheiden.",
       "ai_unavailable": "Die Übersetzung ist gerade nicht erreichbar — der Fall bleibt offen.",
+      "translation_invalid": "Eine KI-Übersetzung hält die Zeichenlimiten nicht ein. Der Fall bleibt offen — ohne Vorschau lässt sich das hier nicht korrigieren; bitte abweisen und den Hinweis in der Notiz festhalten.",
       "generic": "Das hat nicht geklappt. Bitte versuche es erneut."
     },
-    "findingsNote": "Maschinell erzeugte Begründungen des Civic-Linters — Hinweise, keine Empfehlung. Der Text stammt aus dem beanstandeten Inhalt und kann darauf angelegt sein, den Entscheid zu beeinflussen."
+    "findingsNote": "Maschinell erzeugte Begründungen des Civic-Linters — Hinweise, keine Empfehlung. Der Text stammt aus dem beanstandeten Inhalt und kann darauf angelegt sein, den Entscheid zu beeinflussen.",
+    "changeRequestNote": "Änderungsantrag. Depublizieren entfernt nur diese Karte — ein bereits übernommener Text steht im Ticket; dafür das Ticket selbst melden."
   },
   "errors": {
     "notFoundTitle": "Seite nicht gefunden",
@@ -552,5 +566,108 @@
     "errorBody": "Die Seite konnte nicht geladen werden. Versuche es nochmals — bleibt der Fehler bestehen, melde dich beim Betrieb.",
     "retry": "Nochmals versuchen",
     "backHome": "Zum Board"
+  },
+  "loginEmail": {
+    "subject": "Dein Anmelde-Link für wiemeinsch.ch",
+    "heading": "Anmelden bei wiemeinsch.ch",
+    "intro": "Klicke auf den Knopf, um dich anzumelden. Der Link ist eine Stunde gültig und funktioniert nur einmal.",
+    "button": "Jetzt anmelden",
+    "fallback": "Falls der Knopf nicht funktioniert, kopiere diesen Link in deinen Browser:",
+    "ignore": "Du hast keine Anmeldung angefordert? Dann kannst du diese E-Mail einfach ignorieren."
+  },
+  "privacy": {
+    "metaTitle": "Datenschutz — wiemeinsch.ch",
+    "title": "Datenschutz",
+    "lead": "Kurz gesagt: Was du hier beiträgst und wie du abstimmst, ist öffentlich, unter einem zufälligen @handle. Deine E-Mail-Adresse und deine freiwilligen Angaben bleiben privat. Diese Seite sagt vollständig, was wir mit welchen Daten tun, wer sie erhält und was du tun kannst. Grundlage ist das Schweizer Datenschutzgesetz (DSG).",
+    "updated": "Fassung vom 25. September 2026",
+    "responsible": {
+      "title": "Verantwortlich",
+      "body": "Für die Bearbeitung deiner Daten ist verantwortlich:",
+      "contact": "Für alle Anliegen zum Datenschutz genügt eine E-Mail an diese Adresse."
+    },
+    "consent": {
+      "title": "Deine Einwilligung",
+      "body": "Wer mitmacht, veröffentlicht politische Meinungen, und Abstimmungen können politische Ansichten zeigen. Solche Daten gelten nach DSG als besonders schützenswert. Deshalb fragen wir nach dem ersten Login ausdrücklich, ob du den Punkten auf dieser Seite zustimmst. Ohne Einwilligung kannst du als Gast alles lesen, aber nicht mitmachen.\n\nWir speichern, welcher Fassung dieser Erklärung du wann zugestimmt hast. Ändern wir sie wesentlich, fragen wir dich beim nächsten Besuch erneut.\n\nDu kannst deine Einwilligung jederzeit mit einer E-Mail widerrufen. Weil Mitmachen ohne sie nicht möglich ist, schliessen wir dann dein Konto (siehe «Wie lange wir Daten aufbewahren»). Was bis dahin geschehen ist, bleibt rechtmässig."
+    },
+    "data": {
+      "title": "Welche Daten wir bearbeiten",
+      "body": "Konto: deine E-Mail-Adresse, ein zufällig erzeugter @handle, deine Sprache, deine Einwilligung und wann du zuletzt deine Benachrichtigungen gelesen hast. Meldest du dich mit Google an, speichern wir zusätzlich die Konto-Kennung und die technischen Anmeldedaten, die Google dabei übergibt. Deinen Namen und dein Profilbild übernehmen wir nicht.\n\nBeiträge: Tickets, Statements und Änderungsanträge samt ihren Übersetzungen, deine Stimmen zu Tickets und Statements, deine Meldungen und deine Einsprüche. Legst du Einspruch gegen eine Entscheidung des Civic-Linters ein, speichern wir den blockierten Text, damit ihn ein Mensch prüfen kann. Blockierte Texte ohne Einspruch speichern wir nicht.\n\nFreiwillig, in den Einstellungen: Jahrgang, Geschlecht, Bildung, Postleitzahl und Beruf. Du kannst sie jederzeit ändern oder leeren.\n\nTechnisch: Bei jedem Besuch fallen Angaben an, die ein Webserver braucht, darunter deine IP-Adresse. IP- und E-Mail-Adressen dienen uns als Zähler, um Missbrauch zu bremsen, zum Beispiel höchstens fünf Anmelde-Links in 15 Minuten. Diese Zähler löschen wir spätestens nach zwei Stunden. Unsere eigenen Betriebsprotokolle enthalten weder Texte noch E-Mail- oder IP-Adressen."
+    },
+    "public": {
+      "title": "Was öffentlich ist",
+      "body": "Öffentlich ist dein @handle mit deinem Profil: deine Tickets, Statements, Änderungsanträge und Co-Autorschaften und wie du über Tickets abgestimmt hast. Deine Stimmen zu Statements erscheinen nur in den Summen.\n\nAbstimmungen stehen nie unter deinem Namen oder deiner E-Mail-Adresse, sondern nur unter dem zufälligen @handle, den du nicht selbst wählst. Wer deinen @handle kennt oder dich an deinen Texten erkennt, kann dir deine Stimmen aber zuordnen. Schreib deshalb nichts, was du nicht öffentlich vertreten willst.\n\nÖffentliche Seiten kann jeder abrufen, auch ohne Konto. Suchmaschinen können sie aufnehmen, andere können sie kopieren. Was andere kopiert haben, können wir nicht zurückholen.\n\nNie öffentlich sind deine E-Mail-Adresse, deine freiwilligen Angaben, deine Meldungen und deine Einsprüche. Wer etwas gemeldet hat, sehen nur die Moderatorinnen und Moderatoren, nicht die gemeldete Person."
+    },
+    "reuse": {
+      "title": "Wie Beiträge und Daten weiterverwendet werden",
+      "body": "wiemeinsch.ch soll politische Arbeit sichtbar und nutzbar machen. Deshalb dürfen wir alles Öffentliche weiterverwenden und an andere weitergeben, auch in grossen Mengen und maschinenlesbar: als offene Daten, für Wissenschaft und Forschung, für Medien und für Politik und Verwaltung, etwa um ihnen die meistunterstützten Anliegen zu übergeben. Beiträge und Stimmen erscheinen dabei wie auf der Website unter dem @handle.\n\nÖffentliche Beiträge und Stimmen können wir auch mit KI auswerten, zum Beispiel für Zusammenfassungen, Themenübersichten oder um zu erkennen, wo Menschen über politische Lager hinweg zustimmen.\n\nDeine freiwilligen Angaben geben wir nie einzeln weiter. Wir werten sie nur zusammengefasst aus, für Gruppen ab 20 Personen, und dürfen solche Auswertungen veröffentlichen und weitergeben. Kleinere Gruppen lassen wir ganz weg, damit niemand auf Einzelne schliessen kann.\n\nWir verkaufen keine Daten, zeigen keine Werbung und erstellen keine Werbeprofile."
+    },
+    "purposes": {
+      "title": "Wozu",
+      "body": "Wir bearbeiten die Daten, um dich anzumelden, deine Beiträge zu veröffentlichen, zu übersetzen und zu ranken, Beiträge vor der Veröffentlichung auf einen sachlichen Ton zu prüfen, Missbrauch und automatisierte Zugriffe abzuwehren, Meldungen und Einsprüche zu bearbeiten, die Plattform zu betreiben und weiterzuentwickeln und für die Weiterverwendung, die oben beschrieben ist.\n\nPer E-Mail schreiben wir dir zur Anmeldung und wenn es um dein Konto geht. Selten informieren wir auch über wichtige Neuerungen der Plattform. Davon kannst du dich jederzeit abmelden, eine kurze Antwort genügt."
+    },
+    "recipients": {
+      "title": "Wer Daten erhält",
+      "body": "Infomaniak Network SA (Schweiz) betreibt Server, Datenbank, die verschlüsselten Sicherungskopien und den E-Mail-Versand.\n\nCloudflare, Inc. (USA) schützt und liefert die Website aus und stellt die Sicherheitsprüfung beim Login bereit. Jeder Aufruf läuft über Cloudflare, mit deiner IP-Adresse und technischen Angaben deines Browsers.\n\nMistral AI (Frankreich) prüft Beiträge auf einen sachlichen Ton und übersetzt sie in die drei Landessprachen. Mistral erhält den Text der Beiträge, aber weder deine E-Mail-Adresse noch deinen @handle noch deine freiwilligen Angaben. Mistral verwendet die Texte nicht zum Training seiner Modelle und bewahrt sie bis zu 30 Tage auf, um Missbrauch zu erkennen.\n\nGoogle LLC (USA) erhält Daten nur, wenn du dich mit Google anmeldest.\n\nWechseln wir einen dieser Anbieter oder kommt einer dazu, führen wir ihn hier auf, bevor er Daten erhält. Behörden geben wir Daten nur heraus, wenn uns das Gesetz dazu verpflichtet. Geht die Plattform an eine andere Trägerschaft über, etwa an einen Verein, gehen die Daten mit, und diese Erklärung gilt weiter."
+    },
+    "abroad": {
+      "title": "Bekanntgabe ins Ausland",
+      "body": "Frankreich hat nach Feststellung des Bundesrates ein angemessenes Datenschutzniveau. Die USA gelten nur für Unternehmen als angemessen, die unter dem Swiss-U.S. Data Privacy Framework zertifiziert sind. Wo das bei Cloudflare oder Google nicht greift, stützen wir uns auf ihre Standardvertragsklauseln. US-Behörden können unter Umständen auf Daten zugreifen, ohne dass du davon erfährst. Mit deiner Einwilligung stimmst du dieser Bekanntgabe ausdrücklich zu."
+    },
+    "retention": {
+      "title": "Wie lange wir Daten aufbewahren",
+      "body": "Anmelde-Links gelten eine Stunde, eine Sitzung höchstens 30 Tage. Abgelaufene Links und Sitzungen löschen wir stündlich.\n\nDein Konto bleibt bestehen, bis du die Löschung verlangst oder deine Einwilligung widerrufst. Dann löschen wir deine E-Mail-Adresse, deine freiwilligen Angaben und deine Anmeldedaten. Deine Beiträge und Stimmen bleiben stehen, weil andere darauf aufbauen, aber ohne Bezug zu deinem Konto: An die Stelle deines @handle tritt der Hinweis auf ein gelöschtes Konto.\n\nDepublizierte Beiträge und abgeschlossene Moderationsfälle bewahren wir auf, damit Entscheide nachvollziehbar bleiben. Verschlüsselte Sicherungskopien der Datenbank löschen wir nach höchstens zwölf Monaten. Bis dahin können gelöschte Daten dort noch enthalten sein."
+    },
+    "storage": {
+      "title": "Cookies und Speicher im Browser",
+      "body": "Wir setzen nur Cookies, die für die Anmeldung und ihren Schutz nötig sind: das Sitzungs-Cookie, ein Cookie gegen gefälschte Anfragen und eines, das sich die Rücksprungseite merkt. Cloudflare kann eigene, technisch notwendige Cookies zur Abwehr von Bots setzen. Analyse- und Werbe-Cookies gibt es keine, eine Nutzungsstatistik ebenfalls nicht. Führen wir eine ein, dann ohne Cookies und ohne Profile, und wir nennen sie vorher hier.\n\nEntwürfe deiner Texte speichert dein Browser lokal, damit nichts verloren geht, wenn du den Tab schliesst. Sie verlassen dein Gerät erst, wenn du sie prüfen lässt oder absendest."
+    },
+    "rights": {
+      "title": "Deine Rechte",
+      "body": "Du kannst Auskunft über deine Daten verlangen, falsche Daten berichtigen lassen, dein Konto löschen lassen, deine Einwilligung widerrufen und deine Daten in einem gängigen, maschinenlesbaren Format erhalten. Deine Sprache und deine freiwilligen Angaben änderst du selbst in den Einstellungen. Für alles andere genügt eine E-Mail an die oben genannte Adresse. Wir antworten innert 30 Tagen.\n\nBist du mit unserer Antwort nicht einverstanden, kannst du dich an den Eidgenössischen Datenschutz- und Öffentlichkeitsbeauftragten (EDÖB) wenden."
+    },
+    "changes": {
+      "title": "Änderungen",
+      "body": "Wir passen diese Erklärung an, wenn sich die Plattform ändert. Oben steht immer, welche Fassung gilt. Bei wesentlichen Änderungen, etwa einem neuen Zweck oder einem neuen Empfänger in einem Land ohne angemessenes Datenschutzniveau, fragen wir dich beim nächsten Besuch erneut um deine Einwilligung."
+    }
+  },
+  "consent": {
+    "metaTitle": "Einwilligung — wiemeinsch.ch",
+    "title": "Bevor du mitmachst",
+    "lead": "wiemeinsch.ch ist ein öffentliches politisches Backlog. Damit du mitmachen kannst, brauchen wir deine ausdrückliche Einwilligung zu diesen Punkten.",
+    "points": {
+      "votes": {
+        "title": "Deine Abstimmungen sind öffentlich",
+        "body": "Wie du über Tickets abstimmst, steht auf deinem Profil, zusammen mit deinen Beiträgen. Das kann politische Ansichten zeigen. Es erscheint nur unter deinem zufälligen @handle, nie unter deinem Namen oder deiner E-Mail-Adresse."
+      },
+      "reuse": {
+        "title": "Öffentliches wird weiterverwendet",
+        "body": "Beiträge und Stimmen dürfen wir und andere weiterverwenden: als offene Daten, für Forschung, in Medien und als Grundlage für Politik und Verwaltung."
+      },
+      "ai": {
+        "title": "KI prüft, übersetzt und wertet aus",
+        "body": "Mistral AI in Frankreich prüft deine Texte auf einen sachlichen Ton und übersetzt sie. Öffentliche Beiträge und Stimmen können wir zusätzlich mit KI auswerten."
+      },
+      "demographics": {
+        "title": "Freiwillige Angaben bleiben privat",
+        "body": "Jahrgang, Geschlecht, Bildung, Postleitzahl und Beruf sind freiwillig. Wir werten sie nur zusammengefasst für Gruppen ab 20 Personen aus und dürfen solche Auswertungen veröffentlichen."
+      },
+      "email": {
+        "title": "E-Mails von uns",
+        "body": "Wir schreiben dir zur Anmeldung, zu deinem Konto und selten über wichtige Neuerungen. Von den Neuerungen kannst du dich jederzeit abmelden."
+      },
+      "abroad": {
+        "title": "Daten gehen auch ins Ausland",
+        "body": "Cloudflare (USA) liefert die Website aus, Mistral (Frankreich) verarbeitet deine Texte, und Google (USA) ist beteiligt, wenn du dich mit Google anmeldest."
+      }
+    },
+    "withdraw": "Du kannst die Einwilligung jederzeit per E-Mail widerrufen. Dann schliessen wir dein Konto, und deine öffentlichen Beiträge und Stimmen bleiben ohne Bezug zu dir stehen.",
+    "details": "Alles Weitere steht in der <link>Datenschutzerklärung</link>.",
+    "accept": "Ich willige ein",
+    "decline": "Ablehnen und abmelden",
+    "declineNote": "Ohne Einwilligung kannst du als Gast weiterlesen. Dein Konto bleibt ohne öffentliche Angaben bestehen. Schreib uns, wenn wir es löschen sollen.",
+    "errors": {
+      "outdated": "Die Datenschutzerklärung wurde gerade geändert. Lade die Seite neu und lies die aktuelle Fassung.",
+      "generic": "Das hat nicht geklappt. Versuch es in einer Minute noch einmal."
+    }
   }
 }

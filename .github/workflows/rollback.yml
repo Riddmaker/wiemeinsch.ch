@@ -1,0 +1,33 @@
+# Rollback: Die Produktion auf ein früher gebautes Image zurückstellen — ohne
+# Neubau, ohne Revert-Commit und ohne PR.
+#
+# Warum ein eigener Workflow: `workflow_dispatch` von deploy.yml baut immer
+# den aktuellen Stand des Branches; einen älteren Commit kann man dort nicht
+# wählen. Ein Revert auf main braucht PR und die volle Pipeline (15–20 min).
+# Die Images früherer Commits liegen aber signiert in der GHCR — dieser
+# Workflow prüft die Signatur des gewünschten Images genauso wie ein Deploy
+# (redeploy.yml) und stellt die Umgebung darauf um.
+#
+# Grenze: Das Schema wird dabei NICHT zurückgedreht. Das geht nur, weil
+# Migrationen additiv sind (siehe Container-Start).
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Voller Commit-SHA (40 Zeichen) eines auf main gebauten Images
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  redeploy:
+    name: Rollback auf ein signiertes Image
+    uses: ./.github/workflows/redeploy.yml
+    with:
+      # Format und Signatur (deploy.yml auf main) prüft redeploy.yml, bevor
+      # irgendetwas an die Plattform geht.
+      tag: ${{ inputs.sha }}

@@ -27,8 +27,15 @@ export const REPORT_REASONS = [
 export const reportReasonSchema = z.enum(REPORT_REASONS);
 export type ReportReason = z.output<typeof reportReasonSchema>;
 
-/** Meldbare Inhalte: publizierte Tickets und Statements . */
-export const reportTargetTypeSchema = z.enum(["TICKET", "STATEMENT"]);
+/**
+ * Meldbare Inhalte: publizierte Tickets, Statements und (seit dem Review vom
+ * 25.09.2026) Änderungsanträge — auch sie sind öffentlich, samt Text.
+ */
+export const reportTargetTypeSchema = z.enum([
+  "TICKET",
+  "STATEMENT",
+  "CHANGE_REQUEST",
+]);
 export type ReportTargetType = z.output<typeof reportTargetTypeSchema>;
 
 /** cuid-Länge; die Existenz prüft die Action zusätzlich gegen die DB. */

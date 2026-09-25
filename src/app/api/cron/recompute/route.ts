@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { purgeExpiredData } from "@/services/data-retention";
 import { recomputeAllTicketScores } from "@/services/scoring-recompute";
 
 /**
@@ -74,7 +75,14 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const result = await recomputeAllTicketScores();
-  return Response.json({ tickets: result.tickets, updated: result.updated });
+  // Im selben Takt abgelaufene Rate-Limit-Zähler, Anmelde-Links und
+  // Sessions löschen — die Fristen stehen in der Datenschutzerklärung.
+  const purged = await purgeExpiredData();
+  return Response.json({
+    tickets: result.tickets,
+    updated: result.updated,
+    purged,
+  });
 }
 
 /**

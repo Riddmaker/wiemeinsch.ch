@@ -150,6 +150,12 @@ export async function loadChangeRequests(opts: {
 
   const entries: ChangeRequestEntry[] = [];
   rows.forEach((row, index) => {
+    // Depubliziert (Moderation): nicht anzeigen. Die laufende Nummer zählt
+    // ihn aber mit — sonst verschöben sich «#N» der übrigen Anträge und die
+    // Co-Autor-Zeilen, die darauf verweisen.
+    if (row.contentStatus === "DEPUBLISHED") {
+      return;
+    }
     const version = pickTranslation(row.translations, opts.displayLocale);
     if (!version) {
       // Fassung fehlt (Datenfehler) — Antrag überspringen statt leer rendern.

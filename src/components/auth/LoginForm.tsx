@@ -4,6 +4,7 @@ import { getCsrfToken, signIn } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import Script from "next/script";
 import { useEffect, useState } from "react";
+import { Link } from "@/i18n/navigation";
 
 // E-Mail-Formular postet klassisch an /api/auth/signin/email (NextAuth v4);
 // der Route-Guard prüft dort Rate-Limit + Turnstile VOR dem Mailversand.
@@ -72,6 +73,24 @@ export function LoginForm({
           {t("submit")}
         </button>
       </form>
+
+      {/* Vor der Registrierung sagen, was öffentlich wird (DSG Art. 19):
+          Abstimmungen können politische Ansichten zeigen. */}
+      <p
+        data-testid="login-privacy-hint"
+        className="font-mono text-xs leading-relaxed text-meta"
+      >
+        {t.rich("privacyHint", {
+          link: (chunks) => (
+            <Link
+              href="/datenschutz"
+              className="underline underline-offset-2 hover:text-ink"
+            >
+              {chunks}
+            </Link>
+          ),
+        })}
+      </p>
 
       <Script
         src="https://challenges.cloudflare.com/turnstile/v0/api.js"

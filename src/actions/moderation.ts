@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import type { Prisma } from "@/generated/prisma/client";
+import { lockTicketRow } from "@/lib/db-locks";
 import { prisma } from "@/lib/prisma";
 import { checkAiBudget, checkRateLimit } from "@/lib/rate-limit";
 import { adminUserId } from "@/lib/require-admin";
@@ -21,12 +22,13 @@ import { ticketLintFields, translateDoc } from "@/services/content-flow";
 import { lintFields, type BlockedFields } from "@/services/content-pipeline";
 import { MistralUnavailableError } from "@/services/mistral";
 import {
-  createStatement,
+  createStatementInTx,
   createTicket,
   refreshStatementAggregates,
   regionExists,
   translateTicketDraft,
 } from "@/services/publish-content";
+import { refreshTicketCounters } from "@/services/change-request-counters";
 
 /**
  * Moderation (P12) — Meldungen, Linter-Anfechtungen und die Admin-Entscheide.
@@ -40,7 +42,12 @@ import {
  */
 
 export type ModerationErrorCode =
-  "unauthorized" | "rate_limited" | "invalid_input" | "ai_unavailable";
+  | "unauthorized"
+  | "rate_limited"
+  | "invalid_input"
+  | "ai_unavailable"
+  /** Freigabe: eine KI-Übersetzung verletzt die Zeichenlimiten. */
+  | "translation_invalid";
 
 export type ReportResult =
   { ok: true } | { ok: false; error: ModerationErrorCode };
@@ -56,6 +63,9 @@ export type CaseDecisionResult =
 /** Zeitfenster für die Doppelklick-Erkennung (Muster aus P7/P9). */
 const IDEMPOTENCY_WINDOW_MS = 2 * 60 * 1000;
 
+/** Signal innerhalb der Freigabe-Transaktion: Ziel existiert nicht mehr. */
+class AppealTargetGoneError extends Error {}
+
 /** Depublizierte Inhalte verschwinden überall — der Cache muss mit. */
 function revalidateContent(): void {
   revalidatePath("/", "layout");
@@ -64,6 +74,38 @@ function revalidateContent(): void {
 // ---------------------------------------------------------------------------
 // 12.1 — Melden (REPORT)
 // ---------------------------------------------------------------------------
+
+/**
+ * Meldbar ist nur, was öffentlich zu sehen ist. Ein Antrag zählt dazu, solange
+ * er selbst und sein Ticket publiziert sind.
+ */
+async function isReportable(
+  targetType: "TICKET" | "STATEMENT" | "CHANGE_REQUEST",
+  targetId: string,
+): Promise<boolean> {
+  if (targetType === "TICKET") {
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: targetId },
+      select: { status: true },
+    });
+    return ticket?.status === "PUBLISHED";
+  }
+  if (targetType === "STATEMENT") {
+    const statement = await prisma.statement.findUnique({
+      where: { id: targetId },
+      select: { status: true },
+    });
+    return statement?.status === "PUBLISHED";
+  }
+  const changeRequest = await prisma.changeRequest.findUnique({
+    where: { id: targetId },
+    select: { contentStatus: true, ticket: { select: { status: true } } },
+  });
+  return (
+    changeRequest?.contentStatus === "PUBLISHED" &&
+    changeRequest.ticket.status === "PUBLISHED"
+  );
+}
 
 export async function reportContent(input: unknown): Promise<ReportResult> {
   const userId = await authenticatedUserId();
@@ -89,28 +131,16 @@ export async function reportContent(input: unknown): Promise<ReportResult> {
 
   // Fremde/erfundene Ids sind ein Bypass-Vektor; depublizierter Inhalt ist
   // nicht mehr meldbar (er ist bereits weg).
-  const status =
-    targetType === "TICKET"
-      ? (
-          await prisma.ticket.findUnique({
-            where: { id: targetId },
-            select: { status: true },
-          })
-        )?.status
-      : (
-          await prisma.statement.findUnique({
-            where: { id: targetId },
-            select: { status: true },
-          })
-        )?.status;
-  if (status !== "PUBLISHED") {
+  if (!(await isReportable(targetType, targetId))) {
     return { ok: false, error: "invalid_input" };
   }
 
   const target =
     targetType === "TICKET"
       ? { ticketId: targetId }
-      : { statementId: targetId };
+      : targetType === "STATEMENT"
+        ? { statementId: targetId }
+        : { changeRequestId: targetId };
 
   // Zweitmeldung desselben Users auf dasselbe Ziel erzeugt keinen zweiten
   // Case — sonst liesse sich die Queue mit einem Klick fluten.
@@ -362,18 +392,58 @@ export async function depublishReportedContent(
 
   const moderationCase = await prisma.moderationCase.findUnique({
     where: { id: context.caseId },
-    select: { type: true, status: true, ticketId: true, statementId: true },
+    select: {
+      type: true,
+      status: true,
+      ticketId: true,
+      statementId: true,
+      changeRequestId: true,
+    },
   });
   if (
     !moderationCase ||
     moderationCase.status !== "OPEN" ||
     moderationCase.type !== "REPORT" ||
-    (!moderationCase.ticketId && !moderationCase.statementId)
+    (!moderationCase.ticketId &&
+      !moderationCase.statementId &&
+      !moderationCase.changeRequestId)
   ) {
     return { ok: false, error: "invalid_input" };
   }
 
-  await prisma.$transaction(async (tx) => {
+  const done = await prisma.$transaction(async (tx) => {
+    // Betroffenes Ticket zuerst sperren (lib/db-locks.ts), dann den Fall
+    // atomar beanspruchen: Entscheidet ein zweiter Admin gleichzeitig, geht
+    // sein Claim leer aus, statt den ersten Entscheid zu überschreiben.
+    const ticketId =
+      moderationCase.ticketId ??
+      (moderationCase.statementId
+        ? (
+            await tx.statement.findUnique({
+              where: { id: moderationCase.statementId },
+              select: { ticketId: true },
+            })
+          )?.ticketId
+        : (
+            await tx.changeRequest.findUnique({
+              where: { id: moderationCase.changeRequestId ?? "" },
+              select: { ticketId: true },
+            })
+          )?.ticketId);
+    if (ticketId) {
+      await lockTicketRow(tx, ticketId);
+    }
+    const claimed = await tx.moderationCase.updateMany({
+      where: { id: context.caseId, status: "OPEN", type: "REPORT" },
+      data: {
+        status: "RESOLVED",
+        resolvedAt: new Date(),
+        resolutionNote: formatResolutionNote("DEPUBLISHED", context.note),
+      },
+    });
+    if (claimed.count === 0) {
+      return false;
+    }
     if (moderationCase.statementId) {
       const statement = await tx.statement.update({
         where: { id: moderationCase.statementId },
@@ -381,21 +451,26 @@ export async function depublishReportedContent(
         select: { ticketId: true },
       });
       await refreshStatementAggregates(tx, statement.ticketId);
+    } else if (moderationCase.changeRequestId) {
+      // Nur die Karte verschwindet. Ein bereits übernommener Text steht im
+      // Ticket — dafür ist die Meldung des Tickets selbst da.
+      const changeRequest = await tx.changeRequest.update({
+        where: { id: moderationCase.changeRequestId },
+        data: { contentStatus: "DEPUBLISHED" },
+        select: { ticketId: true },
+      });
+      await refreshTicketCounters(tx, changeRequest.ticketId);
     } else if (moderationCase.ticketId) {
       await tx.ticket.update({
         where: { id: moderationCase.ticketId },
         data: { status: "DEPUBLISHED" },
       });
     }
-    await tx.moderationCase.update({
-      where: { id: context.caseId },
-      data: {
-        status: "RESOLVED",
-        resolvedAt: new Date(),
-        resolutionNote: formatResolutionNote("DEPUBLISHED", context.note),
-      },
-    });
+    return true;
   });
+  if (!done) {
+    return { ok: false, error: "invalid_input" };
+  }
 
   revalidateContent();
   return { ok: true };
@@ -445,7 +520,13 @@ export async function approveAppeal(
     return { ok: false, error: "invalid_input" };
   }
 
-  let published: { ticketId?: string; statementId?: string };
+  // Zuerst übersetzen (Sekunden, externer Dienst) — ausserhalb jeder
+  // Transaktion. Danach wird in EINER Transaktion der Fall beansprucht und
+  // der Inhalt geschrieben: Ein gleichzeitiges Abweisen oder ein zweiter
+  // Klick publiziert so weder trotzdem noch doppelt (Review 25.09.2026).
+  let publish: (
+    tx: Prisma.TransactionClient,
+  ) => Promise<{ ticketId?: string; statementId?: string } | null>;
   try {
     if (appeal.data.kind === "ticket") {
       const draft = appeal.data.draft;
@@ -455,14 +536,17 @@ export async function approveAppeal(
         translations,
       });
       if (!publishInput.success) {
-        return { ok: false, error: "invalid_input" };
+        // Meist eine Übersetzung ausserhalb der Zeichenlimiten — ohne
+        // Preview lässt sie sich hier nicht korrigieren.
+        return { ok: false, error: "translation_invalid" };
       }
-      published = {
+      publish = async (tx) => ({
         ticketId: await createTicket(
           moderationCase.reporterId,
           publishInput.data,
+          tx,
         ),
-      };
+      });
     } else {
       const draft = appeal.data.draft;
       const translations = await translateDoc(draft.content, draft.locale);
@@ -471,17 +555,16 @@ export async function approveAppeal(
         translations,
       });
       if (!publishInput.success) {
-        return { ok: false, error: "invalid_input" };
+        return { ok: false, error: "translation_invalid" };
       }
-      const statementId = await createStatement(
-        moderationCase.reporterId,
-        publishInput.data,
-      );
-      if (!statementId) {
-        // Ziel-Ticket ist inzwischen weg oder depubliziert.
-        return { ok: false, error: "invalid_input" };
-      }
-      published = { statementId };
+      publish = async (tx) => {
+        const statementId = await createStatementInTx(
+          tx,
+          moderationCase.reporterId,
+          publishInput.data,
+        );
+        return statementId ? { statementId } : null;
+      };
     }
   } catch (e) {
     if (e instanceof MistralUnavailableError) {
@@ -491,16 +574,41 @@ export async function approveAppeal(
     throw e;
   }
 
-  await prisma.moderationCase.update({
-    where: { id: context.caseId },
-    data: {
-      status: "RESOLVED",
-      resolvedAt: new Date(),
-      resolutionNote: formatResolutionNote("APPEAL_APPROVED", context.note),
+  const outcome = await prisma
+    .$transaction(async (tx) => {
+      const claimed = await tx.moderationCase.updateMany({
+        where: { id: context.caseId, status: "OPEN", type: "APPEAL" },
+        data: {
+          status: "RESOLVED",
+          resolvedAt: new Date(),
+          resolutionNote: formatResolutionNote("APPEAL_APPROVED", context.note),
+        },
+      });
+      if (claimed.count === 0) {
+        return "already_decided" as const;
+      }
+      const published = await publish(tx);
+      if (!published) {
+        // Ziel-Ticket ist inzwischen weg oder depubliziert — die ganze
+        // Transaktion zurückrollen, der Fall bleibt offen.
+        throw new AppealTargetGoneError();
+      }
       // Verweis auf den publizierten Inhalt — Nachvollziehbarkeit ohne Zusatzfeld.
-      ...published,
-    },
-  });
+      await tx.moderationCase.update({
+        where: { id: context.caseId },
+        data: published,
+      });
+      return "published" as const;
+    })
+    .catch((error: unknown) => {
+      if (error instanceof AppealTargetGoneError) {
+        return "target_gone" as const;
+      }
+      throw error;
+    });
+  if (outcome !== "published") {
+    return { ok: false, error: "invalid_input" };
+  }
 
   revalidateContent();
   return { ok: true };

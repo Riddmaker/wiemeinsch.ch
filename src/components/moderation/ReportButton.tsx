@@ -13,11 +13,17 @@ import { REPORT_REASONS, type ReportReason } from "@/lib/validation/moderation";
  * NICHT öffentlich markiert (Anti-Pranger, Manifest). Fester Grund-Katalog,
  * kein Freitext (User-Entscheid 30.08.2026).
  */
+const TARGET_TYPES = {
+  ticket: "TICKET",
+  statement: "STATEMENT",
+  changeRequest: "CHANGE_REQUEST",
+} as const;
+
 export function ReportButton({
   target,
   isLoggedIn,
 }: {
-  target: { kind: "ticket" | "statement"; id: string };
+  target: { kind: "ticket" | "statement" | "changeRequest"; id: string };
   isLoggedIn: boolean;
 }) {
   const t = useTranslations("moderation");
@@ -48,7 +54,7 @@ export function ReportButton({
     startTransition(async () => {
       const result = await callAction(() =>
         reportContent({
-          targetType: target.kind === "ticket" ? "TICKET" : "STATEMENT",
+          targetType: TARGET_TYPES[target.kind],
           targetId: target.id,
           reason,
         }),

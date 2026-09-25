@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { ChangeRequestDecision } from "@/components/tickets/ChangeRequestDecision";
 import { ChangeRequestForm } from "@/components/tickets/ChangeRequestForm";
 import { ChangeRequestWithdraw } from "@/components/tickets/ChangeRequestWithdraw";
+import { ReportButton } from "@/components/moderation/ReportButton";
 import { DiffView } from "@/components/tickets/DiffView";
 import { Link } from "@/i18n/navigation";
 import type { AppLocale } from "@/i18n/routing";
@@ -13,6 +14,7 @@ import {
 import { diffTags } from "@/lib/text-diff";
 import type { ChangeRequestTextField } from "@/lib/validation/change-request";
 import { plainText, type ConstrainedDoc } from "@/lib/validation/tiptap";
+import { dateFormatter } from "@/lib/format";
 
 /**
  * Ein Änderungsantrag (P10.2). Farbe bleibt sonst den Statements vorbehalten
@@ -98,11 +100,7 @@ export async function ChangeRequestCard({
   const tNew = await getTranslations("ticketNew");
   const tRoot = await getTranslations();
 
-  const dateFormat = new Intl.DateTimeFormat(`${locale}-CH`, {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  const dateFormat = dateFormatter(locale);
 
   const fieldLabel: Record<ChangeRequestTextField, string> = {
     title: tNew("titleLabel"),
@@ -209,7 +207,7 @@ export async function ChangeRequestCard({
       </summary>
 
       <div className="p-4 sm:p-5">
-        <p className="font-mono text-[11.5px] uppercase tracking-[0.03em] text-meta">
+        <div className="font-mono text-[11.5px] uppercase tracking-[0.03em] text-meta">
           {entry.authorHandle && (
             <>
               <Link
@@ -225,7 +223,14 @@ export async function ChangeRequestCard({
             language: tRoot(`localeSwitcher.${entry.originalLocale}`),
           })}
           {entry.isTranslated && ` · ${t("aiTranslated")}`}
-        </p>
+          {/* Melden (Review 25.09.2026): Anträge sind öffentlich wie
+              Statements — gleiche stille Behandlung, kein Warn-Element. */}
+          {" · "}
+          <ReportButton
+            target={{ kind: "changeRequest", id: entry.id }}
+            isLoggedIn={viewerId !== null}
+          />
+        </div>
 
         <p className="mt-3 font-mono text-[11px] uppercase tracking-wide text-meta">
           {showsAdjustments
@@ -299,6 +304,7 @@ export async function ChangeRequestCard({
             changedFields={entry.changedFields}
             {...(entry.hashtags ? { proposedHashtags: entry.hashtags } : {})}
             isStale={entry.isStale}
+            revisedAt={entry.revisedAt?.toISOString() ?? null}
           />
         )}
 

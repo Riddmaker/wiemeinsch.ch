@@ -1,8 +1,8 @@
 # CI/CD-Pipeline für wiemeinsch.ch.
 #
 # Kette: Qualität → E2E → Image bauen & signieren → Signatur prüfen und
-# Redeploy über die Jelastic-API. Schlägt eine Stufe fehl, wird KEIN Image
-# publiziert und nichts deployed.
+# Redeploy über die Jelastic-API (redeploy.yml, geteilt mit rollback.yml).
+# Schlägt eine Stufe fehl, wird KEIN Image publiziert und nichts deployed.
 #
 # Action-Versionen sind exakt gepinnt und am 02.09.2026 gegen die jeweils
 # aktuellen Releases der Hersteller geprüft (HABIT 4). Nächste Härtungsstufe
@@ -12,7 +12,9 @@ name: Deploy
 on:
   push:
     branches: [main]
-  # Erlaubt einen Redeploy des unveränderten Standes ohne Leer-Commit.
+  # Erlaubt einen Redeploy des unveränderten Standes ohne Leer-Commit. Von
+  # einem anderen Branch gestartet, laufen nur die Prüfungen: Build und Push
+  # sind an main gebunden (siehe build-push).
   workflow_dispatch:
 
 # Zwei gleichzeitige Deployments derselben Umgebung wären ein Rennen um den
@@ -39,6 +41,10 @@ jobs:
   build-push:
     name: Image bauen, publizieren, signieren
     needs: checks
+    # Nur main baut und pusht. Ohne diese Bedingung schöbe ein manueller Lauf
+    # auf dev ein ungeprüftes Image unter `latest` in die Registry — und
+    # `latest` zieht die Umgebung bei einem Neuimport des Manifests.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -113,7 +119,7 @@ jobs:
           echo "Signatur gültig für ${IDENTITY}"
 
       - name: Build-Provenance attestieren
-        uses: actions/attest@v4
+        uses: actions/attest@v4.2.2
         with:
           subject-name: ${{ env.IMAGE }}
           subject-digest: ${{ steps.push.outputs.digest }}
@@ -125,98 +131,12 @@ jobs:
   deploy:
     name: Signatur prüfen, Jelastic-Redeploy auslösen
     needs: build-push
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    # Token und Zielangaben liegen NUR in dieser Environment, nicht repo-weit:
-    # Kein anderer Job (und kein Workflow aus einem anderen Branch, sofern die
-    # Environment auf `main` beschränkt ist) kommt an den Redeploy-Token.
-    environment: production
-    env:
-      JELASTIC_API_URL: ${{ vars.JELASTIC_API_URL }}
-      JELASTIC_ENV_NAME: ${{ vars.JELASTIC_ENV_NAME }}
-      JELASTIC_NODE_GROUP: ${{ vars.JELASTIC_NODE_GROUP }}
-      PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
-      DIGEST: ${{ needs.build-push.outputs.digest }}
+    # Dieselben Schritte wie ein Rollback, nur mit dem frisch gebauten Digest
+    # als Erwartung: Der Tag muss exakt auf das gebaute Image zeigen.
+    uses: ./.github/workflows/redeploy.yml
+    with:
       # Unveränderlicher Tag aus `build-push` (type=sha,format=long).
-      TAG: ${{ github.sha }}
-    steps:
-      - name: Vorbedingungen prüfen
-        env:
-          JELASTIC_API_TOKEN: ${{ secrets.JELASTIC_API_TOKEN }}
-        run: |
-          missing=""
-          [ -n "${JELASTIC_API_TOKEN}" ] || missing="${missing} secret:JELASTIC_API_TOKEN"
-          [ -n "${JELASTIC_API_URL}" ] || missing="${missing} var:JELASTIC_API_URL"
-          [ -n "${JELASTIC_ENV_NAME}" ] || missing="${missing} var:JELASTIC_ENV_NAME"
-          [ -n "${JELASTIC_NODE_GROUP}" ] || missing="${missing} var:JELASTIC_NODE_GROUP"
-          if [ -n "${missing}" ]; then
-            echo "::error::Environment 'production' unvollständig:${missing}"
-            exit 1
-          fi
-
-      - name: cosign installieren
-        uses: sigstore/cosign-installer@v4.1.2
-        with:
-          # Dieselbe Version wie beim Signieren (siehe build-push).
-          cosign-release: v3.0.6
-
-      - name: Signatur des Deploy-Tags prüfen
-        # Die Plattform zieht das Image selbst; auf dem Node gibt es keinen
-        # Einstiegspunkt vor dem Start. Deshalb wird HIER geprüft, unmittelbar
-        # vor dem API-Aufruf — und zwar der Tag, den Jelastic gleich zieht,
-        # nicht nur der Digest: cosign löst den Tag auf, und der aufgelöste
-        # Digest muss exakt der gebaute sein. Ein nachträglich umgehängter Tag
-        # fällt damit auf, bevor er deployt wird.
-        env:
-          IDENTITY: ${{ github.server_url }}/${{ github.repository }}/.github/workflows/deploy.yml@refs/heads/main
-        run: |
-          verified=$(cosign verify "${IMAGE}:${TAG}" \
-            --certificate-identity "${IDENTITY}" \
-            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-            | jq -r '[.[].critical.image["docker-manifest-digest"]] | unique | .[]')
-          if [ "${verified}" != "${DIGEST}" ]; then
-            echo "::error::Tag ${TAG} zeigt auf ${verified:-nichts Verifizierbares}, gebaut wurde ${DIGEST} — kein Deploy."
-            exit 1
-          fi
-          echo "Signatur gültig, ${IMAGE}:${TAG} = ${DIGEST}"
-
-      - name: Redeploy über die Jelastic-API
-        # Eine Webhook-URL gibt es nicht: Redeploy ist die API-Methode
-        # RedeployContainersByGroup mit einem Personal Access Token.
-        # - Token über stdin in den POST-Body — nie in eine URL, nie in die
-        #   Prozessliste, nie ins Log (HABIT 1).
-        # - Die API meldet Fehler mit HTTP 200 und `result` ≠ 0; ein 2xx allein
-        #   ist KEIN Erfolg.
-        env:
-          JELASTIC_API_TOKEN: ${{ secrets.JELASTIC_API_TOKEN }}
-        run: |
-          response=$(mktemp)
-          status=$(printf '%s' "${JELASTIC_API_TOKEN}" | curl -sS \
-            -o "${response}" -w '%{http_code}' --max-time 900 \
-            -X POST "${JELASTIC_API_URL%/}/1.0/environment/control/rest/redeploycontainersbygroup" \
-            --data-urlencode "session@-" \
-            --data-urlencode "envName=${JELASTIC_ENV_NAME}" \
-            --data-urlencode "nodeGroup=${JELASTIC_NODE_GROUP}" \
-            --data-urlencode "tag=${TAG}")
-          result=$(jq -r '.result // "keine"' "${response}" 2>/dev/null || echo "kein JSON")
-          if [ "${status}" != "200" ] || [ "${result}" != "0" ]; then
-            error=$(jq -r '.error // empty' "${response}" 2>/dev/null || true)
-            echo "::error::Redeploy fehlgeschlagen: HTTP ${status}, result ${result}${error:+, ${error}}"
-            exit 1
-          fi
-          echo "Redeploy abgeschlossen: ${JELASTIC_NODE_GROUP} läuft auf ${TAG}"
-
-      - name: Öffentlichen Healthcheck abwarten
-        # Optional, solange die Domain noch nicht hinter Cloudflare hängt.
-        if: env.PUBLIC_BASE_URL != ''
-        run: |
-          url="${PUBLIC_BASE_URL%/}/api/health"
-          for _ in $(seq 1 60); do
-            if curl -fsS --max-time 10 "${url}" > /dev/null; then
-              echo "Healthcheck grün."
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "::error::${url} antwortet nach 5 Minuten nicht mit 200."
-          exit 1
+      tag: ${{ github.sha }}
+      expected-digest: ${{ needs.build-push.outputs.digest }}
+    # Kein `secrets: inherit`: Der Redeploy-Job liest das Token direkt aus
+    # der Environment `production` — mehr braucht er nicht.

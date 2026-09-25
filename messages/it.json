@@ -50,7 +50,8 @@
   "footer": {
     "impressum": "Impressum",
     "license": "Open source con licenza PolyForm Noncommercial 1.0.0",
-    "faq": "FAQ e stampa"
+    "faq": "FAQ e stampa",
+    "privacy": "Protezione dei dati"
   },
   "home": {
     "title": "Il backlog politico della Svizzera",
@@ -172,15 +173,19 @@
       "Turnstile": "La verifica di sicurezza non è riuscita. Ricarica la pagina e riprova.",
       "RateLimit": "Troppi tentativi in poco tempo. Attendi qualche minuto e riprova.",
       "Verification": "Questo link di accesso non è valido o è scaduto. Richiedi un nuovo link.",
+      "EmailSignin": "Non possiamo utilizzare questo indirizzo e-mail. Controlla che sia scritto correttamente.",
+      "OAuthAccountNotLinked": "Per questo indirizzo e-mail esiste già un account che accede tramite link. Accedi con il tuo indirizzo e-mail.",
       "Default": "L'accesso non è riuscito. Riprova."
     },
-    "backToLogin": "Torna all'accesso"
+    "backToLogin": "Torna all'accesso",
+    "privacyHint": "I tuoi voti diventano pubblici sotto il tuo @handle casuale. Dopo l’accesso ti chiediamo il consenso. Maggiori dettagli in <link>Protezione dei dati</link>."
   },
   "editor": {
     "bold": "Grassetto",
     "italic": "Corsivo",
     "bulletList": "Elenco puntato",
-    "counter": "{count} / {max} caratteri"
+    "counter": "{count} / {max} caratteri",
+    "counterWithMin": "{count} / {max} caratteri · almeno {min}"
   },
   "levels": {
     "FEDERAL": "Nazionale",
@@ -227,8 +232,10 @@
       "duplicates": "Gli hashtag non devono ripetersi",
       "canton_required": "Scegli un cantone",
       "municipality_required": "Scegli un comune",
-      "federal_no_region": "Per «Nazionale» non serve una regione"
-    }
+      "federal_no_region": "Per «Nazionale» non serve una regione",
+      "too_complex": "Il testo è troppo annidato o contiene troppi paragrafi vuoti."
+    },
+    "translationInvalid": "Una traduzione non rispetta i limiti di caratteri. Correggi i campi segnalati prima di pubblicare."
   },
   "linter": {
     "chip": "CIVIC-LINTER · {reason}",
@@ -302,8 +309,10 @@
       "invalid_input": "I dati sono incompleti o non validi. Controlla il modulo.",
       "ai_unavailable": "La verifica IA non è raggiungibile al momento. La bozza resta salvata — riprova più tardi.",
       "min_50": "Almeno 50 caratteri",
-      "max_500": "Massimo 500 caratteri"
-    }
+      "max_500": "Massimo 500 caratteri",
+      "too_complex": "Il testo è troppo annidato o contiene troppi paragrafi vuoti."
+    },
+    "translationInvalid": "Una traduzione non rispetta i limiti di caratteri. Correggi i campi segnalati prima di pubblicare."
   },
   "changeRequests": {
     "heading": "{count, plural, =0 {Richieste di modifica} one {# richiesta di modifica} other {# richieste di modifica}}",
@@ -365,7 +374,9 @@
       "max_1500": "Massimo 1'500 caratteri",
       "min_1": "Campo obbligatorio",
       "not_requester": "Solo chi ha inoltrato la richiesta può rivederla o ritirarla.",
-      "awaiting_revision": "Questa richiesta è stata rimandata in revisione e attende una nuova versione."
+      "awaiting_revision": "Questa richiesta è stata rimandata in revisione e attende una nuova versione.",
+      "revised": "Nel frattempo la richiesta è stata rielaborata. La nuova versione è ora visualizzata sopra — controllala prima di decidere.",
+      "too_complex": "Il testo è troppo annidato o contiene troppi paragrafi vuoti."
     },
     "confirmMergeIntro": "La proposta viene accettata senza modifiche e sostituisce i campi interessati in tutte e tre le lingue. @{handle} verrà elencato come co-autore.",
     "adjust": "Adatta e accetta",
@@ -397,7 +408,8 @@
     "withdrawConfirmText": "Una volta ritirata, l'autore non potrà più accettare la richiesta. Potrai poi inoltrarne una nuova.",
     "confirmWithdraw": "Ritira la richiesta",
     "withdrawing": "Ritiro in corso…",
-    "withdrawnOn": "Ritirata il {date}"
+    "withdrawnOn": "Ritirata il {date}",
+    "translationInvalid": "Una traduzione non rispetta i limiti di caratteri. Correggi i campi segnalati prima di pubblicare."
   },
   "profile": {
     "memberSince": "Iscritto dal {date}",
@@ -541,9 +553,11 @@
       "rate_limited": "Troppe richieste. Riprova più tardi.",
       "invalid_input": "Questo caso non può essere deciso così.",
       "ai_unavailable": "La traduzione non è raggiungibile — il caso resta aperto.",
+      "translation_invalid": "Una traduzione dell’IA non rispetta i limiti di caratteri. Il caso resta aperto — senza anteprima non si può correggere qui; respingilo e annotalo nella nota.",
       "generic": "Non ha funzionato. Riprova."
     },
-    "findingsNote": "Motivazioni generate automaticamente dal Civic-Linter — indicazioni, non una raccomandazione. Il testo deriva dal contenuto contestato e può mirare a influenzare la decisione."
+    "findingsNote": "Motivazioni generate automaticamente dal Civic-Linter — indicazioni, non una raccomandazione. Il testo deriva dal contenuto contestato e può mirare a influenzare la decisione.",
+    "changeRequestNote": "Richiesta di modifica. La depubblicazione rimuove solo questa scheda — un testo già ripreso resta nel ticket; per quello segnalare il ticket stesso."
   },
   "errors": {
     "notFoundTitle": "Pagina non trovata",
@@ -552,5 +566,108 @@
     "errorBody": "Non è stato possibile caricare la pagina. Riprova — se l'errore persiste, contatta il gestore.",
     "retry": "Riprova",
     "backHome": "Alla bacheca"
+  },
+  "loginEmail": {
+    "subject": "Il tuo link di accesso per wiemeinsch.ch",
+    "heading": "Accedi a wiemeinsch.ch",
+    "intro": "Clicca sul pulsante per accedere. Il link è valido per un’ora e funziona una sola volta.",
+    "button": "Accedi ora",
+    "fallback": "Se il pulsante non funziona, copia questo link nel tuo browser:",
+    "ignore": "Non hai richiesto un accesso? Puoi semplicemente ignorare questa e-mail."
+  },
+  "privacy": {
+    "metaTitle": "Protezione dei dati — wiemeinsch.ch",
+    "title": "Protezione dei dati",
+    "lead": "In breve: ciò che pubblichi qui e come voti sono pubblici, sotto un @handle casuale. Il tuo indirizzo e-mail e le tue indicazioni facoltative restano privati. Questa pagina spiega in modo completo che cosa facciamo con quali dati, chi li riceve e che cosa puoi fare. La base è la legge svizzera sulla protezione dei dati (LPD).",
+    "updated": "Versione del 25 settembre 2026",
+    "responsible": {
+      "title": "Responsabile",
+      "body": "Il responsabile del trattamento dei tuoi dati è:",
+      "contact": "Per qualsiasi richiesta sulla protezione dei dati basta un’e-mail a questo indirizzo."
+    },
+    "consent": {
+      "title": "Il tuo consenso",
+      "body": "Chi partecipa pubblica opinioni politiche, e i voti possono rivelare convinzioni politiche. Secondo la LPD si tratta di dati degni di particolare protezione. Per questo, dopo il primo accesso, ti chiediamo espressamente se accetti i punti di questa pagina. Senza consenso puoi leggere tutto come ospite, ma non partecipare.\n\nSalviamo a quale versione di questa dichiarazione hai acconsentito e quando. Se la modifichiamo in modo sostanziale, ti chiediamo di nuovo il consenso alla prossima visita.\n\nPuoi revocare il consenso in qualsiasi momento con un’e-mail. Poiché senza di esso non è possibile partecipare, chiudiamo allora il tuo account (vedi «Per quanto tempo conserviamo i dati»). Ciò che è avvenuto fino a quel momento resta lecito."
+    },
+    "data": {
+      "title": "Quali dati trattiamo",
+      "body": "Account: il tuo indirizzo e-mail, un @handle generato a caso, la tua lingua, il tuo consenso e quando hai letto per l’ultima volta le tue notifiche. Se accedi con Google, salviamo inoltre l’identificativo dell’account e i dati di accesso tecnici che Google trasmette. Non riprendiamo né il tuo nome né la tua immagine del profilo.\n\nContributi: ticket, prese di posizione e richieste di modifica con le loro traduzioni, i tuoi voti su ticket e prese di posizione, le tue segnalazioni e i tuoi ricorsi. Se ricorri contro una decisione del Civic-Linter, salviamo il testo bloccato affinché una persona possa esaminarlo. I testi bloccati senza ricorso non li salviamo.\n\nFacoltativamente, nelle impostazioni: anno di nascita, genere, formazione, codice postale e professione. Puoi modificarli o cancellarli in qualsiasi momento.\n\nDati tecnici: ogni visita genera i dati di cui un server web ha bisogno, tra cui il tuo indirizzo IP. Gli indirizzi IP ed e-mail ci servono da contatori per frenare gli abusi, per esempio al massimo cinque link di accesso in 15 minuti. Cancelliamo questi contatori al più tardi dopo due ore. I nostri protocolli d’esercizio non contengono né testi né indirizzi e-mail o IP."
+    },
+    "public": {
+      "title": "Che cosa è pubblico",
+      "body": "È pubblico il tuo @handle con il tuo profilo: i tuoi ticket, prese di posizione, richieste di modifica e coautorie e come hai votato sui ticket. I tuoi voti sulle prese di posizione compaiono solo nei totali.\n\nI voti non compaiono mai sotto il tuo nome o il tuo indirizzo e-mail, ma solo sotto l’@handle casuale, che non scegli tu. Chi conosce il tuo @handle o ti riconosce dai tuoi testi può però attribuirti i tuoi voti. Non scrivere quindi nulla che non vuoi sostenere pubblicamente.\n\nLe pagine pubbliche sono accessibili a tutti, anche senza account. I motori di ricerca possono indicizzarle, altri possono copiarle. Ciò che altri hanno copiato non possiamo recuperarlo.\n\nNon sono mai pubblici il tuo indirizzo e-mail, le tue indicazioni facoltative, le tue segnalazioni e i tuoi ricorsi. Chi ha segnalato qualcosa lo vedono solo le moderatrici e i moderatori, non la persona segnalata."
+    },
+    "reuse": {
+      "title": "Come vengono riutilizzati contributi e dati",
+      "body": "wiemeinsch.ch vuole rendere il lavoro politico visibile e utilizzabile. Per questo possiamo riutilizzare tutto ciò che è pubblico e trasmetterlo ad altri, anche in grandi quantità e in forma leggibile da una macchina: come dati aperti, per la scienza e la ricerca, per i media e per la politica e l’amministrazione, per esempio per consegnare loro le richieste più sostenute. Contributi e voti compaiono, come sul sito, sotto l’@handle.\n\nPossiamo anche analizzare con l’IA i contributi e i voti pubblici, per esempio per riassunti, panoramiche tematiche o per riconoscere dove le persone concordano al di là degli schieramenti politici.\n\nLe tue indicazioni facoltative non le trasmettiamo mai singolarmente. Le analizziamo solo in forma aggregata, per gruppi di almeno 20 persone, e possiamo pubblicare e trasmettere tali analisi. I gruppi più piccoli li tralasciamo del tutto, affinché nessuno possa risalire a singole persone.\n\nNon vendiamo dati, non mostriamo pubblicità e non creiamo profili pubblicitari."
+    },
+    "purposes": {
+      "title": "Per quale scopo",
+      "body": "Trattiamo i dati per farti accedere, per pubblicare, tradurre e classificare i tuoi contributi, per verificare prima della pubblicazione che il tono resti oggettivo, per difenderci da abusi e accessi automatizzati, per gestire segnalazioni e ricorsi, per gestire e sviluppare la piattaforma e per il riutilizzo descritto sopra.\n\nTi scriviamo per e-mail per l’accesso e quando si tratta del tuo account. Raramente ti informiamo anche su novità importanti della piattaforma. Puoi disiscriverti in qualsiasi momento, basta una breve risposta."
+    },
+    "recipients": {
+      "title": "Chi riceve i dati",
+      "body": "Infomaniak Network SA (Svizzera) gestisce i server, la banca dati, le copie di sicurezza cifrate e l’invio delle e-mail.\n\nCloudflare, Inc. (Stati Uniti) protegge e distribuisce il sito e fornisce la verifica di sicurezza all’accesso. Ogni richiesta passa da Cloudflare, con il tuo indirizzo IP e dati tecnici del tuo browser.\n\nMistral AI (Francia) verifica che il tono dei contributi resti oggettivo e li traduce nelle tre lingue nazionali. Mistral riceve il testo dei contributi, ma né il tuo indirizzo e-mail, né il tuo @handle, né le tue indicazioni facoltative. Mistral non usa questi testi per addestrare i suoi modelli e li conserva fino a 30 giorni per individuare abusi.\n\nGoogle LLC (Stati Uniti) riceve dati solo se accedi con Google.\n\nSe cambiamo uno di questi fornitori o se ne aggiunge uno, lo indichiamo qui prima che riceva dati. Alle autorità consegniamo dati solo se la legge ci obbliga. Se la piattaforma passa a un altro ente responsabile, per esempio un’associazione, i dati passano con essa e questa dichiarazione continua a valere."
+    },
+    "abroad": {
+      "title": "Comunicazione all’estero",
+      "body": "Secondo il Consiglio federale, la Francia offre un livello di protezione dei dati adeguato. Gli Stati Uniti sono considerati adeguati solo per le imprese certificate secondo lo Swiss-U.S. Data Privacy Framework. Dove ciò non vale per Cloudflare o Google, ci basiamo sulle loro clausole contrattuali tipo. Le autorità statunitensi possono, in determinati casi, accedere ai dati senza che tu ne venga informato. Con il tuo consenso accetti espressamente questa comunicazione."
+    },
+    "retention": {
+      "title": "Per quanto tempo conserviamo i dati",
+      "body": "I link di accesso valgono un’ora, una sessione dura al massimo 30 giorni. Cancelliamo ogni ora i link e le sessioni scaduti.\n\nIl tuo account esiste finché non ne chiedi la cancellazione o revochi il consenso. Cancelliamo allora il tuo indirizzo e-mail, le tue indicazioni facoltative e i tuoi dati di accesso. I tuoi contributi e i tuoi voti restano, perché altri vi si basano, ma senza legame con il tuo account: al posto del tuo @handle compare l’indicazione di un account cancellato.\n\nConserviamo i contributi depubblicati e i casi di moderazione chiusi affinché le decisioni restino comprensibili. Cancelliamo le copie di sicurezza cifrate della banca dati dopo al massimo dodici mesi. Fino ad allora vi possono ancora figurare dati cancellati."
+    },
+    "storage": {
+      "title": "Cookie e memoria del browser",
+      "body": "Usiamo solo i cookie necessari per l’accesso e la sua protezione: il cookie di sessione, un cookie contro le richieste falsificate e uno che memorizza la pagina di ritorno. Cloudflare può impostare propri cookie tecnicamente necessari per difendersi dai bot. Non ci sono cookie di analisi o pubblicitari, né statistiche d’uso. Se ne introdurremo, sarà senza cookie e senza profili, e lo indicheremo prima qui.\n\nIl tuo browser salva localmente le bozze dei tuoi testi, così nulla va perso se chiudi la scheda. Lasciano il tuo dispositivo solo quando le fai verificare o le invii."
+    },
+    "rights": {
+      "title": "I tuoi diritti",
+      "body": "Puoi chiedere informazioni sui tuoi dati, far rettificare dati errati, far cancellare il tuo account, revocare il consenso e ricevere i tuoi dati in un formato comune e leggibile da una macchina. La lingua e le indicazioni facoltative le modifichi tu stesso nelle impostazioni. Per tutto il resto basta un’e-mail all’indirizzo indicato sopra. Rispondiamo entro 30 giorni.\n\nSe la nostra risposta non ti soddisfa, puoi rivolgerti all’Incaricato federale della protezione dei dati e della trasparenza (IFPDT)."
+    },
+    "changes": {
+      "title": "Modifiche",
+      "body": "Adattiamo questa dichiarazione quando la piattaforma cambia. In alto è sempre indicata la versione in vigore. In caso di modifiche sostanziali, per esempio un nuovo scopo o un nuovo destinatario in un Paese senza un livello di protezione adeguato, ti chiediamo di nuovo il consenso alla prossima visita."
+    }
+  },
+  "consent": {
+    "metaTitle": "Consenso — wiemeinsch.ch",
+    "title": "Prima di partecipare",
+    "lead": "wiemeinsch.ch è un backlog politico pubblico. Per poter partecipare ci serve il tuo consenso esplicito sui punti seguenti.",
+    "points": {
+      "votes": {
+        "title": "I tuoi voti sono pubblici",
+        "body": "Come voti sui ticket figura sul tuo profilo, insieme ai tuoi contributi. Può rivelare convinzioni politiche. Compare solo sotto il tuo @handle casuale, mai sotto il tuo nome o il tuo indirizzo e-mail."
+      },
+      "reuse": {
+        "title": "Ciò che è pubblico viene riutilizzato",
+        "body": "Noi e altri possiamo riutilizzare contributi e voti: come dati aperti, per la ricerca, nei media e come base per la politica e l’amministrazione."
+      },
+      "ai": {
+        "title": "L’IA verifica, traduce e analizza",
+        "body": "Mistral AI in Francia verifica che il tono dei tuoi testi resti oggettivo e li traduce. Possiamo inoltre analizzare con l’IA i contributi e i voti pubblici."
+      },
+      "demographics": {
+        "title": "Le indicazioni facoltative restano private",
+        "body": "Anno di nascita, genere, formazione, codice postale e professione sono facoltativi. Li analizziamo solo in forma aggregata per gruppi di almeno 20 persone e possiamo pubblicare tali analisi."
+      },
+      "email": {
+        "title": "Le nostre e-mail",
+        "body": "Ti scriviamo per l’accesso, sul tuo account e raramente su novità importanti. Dalle novità puoi disiscriverti in qualsiasi momento."
+      },
+      "abroad": {
+        "title": "I dati vanno anche all’estero",
+        "body": "Cloudflare (Stati Uniti) distribuisce il sito, Mistral (Francia) elabora i tuoi testi e Google (Stati Uniti) è coinvolto se accedi con Google."
+      }
+    },
+    "withdraw": "Puoi revocare il consenso in qualsiasi momento per e-mail. Chiudiamo allora il tuo account, e i tuoi contributi e voti pubblici restano senza legame con te.",
+    "details": "Tutti i dettagli sono nella <link>dichiarazione sulla protezione dei dati</link>.",
+    "accept": "Acconsento",
+    "decline": "Rifiuta ed esci",
+    "declineNote": "Senza consenso puoi continuare a leggere come ospite. Il tuo account resta senza dati pubblici. Scrivici se dobbiamo cancellarlo.",
+    "errors": {
+      "outdated": "La dichiarazione sulla protezione dei dati è appena stata modificata. Ricarica la pagina e leggi la versione attuale.",
+      "generic": "Non ha funzionato. Riprova tra un minuto."
+    }
   }
 }

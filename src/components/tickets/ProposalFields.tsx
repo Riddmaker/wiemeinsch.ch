@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { ChangeRequestLinterFields } from "@/actions/change-requests";
 import { ConstrainedEditor } from "@/components/editor/ConstrainedEditor";
 import type { LinterRange } from "@/components/editor/linter-highlight";
@@ -17,7 +17,7 @@ import {
   SOLUTION_MIN,
   TITLE_MAX,
 } from "@/lib/validation/limits";
-import type { ConstrainedDoc } from "@/lib/validation/tiptap";
+import { graphemeLength, type ConstrainedDoc } from "@/lib/validation/tiptap";
 
 /**
  * Editierbare Felder EINER Fassung eines Änderungsantrags — nur die Felder,
@@ -58,6 +58,7 @@ export function ProposalFields({
   editorKey,
   testIdPrefix,
   labelSuffix,
+  fieldErrors = {},
 }: {
   fields: readonly ChangeRequestTextField[];
   version: ChangeRequestProposal;
@@ -79,9 +80,25 @@ export function ProposalFields({
   testIdPrefix: string;
   /** Zusatz im zugänglichen Namen, etwa die Sprache der Fassung. */
   labelSuffix?: string;
+  /** Verletzte Zeichenlimiten je Feld (Fehlercode wie `min_200`). */
+  fieldErrors?: Partial<Record<ChangeRequestTextField, string>>;
 }) {
   const tTicket = useTranslations("ticketDetail");
   const tNew = useTranslations("ticketNew");
+  const tEditor = useTranslations("editor");
+  const tErrors = useTranslations("changeRequests.errors");
+  const errorLine = (field: ChangeRequestTextField) => {
+    const code = fieldErrors[field];
+    if (!code) {
+      return null;
+    }
+    return (
+      <p className="font-mono text-xs text-signal">
+        {tErrors.has(code) ? tErrors(code) : tErrors("invalid_input")}
+      </p>
+    );
+  };
+  const chNumber = new Intl.NumberFormat(`${useLocale()}-CH`);
 
   const fieldLabel: Record<ChangeRequestTextField, string> = {
     title: tNew("titleLabel"),
@@ -103,11 +120,28 @@ export function ProposalFields({
             type="text"
             data-testid={`${testIdPrefix}-title`}
             aria-label={accessibleName("title")}
-            maxLength={TITLE_MAX}
             value={version.title ?? ""}
             onChange={(event) => onFieldChange("title", event.target.value)}
             className="rounded-[2px] border-[1.5px] border-line bg-paper px-3 py-2 font-serif text-[15.5px] focus:border-ink focus:outline-none"
           />
+          {/* Zähler statt `maxLength`: Eine KI-Übersetzung kann länger als
+              80 Zeichen ankommen — `maxLength` kürzt sie nicht, zeigte aber
+              auch nicht, dass sie zu lang ist (Review 25.09.2026). */}
+          <span
+            className={`text-right font-mono text-[11.5px] ${
+              graphemeLength((version.title ?? "").trim()) > TITLE_MAX
+                ? "text-signal"
+                : "text-meta"
+            }`}
+          >
+            {tEditor("counter", {
+              count: chNumber.format(
+                graphemeLength((version.title ?? "").trim()),
+              ),
+              max: chNumber.format(TITLE_MAX),
+            })}
+          </span>
+          {errorLine("title")}
           {findings.title && <LinterFeedback findings={findings.title} />}
         </label>
       )}
@@ -127,6 +161,7 @@ export function ProposalFields({
             onUpdate={(next) => onFieldChange(field, next as ConstrainedDoc)}
             highlights={toHighlights(findings, field)}
           />
+          {errorLine(field)}
           {findings[field] && <LinterFeedback findings={findings[field]} />}
         </div>
       ))}

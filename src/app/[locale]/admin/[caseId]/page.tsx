@@ -8,6 +8,7 @@ import { getDisplayLocale } from "@/lib/display-locale";
 import { loadModerationCase } from "@/lib/moderation";
 import { reasonLabels } from "@/lib/moderation-labels";
 import { adminUserId } from "@/lib/require-admin";
+import { dateFormatter } from "@/lib/format";
 
 /**
  * Detailansicht eines Moderationsfalls (P12.3): betroffener Inhalt bzw.
@@ -41,11 +42,7 @@ export default async function AdminCasePage({
   const t = await getTranslations("admin");
   const tLinter = await getTranslations("linter");
 
-  const dateFormat = new Intl.DateTimeFormat(`${locale}-CH`, {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  const dateFormat = dateFormatter(locale);
 
   const reasons = await reasonLabels(
     moderationCase.type,
@@ -57,7 +54,9 @@ export default async function AdminCasePage({
   const canDepublish =
     isOpen &&
     moderationCase.type === "REPORT" &&
-    (target?.kind === "ticket" || target?.kind === "statement") &&
+    (target?.kind === "ticket" ||
+      target?.kind === "statement" ||
+      target?.kind === "changeRequest") &&
     target.status === "PUBLISHED";
   const canApprove =
     isOpen && moderationCase.type === "APPEAL" && target?.kind === "draft";
@@ -171,6 +170,41 @@ export default async function AdminCasePage({
               </p>
             )}
             <RichTextView doc={target.doc} className={RICH_TEXT_CLASSES} />
+            <Link
+              href={`/tickets/${target.ticketId}`}
+              className="mt-4 inline-block font-mono text-xs underline underline-offset-2 hover:text-ink"
+            >
+              {t("viewContent")}
+            </Link>
+          </div>
+        )}
+
+        {target?.kind === "changeRequest" && (
+          <div data-testid="case-content" data-target-kind="changeRequest">
+            {target.status === "DEPUBLISHED" && (
+              <p className="mb-3 font-mono text-xs uppercase tracking-wide text-signal">
+                {t("contentDepublished")}
+              </p>
+            )}
+            <p className="mb-3 font-mono text-xs leading-relaxed text-meta">
+              {t("changeRequestNote")}
+            </p>
+            {target.title && (
+              <h3 className="font-serif text-xl font-bold">{target.title}</h3>
+            )}
+            {target.hashtags.length > 0 && (
+              <p className="mt-2 font-mono text-[12.5px] text-meta">
+                {target.hashtags.map((tag) => `#${tag}`).join(" ")}
+              </p>
+            )}
+            {target.docs.map((entry) => (
+              <div key={entry.label}>
+                <h4 className="mt-4 font-mono text-[11.5px] uppercase tracking-wide text-meta">
+                  {t(`fields.${entry.label}`)}
+                </h4>
+                <RichTextView doc={entry.doc} className={RICH_TEXT_CLASSES} />
+              </div>
+            ))}
             <Link
               href={`/tickets/${target.ticketId}`}
               className="mt-4 inline-block font-mono text-xs underline underline-offset-2 hover:text-ink"

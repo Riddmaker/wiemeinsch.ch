@@ -1,5 +1,6 @@
 "use server";
 
+import { lockStatementRow, lockTicketRow } from "@/lib/db-locks";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { authenticatedUserId } from "@/lib/require-user";
@@ -19,8 +20,10 @@ import { computeTicketScores } from "@/services/scoring";
  * anderer Wert = umschalten (Upsert); nie mehr als 1 Zeile pro User+Ziel.
  *
  * Zähler werden in der Transaktion aus der Vote-Tabelle GEZÄHLT (nicht
- * inkrementiert) — selbstheilend und race-frei; beim Ticket werden zugleich
- * alle drei Scores denormalisiert (Berechnung).
+ * inkrementiert) — selbstheilend; beim Ticket werden zugleich alle drei
+ * Scores denormalisiert (Berechnung). Race-frei erst durch die Zeilensperre
+ * am Anfang der Transaktion (lib/db-locks.ts, Review 25.09.2026): Ohne sie
+ * überschrieb ein paralleler Vote die Zählung des anderen.
  */
 
 export type VoteActionErrorCode =
@@ -54,6 +57,8 @@ export async function voteOnTicket(input: unknown): Promise<VoteResult> {
   const { ticketId, value } = parsed.data;
 
   const result = await prisma.$transaction(async (tx) => {
+    // ZUERST sperren: parallele Votes auf dieses Ticket zählen nacheinander.
+    await lockTicketRow(tx, ticketId);
     const ticket = await tx.ticket.findUnique({
       where: { id: ticketId },
       select: {
@@ -139,6 +144,7 @@ export async function voteOnStatement(input: unknown): Promise<VoteResult> {
   const { statementId, value } = parsed.data;
 
   const result = await prisma.$transaction(async (tx) => {
+    await lockStatementRow(tx, statementId);
     const statement = await tx.statement.findUnique({
       where: { id: statementId },
       select: { status: true },

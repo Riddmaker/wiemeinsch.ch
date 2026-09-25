@@ -30,6 +30,16 @@ import { appLocaleSchema } from "./ticket";
 const idSchema = z.string().min(1).max(40);
 
 /**
+ * Revisionsstand, den der Ticket-Autor gesehen hat (Code-Review 25.09.2026):
+ * `revisedAt` der angezeigten Fassung, `null` bei nie überarbeiteten
+ * Anträgen. Jeder Entscheid über den Inhalt trägt ihn mit — der Server
+ * lehnt ab, wenn der Antragsteller inzwischen überarbeitet hat. Ohne diese
+ * Bindung übernahm «Übernehmen» den Text, der im Moment des Klicks
+ * gespeichert war, auch wenn der Autor ihn nie gesehen hatte.
+ */
+const revisionSchema = z.iso.datetime().nullable();
+
+/**
  * Status, in denen ein Antrag noch «läuft» (E15): offen oder beim
  * Antragsteller zur Überarbeitung. Pro User ist je Ticket genau EIN
  * laufender Antrag erlaubt, und nur laufende Anträge lassen sich bearbeiten
@@ -188,19 +198,21 @@ export type SubmitChangeRequestInput = z.output<
 >;
 
 /**
- * Eingabe für «Übernehmen» (P10.3, seit E15 unverändert 1:1): nur die Id.
- * Der Server übernimmt die gespeicherten Fassungen — der Client kann keinen
- * Text mitschicken und damit auch keine angepasste Fassung als 1:1-Übernahme
- * ausgeben.
+ * Eingabe für «Übernehmen» (P10.3, seit E15 unverändert 1:1): die Id und
+ * der gesehene Revisionsstand. Der Server übernimmt die gespeicherten
+ * Fassungen — der Client kann keinen Text mitschicken und damit auch keine
+ * angepasste Fassung als 1:1-Übernahme ausgeben.
  */
 export const mergeChangeRequestSchema = z.strictObject({
   changeRequestId: idSchema,
+  revisedAt: revisionSchema,
 });
 
 export type MergeChangeRequestInput = z.output<typeof mergeChangeRequestSchema>;
 
 const adjustedMergeShape = {
   changeRequestId: idSchema,
+  revisedAt: revisionSchema,
   /** Sprache des Ticket-Autors — in ihr passt er den Vorschlag an. */
   locale: appLocaleSchema,
   ...proposalShape,
@@ -243,6 +255,7 @@ export const declineChangeRequestSchema = z.strictObject({
 /** Zur Überarbeitung zurückgeben (E15): nur ein Grund aus dem Katalog. */
 export const returnChangeRequestSchema = z.strictObject({
   changeRequestId: idSchema,
+  revisedAt: revisionSchema,
   reason: returnReasonSchema,
 });
 

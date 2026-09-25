@@ -33,14 +33,16 @@ describe("adminUserId (T12)", () => {
   });
 
   it("eingeloggt ohne Admin-Flag: null", async () => {
-    mockedSession.mockResolvedValue({ user: { id: "user-1" } });
+    mockedSession.mockResolvedValue({
+      user: { id: "user-1", privacyConsent: true },
+    });
     prismaMock.user.findUnique.mockResolvedValue({ isAdmin: false });
     expect(await adminUserId()).toBeNull();
   });
 
   it("isAdmin im Session-Objekt zählt NICHT — die DB entscheidet", async () => {
     mockedSession.mockResolvedValue({
-      user: { id: "user-1", isAdmin: true },
+      user: { id: "user-1", isAdmin: true, privacyConsent: true },
     });
     prismaMock.user.findUnique.mockResolvedValue({ isAdmin: false });
     expect(await adminUserId()).toBeNull();
@@ -51,13 +53,17 @@ describe("adminUserId (T12)", () => {
   });
 
   it("gelöschter User trotz gültiger Session: null", async () => {
-    mockedSession.mockResolvedValue({ user: { id: "ghost" } });
+    mockedSession.mockResolvedValue({
+      user: { id: "ghost", privacyConsent: true },
+    });
     prismaMock.user.findUnique.mockResolvedValue(null);
     expect(await adminUserId()).toBeNull();
   });
 
   it("Admin: liefert die User-Id für die Mutation", async () => {
-    mockedSession.mockResolvedValue({ user: { id: "admin-1" } });
+    mockedSession.mockResolvedValue({
+      user: { id: "admin-1", privacyConsent: true },
+    });
     prismaMock.user.findUnique.mockResolvedValue({ isAdmin: true });
     expect(await adminUserId()).toBe("admin-1");
   });

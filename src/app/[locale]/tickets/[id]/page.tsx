@@ -14,6 +14,7 @@ import { toAppLocale } from "@/lib/locale";
 import { prisma } from "@/lib/prisma";
 import { regionName } from "@/lib/ticket-display";
 import { pickTranslation } from "@/lib/translations";
+import { dateFormatter } from "@/lib/format";
 
 /**
  * Ticket-Detailseite (P7.6): Republik-Style-Rendering (font-serif) mit
@@ -90,11 +91,7 @@ export default async function TicketDetailPage({
       )?.value ?? null)
     : null;
 
-  const dateFormat = new Intl.DateTimeFormat(`${locale}-CH`, {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  const dateFormat = dateFormatter(locale);
 
   const isTranslated = !version.isOriginal;
   const canToggleToOriginal = isTranslated;

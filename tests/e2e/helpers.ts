@@ -44,6 +44,41 @@ export async function fetchMagicLink(
   throw new Error(`Keine Magic-Link-Mail für ${email} in Mailpit gefunden`);
 }
 
+/**
+ * Magic Link anfordern, ohne der Weiterleitung zu folgen. NextAuth antwortet
+ * mit einem Redirect: auf `/api/auth/verify-request` bei Erfolg (von dort
+ * geht es weiter auf `/login/check-email`), auf `…/error?error=<Code>`
+ * sonst — seit 25.09.2026 auch beim Limit pro Adresse, das im
+ * signIn-Callback zählt. Rückgabe: `"sent"` oder der Code.
+ */
+export async function requestMagicLink(
+  page: Page,
+  email: string,
+  callbackUrl = "/de",
+): Promise<string> {
+  const { csrfToken } = (await (
+    await page.request.get("/api/auth/csrf")
+  ).json()) as { csrfToken: string };
+  const response = await page.request.post("/api/auth/signin/email", {
+    form: {
+      csrfToken,
+      email,
+      callbackUrl,
+      "cf-turnstile-response": "e2e-dummy-token",
+    },
+    maxRedirects: 0,
+  });
+  const location = response.headers()["location"] ?? "";
+  if (
+    location.includes("/api/auth/verify-request") ||
+    location.includes("/login/check-email")
+  ) {
+    return "sent";
+  }
+  const code = /[?&]error=([^&]+)/.exec(location)?.[1];
+  return code ?? `HTTP ${response.status()}`;
+}
+
 /** Login via Magic-Link mit frischer Wegwerf-Adresse (ohne UI-Umweg). */
 export async function login(page: Page, emailPrefix = "e2e"): Promise<void> {
   const email = `${emailPrefix}-${Date.now()}-${Math.random()
@@ -57,24 +92,18 @@ export async function login(page: Page, emailPrefix = "e2e"): Promise<void> {
  * eine bekannte Identität — der Seed gibt `seed-user-1/-2` E-Mail-Adressen,
  * damit sich der Original-Autor eines Seed-Tickets anmelden kann.
  */
-export async function loginAs(page: Page, email: string): Promise<void> {
+export async function loginAs(
+  page: Page,
+  email: string,
+  callbackUrl = "/de",
+): Promise<void> {
   const requestedAt = Date.now();
-  const { csrfToken } = (await (
-    await page.request.get("/api/auth/csrf")
-  ).json()) as { csrfToken: string };
-  const response = await page.request.post("/api/auth/signin/email", {
-    form: {
-      csrfToken,
-      email,
-      callbackUrl: "/de",
-      "cf-turnstile-response": "e2e-dummy-token",
-    },
-  });
-  if (!response.ok()) {
-    // Bei 429 greift das Limit von 5 Magic-Links pro Adresse und 15 Minuten
-    // (P4) — sonst liefe der Test ohne Session in einen Timeout.
+  const outcome = await requestMagicLink(page, email, callbackUrl);
+  if (outcome !== "sent") {
+    // Z.B. `RateLimit`: das Limit von 5 Magic-Links pro Adresse und 15
+    // Minuten (P4) — sonst liefe der Test ohne Session in einen Timeout.
     throw new Error(
-      `Magic-Link-Anforderung für ${email} fehlgeschlagen: HTTP ${response.status()}`,
+      `Magic-Link-Anforderung für ${email} fehlgeschlagen: ${outcome}`,
     );
   }
   const link = await fetchMagicLink(page, email, requestedAt);
@@ -85,4 +114,19 @@ export async function loginAs(page: Page, email: string): Promise<void> {
   if (page.url().includes("/login/error")) {
     throw new Error(`Magic-Link für ${email} wurde nicht akzeptiert`);
   }
+  await acceptConsentIfAsked(page);
+}
+
+/**
+ * Einwilligung in die Datenschutzerklärung (25.09.2026): Neue Konten und
+ * Konten mit veralteter Version landen nach dem Login auf `/zustimmung`.
+ * Die Rollen-Tests sollen testen, wofür sie da sind — sie willigen ein und
+ * landen dort, wohin der Login führte. Den Ablauf selbst prüft auth.spec.ts.
+ */
+export async function acceptConsentIfAsked(page: Page): Promise<void> {
+  if (!new URL(page.url()).pathname.endsWith("/zustimmung")) {
+    return;
+  }
+  await page.getByTestId("consent-accept").click();
+  await page.waitForURL((url) => !url.pathname.endsWith("/zustimmung"));
 }

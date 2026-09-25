@@ -9,6 +9,7 @@ vi.mock("next-auth", async (importOriginal) => {
 import { getServerSession } from "next-auth";
 import {
   authenticatedUserId,
+  ConsentRequiredError,
   requireUser,
   UnauthorizedError,
 } from "@/lib/require-user";
@@ -27,7 +28,9 @@ describe("requireUser / geschützte Server Action (T4)", () => {
   });
 
   it("liefert die User-Id mit Session", async () => {
-    mockedSession.mockResolvedValue({ user: { id: "user-1" } });
+    mockedSession.mockResolvedValue({
+      user: { id: "user-1", privacyConsent: true },
+    });
     expect(await requireUser()).toEqual({ id: "user-1" });
   });
 
@@ -45,7 +48,55 @@ describe("requireUser / geschützte Server Action (T4)", () => {
   });
 
   it("authenticatedUserId: User-Id mit Session", async () => {
-    mockedSession.mockResolvedValue({ user: { id: "user-1" } });
+    mockedSession.mockResolvedValue({
+      user: { id: "user-1", privacyConsent: true },
+    });
     expect(await authenticatedUserId()).toBe("user-1");
+  });
+});
+
+// Einwilligung (25.09.2026): Ohne sie darf keine Action etwas veröffentlichen.
+describe("requireUser — Einwilligung in die Datenschutzerklärung", () => {
+  beforeEach(() => {
+    mockedSession.mockReset();
+  });
+
+  it("Session ohne Einwilligung: ConsentRequiredError (ein UnauthorizedError)", async () => {
+    mockedSession.mockResolvedValue({
+      user: { id: "user-1", privacyConsent: false },
+    });
+    const error = await requireUser().catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ConsentRequiredError);
+    expect(error).toBeInstanceOf(UnauthorizedError);
+  });
+
+  it("fehlendes Flag gilt als keine Einwilligung (fail closed)", async () => {
+    mockedSession.mockResolvedValue({ user: { id: "user-1" } });
+    await expect(requireUser()).rejects.toBeInstanceOf(ConsentRequiredError);
+    expect(await authenticatedUserId()).toBeNull();
+  });
+
+  it("{ consent: false } lässt die Session ohne Einwilligung durch", async () => {
+    mockedSession.mockResolvedValue({
+      user: { id: "user-1", privacyConsent: false },
+    });
+    expect(await requireUser({ consent: false })).toEqual({ id: "user-1" });
+  });
+
+  it("{ consent: false } verlangt trotzdem eine Session", async () => {
+    mockedSession.mockResolvedValue(null);
+    await expect(requireUser({ consent: false })).rejects.toBeInstanceOf(
+      UnauthorizedError,
+    );
+  });
+
+  it("Action ohne Einwilligung: unauthorized, keine Mutation", async () => {
+    mockedSession.mockResolvedValue({
+      user: { id: "user-1", privacyConsent: false },
+    });
+    expect(await updateProfile({ preferredLocale: "DE" })).toEqual({
+      ok: false,
+      error: "unauthorized",
+    });
   });
 });

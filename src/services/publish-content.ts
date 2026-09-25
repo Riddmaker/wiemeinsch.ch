@@ -1,6 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { AppLocale } from "@/i18n/routing";
 import { routing } from "@/i18n/routing";
+import { lockTicketRow } from "@/lib/db-locks";
 import { toDbLocale } from "@/lib/locale";
 import { prisma } from "@/lib/prisma";
 import { docToMarkdown } from "@/lib/tiptap-markdown";
@@ -130,12 +131,16 @@ function buildTicketTranslationRows(data: PublishTicketInput) {
   return rows;
 }
 
-/** Ticket + alle drei Sprachfassungen in einer Transaktion (nested create). */
+/**
+ * Ticket + alle drei Sprachfassungen in einer Transaktion (nested create).
+ * `client`: in einer umgebenden Transaktion deren Client (Admin-Freigabe).
+ */
 export async function createTicket(
   authorId: string,
   data: PublishTicketInput,
+  client: Prisma.TransactionClient = prisma,
 ): Promise<string> {
-  const ticket = await prisma.ticket.create({
+  const ticket = await client.ticket.create({
     data: {
       authorId,
       level: data.level,
@@ -160,6 +165,10 @@ export async function createTicket(
  * Scores (P9.4-Muster, selbstheilend). Gebraucht beim Publizieren UND beim
  * Depublizieren (P12.4) — sonst behielte ein Ticket Punkte für Inhalt, der
  * nicht mehr sichtbar ist.
+ *
+ * Voraussetzung: Die Transaktion hat die Ticket-Zeile bereits gesperrt
+ * (`lockTicketRow`, als erste Anweisung) — sonst zählt sie an parallelen
+ * Änderungen vorbei.
  */
 export async function refreshStatementAggregates(
   tx: Prisma.TransactionClient,
@@ -204,45 +213,54 @@ export async function createStatement(
   authorId: string,
   data: PublishStatementInput,
 ): Promise<string | null> {
-  return prisma.$transaction(async (tx) => {
-    const ticket = await tx.ticket.findUnique({
-      where: { id: data.ticketId },
-      select: { status: true },
-    });
-    if (!ticket || ticket.status !== "PUBLISHED") {
-      return null;
-    }
+  return prisma.$transaction((tx) => createStatementInTx(tx, authorId, data));
+}
 
-    const translationRows = [
-      {
-        locale: toDbLocale(data.locale),
-        isOriginal: true,
-        content: data.content,
-      },
-    ];
-    for (const locale of routing.locales) {
-      const version = data.translations[locale];
-      if (version) {
-        translationRows.push({
-          locale: toDbLocale(locale),
-          isOriginal: false,
-          content: version,
-        });
-      }
-    }
-
-    const statement = await tx.statement.create({
-      data: {
-        ticketId: data.ticketId,
-        authorId,
-        category: data.category,
-        originalLocale: toDbLocale(data.locale),
-        translations: { create: translationRows },
-      },
-      select: { id: true },
-    });
-
-    await refreshStatementAggregates(tx, data.ticketId);
-    return statement.id;
+/** Wie `createStatement`, aber in einer bestehenden Transaktion. */
+export async function createStatementInTx(
+  tx: Prisma.TransactionClient,
+  authorId: string,
+  data: PublishStatementInput,
+): Promise<string | null> {
+  // Sperre VOR dem Insert, der auf das Ticket verweist (lib/db-locks.ts).
+  await lockTicketRow(tx, data.ticketId);
+  const ticket = await tx.ticket.findUnique({
+    where: { id: data.ticketId },
+    select: { status: true },
   });
+  if (!ticket || ticket.status !== "PUBLISHED") {
+    return null;
+  }
+
+  const translationRows = [
+    {
+      locale: toDbLocale(data.locale),
+      isOriginal: true,
+      content: data.content,
+    },
+  ];
+  for (const locale of routing.locales) {
+    const version = data.translations[locale];
+    if (version) {
+      translationRows.push({
+        locale: toDbLocale(locale),
+        isOriginal: false,
+        content: version,
+      });
+    }
+  }
+
+  const statement = await tx.statement.create({
+    data: {
+      ticketId: data.ticketId,
+      authorId,
+      category: data.category,
+      originalLocale: toDbLocale(data.locale),
+      translations: { create: translationRows },
+    },
+    select: { id: true },
+  });
+
+  await refreshStatementAggregates(tx, data.ticketId);
+  return statement.id;
 }

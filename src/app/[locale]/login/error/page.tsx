@@ -3,7 +3,15 @@ import { Link } from "@/i18n/navigation";
 
 // Ziel von pages.error und des Auth-Guards. Fehlercode → lokalisierte Meldung;
 // unbekannte Codes fallen auf eine generische Meldung zurück (kein Detail-Leak).
-const KNOWN_ERRORS = ["Turnstile", "RateLimit", "Verification"] as const;
+const KNOWN_ERRORS = [
+  "Turnstile",
+  "RateLimit",
+  "Verification",
+  // Adresse vom Normalizer abgelehnt (lib/email-identifier.ts).
+  "EmailSignin",
+  // Google-Login mit einer Adresse, die schon per Magic Link registriert ist.
+  "OAuthAccountNotLinked",
+] as const;
 
 export default async function LoginErrorPage({
   searchParams,
