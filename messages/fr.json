@@ -172,6 +172,8 @@
       "Turnstile": "La vérification de sécurité a échoué. Veuillez recharger la page et réessayer.",
       "RateLimit": "Trop de tentatives en peu de temps. Veuillez patienter quelques minutes avant de réessayer.",
       "Verification": "Ce lien de connexion est invalide ou expiré. Veuillez demander un nouveau lien.",
+      "EmailSignin": "Nous ne pouvons pas utiliser cette adresse e-mail. Veuillez vérifier son orthographe.",
+      "OAuthAccountNotLinked": "Un compte existe déjà pour cette adresse e-mail, avec une connexion par lien. Veuillez vous connecter avec votre adresse e-mail.",
       "Default": "La connexion a échoué. Veuillez réessayer."
     },
     "backToLogin": "Retour à la connexion"
@@ -552,5 +554,13 @@
     "errorBody": "La page n'a pas pu être chargée. Réessaie — si l'erreur persiste, contacte l'exploitant.",
     "retry": "Réessayer",
     "backHome": "Vers le tableau"
+  },
+  "loginEmail": {
+    "subject": "Votre lien de connexion pour wiemeinsch.ch",
+    "heading": "Se connecter à wiemeinsch.ch",
+    "intro": "Cliquez sur le bouton pour vous connecter. Le lien est valable une heure et ne fonctionne qu’une seule fois.",
+    "button": "Se connecter",
+    "fallback": "Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :",
+    "ignore": "Vous n’avez pas demandé de connexion ? Vous pouvez simplement ignorer cet e-mail."
   }
 }

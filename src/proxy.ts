@@ -34,6 +34,9 @@ export default function proxy(request: NextRequest) {
   // Der Layout braucht den vollen Pfad, um Angemeldete auf ihre Profilsprache
   // umzuleiten (E11) — Layouts bekommen ihn in Next nicht von sich aus.
   request.headers.set("x-pathname", request.nextUrl.pathname);
+  // … samt Query: Ein geteilter Link wie `/fr?tab=consensus&seiten=3` soll
+  // nach der Sprach-Umleitung dieselbe Ansicht zeigen, nicht die Startseite.
+  request.headers.set("x-search", request.nextUrl.search);
 
   const response = intlMiddleware(request);
 

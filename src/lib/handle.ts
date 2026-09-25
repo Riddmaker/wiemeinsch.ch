@@ -1,4 +1,5 @@
 import { randomInt, randomUUID } from "node:crypto";
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -213,8 +214,15 @@ function isUniqueViolation(error: unknown): boolean {
  * mit einer kurzen Wortliste ist das kein theoretischer Fall mehr. Geprüft
  * wird nicht vorab per `findUnique` (Race zwischen Prüfung und Schreiben),
  * sondern über den Constraint selbst.
+ *
+ * `extra` schreibt weitere Spalten im selben Update mit — bei der
+ * Registrierung die Sprache (lib/signup-locale.ts), damit ein neues Konto
+ * nie einen Moment lang mit falscher Sprache existiert.
  */
-export async function assignHandle(userId: string): Promise<string> {
+export async function assignHandle(
+  userId: string,
+  extra: Prisma.UserUpdateInput = {},
+): Promise<string> {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     const suffixLength =
       attempt < MAX_ATTEMPTS / 2
@@ -222,7 +230,10 @@ export async function assignHandle(userId: string): Promise<string> {
         : HANDLE_SUFFIX_LENGTH_RETRY;
     const handle = generateHandle(suffixLength);
     try {
-      await prisma.user.update({ where: { id: userId }, data: { handle } });
+      await prisma.user.update({
+        where: { id: userId },
+        data: { ...extra, handle },
+      });
       return handle;
     } catch (error) {
       if (!isUniqueViolation(error)) {
@@ -235,6 +246,9 @@ export async function assignHandle(userId: string): Promise<string> {
   const handle = `${HANDLE_WORDS[randomInt(HANDLE_WORDS.length)]}_${randomUUID()
     .replace(/-/g, "")
     .slice(0, 12)}`;
-  await prisma.user.update({ where: { id: userId }, data: { handle } });
+  await prisma.user.update({
+    where: { id: userId },
+    data: { ...extra, handle },
+  });
   return handle;
 }

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { requestMagicLink } from "./helpers";
 
 /**
  * E2E-Auth-Tests (T4) — laufen gegen die lokale Compose-Instanz
@@ -102,30 +103,72 @@ test("manipulierter/abgelaufener Magic-Link: Fehlerseite, keine Session", async 
   expect(session.user).toBeFalsy();
 });
 
-test("Rate-Limit: 6. Magic-Link-Anfrage derselben Adresse → 429", async ({
-  request,
+test("Rate-Limit: 6. Magic-Link-Anfrage derselben Adresse → Fehlerseite", async ({
+  page,
 }) => {
   flowOnly();
   const email = `e2e-ratelimit-${Date.now()}@example.com`;
-  const { csrfToken } = (await (
-    await request.get("/api/auth/csrf")
-  ).json()) as {
-    csrfToken: string;
-  };
 
-  let lastStatus = 0;
+  const outcomes: string[] = [];
   for (let i = 0; i < 6; i++) {
-    const res = await request.post("/api/auth/signin/email", {
-      form: {
-        csrfToken,
-        email,
-        callbackUrl: "/de",
-        "cf-turnstile-response": "e2e-dummy-token",
-      },
-    });
-    lastStatus = res.status();
+    outcomes.push(await requestMagicLink(page, email));
   }
-  expect(lastStatus).toBe(429);
+  // Seit 25.09.2026 zählt das Limit im signIn-Callback (nach CSRF und
+  // Turnstile) und leitet auf die lokalisierte Fehlerseite um.
+  expect(outcomes.slice(0, 5)).toEqual(Array(5).fill("sent"));
+  expect(outcomes[5]).toBe("RateLimit");
+});
+
+test("Rate-Limit greift auch bei Komma- und Doppelfeld-Varianten", async ({
+  page,
+}) => {
+  flowOnly();
+  const email = `e2e-variant-${Date.now()}@example.com`;
+  // Varianten, die früher je einen eigenen Limit-Schlüssel ergaben, aber an
+  // dieselbe Adresse gingen: Komma-Suffix wird jetzt abgelehnt …
+  expect(await requestMagicLink(page, `${email},1`)).toBe("EmailSignin");
+
+  // … und fünf echte Anforderungen erschöpfen das Budget dieser Adresse,
+  // gleich in welcher Schreibweise sie ankommt.
+  for (let i = 0; i < 5; i++) {
+    expect(
+      await requestMagicLink(page, i % 2 ? email.toUpperCase() : email),
+    ).toBe("sent");
+  }
+  expect(await requestMagicLink(page, ` ${email} `)).toBe("RateLimit");
+});
+
+test("Registrierung über /fr bleibt französisch — samt Anmelde-Mail", async ({
+  page,
+  request,
+}) => {
+  flowOnly();
+  const email = `e2e-fr-${Date.now()}@example.com`;
+  expect(await requestMagicLink(page, email, "/fr")).toBe("sent");
+
+  // Die Mail spricht die Sprache der Anmeldung.
+  let subject = "";
+  for (let attempt = 0; attempt < 20 && !subject; attempt++) {
+    const list = await request.get(`${MAILPIT}/api/v1/messages?limit=20`);
+    const data = (await list.json()) as {
+      messages?: { Subject?: string; To?: { Address: string }[] }[];
+    };
+    subject =
+      data.messages?.find((m) =>
+        m.To?.some((to) => to.Address.toLowerCase() === email),
+      )?.Subject ?? "";
+    if (!subject) await new Promise((r) => setTimeout(r, 500));
+  }
+  expect(subject).toBe("Votre lien de connexion pour wiemeinsch.ch");
+
+  // Nach dem Klick landet das neue Konto auf /fr und bleibt dort — vorher
+  // leitete die Profilsprache (Default DE) sofort auf /de um.
+  const link = await fetchMagicLink(request, email);
+  await page.goto(link);
+  await page.waitForURL("http://localhost:3000/fr**");
+  await page.goto("/fr/faq");
+  await expect(page).toHaveURL(/\/fr\/faq$/);
+  await expect(page.locator("html")).toHaveAttribute("lang", "fr");
 });
 
 test("FR-Login: «Envoyer le lien de connexion» nicht abgeschnitten", async ({

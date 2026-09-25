@@ -172,6 +172,8 @@
       "Turnstile": "Die Sicherheitsprüfung ist fehlgeschlagen. Bitte lade die Seite neu und versuche es noch einmal.",
       "RateLimit": "Zu viele Versuche in kurzer Zeit. Bitte warte einige Minuten und versuche es dann erneut.",
       "Verification": "Dieser Anmelde-Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.",
+      "EmailSignin": "Diese E-Mail-Adresse können wir nicht verwenden. Bitte prüfe die Schreibweise.",
+      "OAuthAccountNotLinked": "Zu dieser E-Mail-Adresse gibt es bereits ein Konto, das sich per Anmelde-Link anmeldet. Bitte melde dich mit deiner E-Mail-Adresse an.",
       "Default": "Die Anmeldung hat nicht geklappt. Bitte versuche es erneut."
     },
     "backToLogin": "Zurück zur Anmeldung"
@@ -552,5 +554,13 @@
     "errorBody": "Die Seite konnte nicht geladen werden. Versuche es nochmals — bleibt der Fehler bestehen, melde dich beim Betrieb.",
     "retry": "Nochmals versuchen",
     "backHome": "Zum Board"
+  },
+  "loginEmail": {
+    "subject": "Dein Anmelde-Link für wiemeinsch.ch",
+    "heading": "Anmelden bei wiemeinsch.ch",
+    "intro": "Klicke auf den Knopf, um dich anzumelden. Der Link ist eine Stunde gültig und funktioniert nur einmal.",
+    "button": "Jetzt anmelden",
+    "fallback": "Falls der Knopf nicht funktioniert, kopiere diesen Link in deinen Browser:",
+    "ignore": "Du hast keine Anmeldung angefordert? Dann kannst du diese E-Mail einfach ignorieren."
   }
 }

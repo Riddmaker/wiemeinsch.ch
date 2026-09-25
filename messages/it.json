@@ -172,6 +172,8 @@
       "Turnstile": "La verifica di sicurezza non è riuscita. Ricarica la pagina e riprova.",
       "RateLimit": "Troppi tentativi in poco tempo. Attendi qualche minuto e riprova.",
       "Verification": "Questo link di accesso non è valido o è scaduto. Richiedi un nuovo link.",
+      "EmailSignin": "Non possiamo utilizzare questo indirizzo e-mail. Controlla che sia scritto correttamente.",
+      "OAuthAccountNotLinked": "Per questo indirizzo e-mail esiste già un account che accede tramite link. Accedi con il tuo indirizzo e-mail.",
       "Default": "L'accesso non è riuscito. Riprova."
     },
     "backToLogin": "Torna all'accesso"
@@ -552,5 +554,13 @@
     "errorBody": "Non è stato possibile caricare la pagina. Riprova — se l'errore persiste, contatta il gestore.",
     "retry": "Riprova",
     "backHome": "Alla bacheca"
+  },
+  "loginEmail": {
+    "subject": "Il tuo link di accesso per wiemeinsch.ch",
+    "heading": "Accedi a wiemeinsch.ch",
+    "intro": "Clicca sul pulsante per accedere. Il link è valido per un’ora e funziona una sola volta.",
+    "button": "Accedi ora",
+    "fallback": "Se il pulsante non funziona, copia questo link nel tuo browser:",
+    "ignore": "Non hai richiesto un accesso? Puoi semplicemente ignorare questa e-mail."
   }
 }

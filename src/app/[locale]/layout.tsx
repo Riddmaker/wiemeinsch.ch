@@ -11,6 +11,7 @@ import { ActionFailureNotice } from "@/components/layout/ActionFailureNotice";
 import { BackToTop } from "@/components/layout/BackToTop";
 import { routing } from "@/i18n/routing";
 import { authOptions } from "@/lib/auth";
+import { assignHandle } from "@/lib/handle";
 import { toAppLocale } from "@/lib/locale";
 import { localeRedirectTarget } from "@/lib/locale-redirect";
 import { prisma } from "@/lib/prisma";
@@ -62,15 +63,24 @@ export default async function LocaleLayout({
   if (userId) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { preferredLocale: true },
+      select: { preferredLocale: true, handle: true },
     });
     if (user) {
-      const pathname = (await headers()).get("x-pathname");
+      // Schlug die Handle-Vergabe bei der Registrierung fehl, schluckt
+      // NextAuth den Fehler des Events — ohne Nachvergabe bliebe das Konto
+      // für immer ohne öffentlichen Namen.
+      if (!user.handle) {
+        await assignHandle(userId);
+      }
+      const requestHeaders = await headers();
+      const pathname = requestHeaders.get("x-pathname");
+      const search = requestHeaders.get("x-search") ?? "";
+      const profileLocale = toAppLocale(user.preferredLocale);
       const target = pathname
-        ? localeRedirectTarget(pathname, toAppLocale(user.preferredLocale))
+        ? localeRedirectTarget(pathname, profileLocale)
         : null;
       if (target) {
-        redirect(target);
+        redirect(`${target}${search}`);
       }
     }
   }
