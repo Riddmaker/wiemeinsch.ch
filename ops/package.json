@@ -1,10 +1,14 @@
 {
   "name": "wiemeinsch-ops",
   "private": true,
-  "description": "Nur die Werkzeuge, die das Laufzeit-Image beim Start braucht: Prisma-CLI für `migrate deploy`. Versionen exakt wie im Root-Lockfile (geprüft in tests/unit/ops-package.test.ts).",
+  "description": "Nur die Werkzeuge, die das Laufzeit-Image beim Start braucht: Prisma-CLI für `migrate deploy`. Versionen exakt wie im Root-Lockfile, Sicherheits-Overrides wie im Root (beides geprüft in tests/unit/ops-package.test.ts).",
   "type": "module",
   "dependencies": {
     "dotenv": "17.4.2",
     "prisma": "7.10.0"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.2",
+    "mysql2": "^3.24.0"
   }
 }

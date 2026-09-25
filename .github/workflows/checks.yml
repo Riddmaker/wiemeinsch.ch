@@ -38,6 +38,16 @@ jobs:
         # Typen des Clients nicht.
         run: npx prisma generate
 
+      - name: Abhängigkeiten auf bekannte Schwachstellen prüfen
+        # Blockierend für «high» und höher in LAUFZEIT-Abhängigkeiten (User-
+        # Entscheid 25.09.2026): Root-Projekt UND ops/ — die Prisma-CLI aus
+        # ops/ läuft im Produktions-Image beim Start. Dev-Werkzeuge (--omit=dev)
+        # landen nicht im Image. Eine bewusste Ausnahme gehört mit Begründung
+        # hierher, nie als stilles `|| true`.
+        run: |
+          npm audit --omit=dev --audit-level=high
+          npm audit --omit=dev --audit-level=high --prefix ops
+
       - name: Secret-Scan des Arbeitsbaums
         # Zweite Verteidigungslinie zum lokalen Pre-Push-Scan: was hier
         # anschlägt, darf nicht in ein Image wandern (HABIT 1).

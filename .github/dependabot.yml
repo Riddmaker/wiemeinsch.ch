@@ -43,6 +43,12 @@ updates:
       minor-patch:
         patterns: ["*"]
         update-types: ["minor", "patch"]
+    # Typen folgen der Node-Major des Laufzeit-Images (Dockerfile: node:24).
+    # Ein @types/node-Major darüber beschriebe APIs, die es im Betrieb nicht
+    # gibt — der Sprung kommt zusammen mit dem Node-Upgrade, nicht allein.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 5
     commit-message:
       prefix: "deps"

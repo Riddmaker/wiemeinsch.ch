@@ -11,3 +11,10 @@ coverage
 OWASP-Gen-AI.pdf
 STYLEGUIDE.html
 *.md
+# Nur lokal vorhandene Arbeitsdateien (gitignored): gehören nicht in den
+# Build-Kontext, auch wenn sie das Endimage nie erreichen würden.
+infra
+.claude
+.playwright-mcp
+.mcp.json
+*.pdf
