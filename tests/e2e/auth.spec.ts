@@ -188,6 +188,17 @@ test("Einwilligung: erst zustimmen, dann mitmachen — ablehnen meldet ab", asyn
     "Avant de participer",
   );
 
+  // Auch eine Navigation im Browser führt nicht vorbei: Am 27.09.2026
+  // entkam man der Zustimmung per Klick auf den eigenen @handle im Header,
+  // weil das Gate im Layout sass und Layouts dabei nicht neu rendern.
+  await page.getByTestId("header-profile").click();
+  await page.waitForURL(
+    (url) =>
+      url.pathname === "/fr/zustimmung" &&
+      (url.searchParams.get("next") ?? "").startsWith("/fr/profil/"),
+  );
+  await expect(page.getByTestId("consent-accept")).toBeVisible();
+
   // Ohne Einwilligung führt jede andere Seite zurück — ausser den Seiten,
   // die man zum Entscheiden braucht.
   await page.goto("/fr/einstellungen");
