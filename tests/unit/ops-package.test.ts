@@ -108,4 +108,20 @@ describe("ops/ — Werkzeuge des Container-Starts", () => {
       expect(rootOverrides[name]).toBe(range);
     }
   });
+
+  /**
+   * Erster Start in Produktion (27.09.2026): Jelastic legt eine eigene
+   * /lib/libssl.so.1.1 in den Container, Prisma erkannte daraus die falsche
+   * Plattform und wollte eine Engine herunterladen. Die Engine ist deshalb im
+   * Laufzeit-Image fest vorgegeben — auf die OpenSSL-3-Variante, die das
+   * Alpine-Image mitbringt, und mit einer Prüfung im Build.
+   */
+  it("gibt der Migration die Schema-Engine fest vor (OpenSSL 3, im Build geprüft)", () => {
+    const dockerfile = readFileSync(path.join(root, "Dockerfile"), "utf8");
+    const runner = dockerfile.slice(dockerfile.lastIndexOf("\nFROM "));
+    expect(runner).toContain(
+      "ENV PRISMA_SCHEMA_ENGINE_BINARY=/app/ops/node_modules/@prisma/engines/schema-engine-linux-musl-openssl-3.0.x",
+    );
+    expect(runner).toContain('RUN test -x "$PRISMA_SCHEMA_ENGINE_BINARY"');
+  });
 });

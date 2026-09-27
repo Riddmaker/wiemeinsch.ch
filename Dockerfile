@@ -50,6 +50,15 @@ COPY --from=build /app/prisma/migrations ./ops/prisma/migrations
 COPY --from=build /app/prisma/data ./ops/data
 COPY --from=build /app/ops-dist/seed.mjs ./ops/seed.mjs
 COPY --chmod=0755 scripts/docker-entrypoint.sh ./docker-entrypoint.sh
+# Schema-Engine fest vorgeben statt von Prisma erkennen lassen: Jelastic legt
+# eine eigene /lib/libssl.so.1.1 in den Container, Prisma schliesst daraus
+# auf «musl + OpenSSL 1.1», findet dafür keine Engine und will eine
+# herunterladen — als `node` ohne Schreibrecht, der Start bricht ab (erster
+# Start in Produktion, 27.09.2026). Das Image selbst bringt nur OpenSSL 3 mit.
+# Die Prüfung lässt schon den Build scheitern, falls ein Prisma-Upgrade die
+# Datei umbenennt.
+ENV PRISMA_SCHEMA_ENGINE_BINARY=/app/ops/node_modules/@prisma/engines/schema-engine-linux-musl-openssl-3.0.x
+RUN test -x "$PRISMA_SCHEMA_ENGINE_BINARY"
 USER node
 EXPOSE 3000
 ENTRYPOINT ["./docker-entrypoint.sh"]
