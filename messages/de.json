@@ -579,7 +579,7 @@
     "metaTitle": "Datenschutz — wiemeinsch.ch",
     "title": "Datenschutz",
     "lead": "Kurz gesagt: Was du hier beiträgst und wie du abstimmst, ist öffentlich, unter einem zufälligen @handle. Deine E-Mail-Adresse und deine freiwilligen Angaben bleiben privat. Diese Seite sagt vollständig, was wir mit welchen Daten tun, wer sie erhält und was du tun kannst. Grundlage ist das Schweizer Datenschutzgesetz (DSG).",
-    "updated": "Fassung vom 25. September 2026",
+    "updated": "Fassung vom 27. September 2026",
     "responsible": {
       "title": "Verantwortlich",
       "body": "Für die Bearbeitung deiner Daten ist verantwortlich:",
@@ -611,7 +611,7 @@
     },
     "abroad": {
       "title": "Bekanntgabe ins Ausland",
-      "body": "Frankreich hat nach Feststellung des Bundesrates ein angemessenes Datenschutzniveau. Die USA gelten nur für Unternehmen als angemessen, die unter dem Swiss-U.S. Data Privacy Framework zertifiziert sind. Wo das bei Cloudflare oder Google nicht greift, stützen wir uns auf ihre Standardvertragsklauseln. US-Behörden können unter Umständen auf Daten zugreifen, ohne dass du davon erfährst. Mit deiner Einwilligung stimmst du dieser Bekanntgabe ausdrücklich zu."
+      "body": "Frankreich hat nach Feststellung des Bundesrates ein angemessenes Datenschutzniveau. Die USA gelten nur für Unternehmen als angemessen, die unter dem Swiss-U.S. Data Privacy Framework zertifiziert sind. Wo das bei Cloudflare oder Google nicht greift, stützen wir uns auf ihre Standardvertragsklauseln. US-Behörden können unter Umständen auf Daten zugreifen, ohne dass du davon erfährst."
     },
     "retention": {
       "title": "Wie lange wir Daten aufbewahren",
@@ -632,39 +632,42 @@
   },
   "consent": {
     "metaTitle": "Einwilligung — wiemeinsch.ch",
-    "title": "Bevor du mitmachst",
-    "lead": "wiemeinsch.ch ist ein öffentliches politisches Backlog. Damit du mitmachen kannst, brauchen wir deine ausdrückliche Einwilligung zu diesen Punkten.",
-    "points": {
-      "votes": {
-        "title": "Deine Abstimmungen sind öffentlich",
-        "body": "Wie du über Tickets abstimmst, steht auf deinem Profil, zusammen mit deinen Beiträgen. Das kann politische Ansichten zeigen. Es erscheint nur unter deinem zufälligen @handle, nie unter deinem Namen oder deiner E-Mail-Adresse."
-      },
-      "reuse": {
-        "title": "Öffentliches wird weiterverwendet",
-        "body": "Beiträge und Stimmen dürfen wir und andere weiterverwenden: als offene Daten, für Forschung, in Medien und als Grundlage für Politik und Verwaltung."
-      },
-      "ai": {
-        "title": "KI prüft, übersetzt und wertet aus",
-        "body": "Mistral AI in Frankreich prüft deine Texte auf einen sachlichen Ton und übersetzt sie. Öffentliche Beiträge und Stimmen können wir zusätzlich mit KI auswerten."
-      },
-      "demographics": {
-        "title": "Freiwillige Angaben bleiben privat",
-        "body": "Jahrgang, Geschlecht, Bildung, Postleitzahl und Beruf sind freiwillig. Wir werten sie nur zusammengefasst für Gruppen ab 20 Personen aus und dürfen solche Auswertungen veröffentlichen."
-      },
-      "email": {
-        "title": "E-Mails von uns",
-        "body": "Wir schreiben dir zur Anmeldung, zu deinem Konto und selten über wichtige Neuerungen. Von den Neuerungen kannst du dich jederzeit abmelden."
-      },
-      "abroad": {
-        "title": "Daten gehen auch ins Ausland",
-        "body": "Cloudflare (USA) liefert die Website aus, Mistral (Frankreich) verarbeitet deine Texte, und Google (USA) ist beteiligt, wenn du dich mit Google anmeldest."
+    "title": "Du machst mit unter einem Zufallsnamen",
+    "lead": "Auf wiemeinsch.ch erscheinst du nur als <name>{handle}</name>. Dein Name, deine E-Mail-Adresse und dein Google-Profil sind nie öffentlich. Öffentlich sind deine Beiträge und Abstimmungen, verknüpft mit diesem Zufallsnamen.",
+    "why": {
+      "title": "Warum wir ausdrücklich fragen",
+      "body": "Wer sieht, wie <name>{handle}</name> abstimmt, kann auf eine politische Haltung schliessen, auch ohne zu wissen, wer dahintersteckt. Das Datenschutzgesetz zählt politische Ansichten zu den besonders schützenswerten Daten, darum brauchen wir dein ausdrückliches Ja. Ganz unsichtbar bist du trotzdem nicht: Wer dich gut kennt, erkennt dich vielleicht an dem, was du schreibst."
+    },
+    "statement": "Ich willige ein, dass meine Beiträge und Abstimmungen unter meinem Zufallsnamen öffentlich sind, auch wenn sie meine politische Haltung erkennen lassen. Sie dürfen weiterverwendet werden: als offene Daten, für Forschung, in Medien, in Politik und Verwaltung und für Auswertungen mit KI. Ausserdem übersetzt KI meine Beiträge in die zwei anderen Landessprachen.",
+    "accept": "Einwilligen und mitmachen",
+    "decline": "Nur lesen",
+    "declineNote": "Mit «Nur lesen» meldest du dich ab und liest als Gast weiter. Dein Konto bleibt ohne öffentliche Angaben bestehen. Schreib uns, wenn wir es löschen sollen.",
+    "facts": {
+      "title": "Gut zu wissen",
+      "items": {
+        "ai": {
+          "title": "Texte prüfen und übersetzen:",
+          "body": "Bevor dein Text erscheint, prüft Mistral AI (Frankreich) den sachlichen Ton und übersetzt ihn in die anderen Landessprachen. Mistral erhält nur den Text, nie deinen Namen, deine E-Mail-Adresse oder deinen Zufallsnamen. Was du selbst hineinschreibst, geht mit. Mistral bewahrt Texte 30 Tage zur Missbrauchskontrolle auf und trainiert nicht damit."
+        },
+        "demographics": {
+          "title": "Freiwillige Angaben:",
+          "body": "Jahrgang, Geschlecht, Bildung, Postleitzahl und Beruf sind freiwillig und nie öffentlich. Wir werten sie nur zusammengefasst aus, für Gruppen ab 20 Personen."
+        },
+        "email": {
+          "title": "E-Mails:",
+          "body": "Wir schreiben dir zur Anmeldung, zu deinem Konto und selten über wichtige Neuerungen. Von den Neuerungen kannst du dich abmelden."
+        },
+        "storage": {
+          "title": "Wo deine Daten liegen:",
+          "body": "bei Infomaniak in der Schweiz. Cloudflare (USA) liefert die Website aus, Google (USA) ist nur beteiligt, wenn du dich mit Google anmeldest."
+        },
+        "withdraw": {
+          "title": "Widerruf:",
+          "body": "jederzeit per E-Mail. Dann schliessen wir dein Konto, und deine Beiträge und Stimmen bleiben ohne Verbindung zu dir stehen."
+        }
       }
     },
-    "withdraw": "Du kannst die Einwilligung jederzeit per E-Mail widerrufen. Dann schliessen wir dein Konto, und deine öffentlichen Beiträge und Stimmen bleiben ohne Bezug zu dir stehen.",
     "details": "Alles Weitere steht in der <link>Datenschutzerklärung</link>.",
-    "accept": "Ich willige ein",
-    "decline": "Ablehnen und abmelden",
-    "declineNote": "Ohne Einwilligung kannst du als Gast weiterlesen. Dein Konto bleibt ohne öffentliche Angaben bestehen. Schreib uns, wenn wir es löschen sollen.",
     "errors": {
       "outdated": "Die Datenschutzerklärung wurde gerade geändert. Lade die Seite neu und lies die aktuelle Fassung.",
       "generic": "Das hat nicht geklappt. Versuch es in einer Minute noch einmal."

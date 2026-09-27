@@ -185,7 +185,7 @@ test("Einwilligung: erst zustimmen, dann mitmachen — ablehnen meldet ab", asyn
   await page.waitForURL("**/fr/zustimmung**");
   expect(new URL(page.url()).searchParams.get("next")).toBe("/fr/tickets/new");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "Avant de participer",
+    "Vous participez sous un nom aléatoire",
   );
 
   // Auch eine Navigation im Browser führt nicht vorbei: Am 27.09.2026
