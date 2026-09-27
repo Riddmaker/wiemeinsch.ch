@@ -138,5 +138,9 @@ jobs:
       # Unveränderlicher Tag aus `build-push` (type=sha,format=long).
       tag: ${{ github.sha }}
       expected-digest: ${{ needs.build-push.outputs.digest }}
-    # Kein `secrets: inherit`: Der Redeploy-Job liest das Token direkt aus
-    # der Environment `production` — mehr braucht er nicht.
+    # `secrets: inherit` ist nötig, obwohl der Token in der Environment
+    # `production` liegt: Ohne blieb er im aufgerufenen Workflow LEER, ohne
+    # Fehlermeldung, während die Variablen derselben Environment ankamen
+    # (erster echter Deploy, 27.09.2026; github/docs#44458,
+    # actions/runner#4453). redeploy.yml liest nur JELASTIC_API_TOKEN.
+    secrets: inherit

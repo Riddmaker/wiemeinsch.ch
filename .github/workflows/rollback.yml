@@ -27,6 +27,9 @@ jobs:
   redeploy:
     name: Rollback auf ein signiertes Image
     uses: ./.github/workflows/redeploy.yml
+    # Wie in deploy.yml: Ohne `inherit` bleibt das Environment-Secret im
+    # aufgerufenen Workflow leer (github/docs#44458).
+    secrets: inherit
     with:
       # Format und Signatur (deploy.yml auf main) prüft redeploy.yml, bevor
       # irgendetwas an die Plattform geht.
