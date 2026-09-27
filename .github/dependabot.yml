@@ -79,3 +79,20 @@ updates:
         update-types: ["version-update:semver-major"]
     commit-message:
       prefix: "docker"
+
+  # Tunnel-Image (tunnel/Dockerfile): cloudflared und die Alpine-Basis, beide
+  # per Digest gepinnt. Majors werden hier NICHT ignoriert — cloudflared
+  # versioniert nach Kalender, jeder Jahreswechsel wäre sonst ein «Major».
+  # Nach dem Merge baut tunnel-image.yml; der Node wird von Hand umgestellt.
+  - package-ecosystem: docker
+    directory: "/tunnel"
+    target-branch: dev
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      tunnel:
+        patterns: ["*"]
+    commit-message:
+      prefix: "docker"

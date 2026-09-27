@@ -1,0 +1,129 @@
+# Tunnel-Image (tunnel/Dockerfile) bauen, prüfen, publizieren, signieren.
+#
+# Eigener Workflow, weil das Image unabhängig von der App lebt: Es ändert
+# sich nur mit cloudflared oder der Alpine-Basis (Dependabot-PRs), und ein
+# neues Tunnel-Image löst bewusst KEINEN Redeploy aus — der Tunnel-Node wird
+# von Hand auf den neuen Commit-SHA-Tag umgestellt, danach wird der
+# Tunnel-Status in Cloudflare geprüft.
+#
+# Action-Versionen wie in deploy.yml (dort geprüft, Dependabot hält beide
+# Workflows gemeinsam aktuell).
+name: Tunnel-Image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tunnel/**"
+      - ".github/workflows/tunnel-image.yml"
+  # Neubau ohne Änderung, z.B. für einen Erst-Import. Nur auf main wirksam
+  # (siehe Job-Bedingung).
+  workflow_dispatch:
+
+concurrency:
+  group: tunnel-image
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ghcr.io/riddmaker/wiemeinsch.ch-tunnel
+
+jobs:
+  build-push:
+    name: Tunnel-Image bauen, prüfen, publizieren, signieren
+    # Wie in deploy.yml: Von einem anderen Branch kommt nichts in die
+    # Registry — auch kein `latest`, das ein Neuimport ziehen würde.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write # GHCR-Push
+      id-token: write # OIDC-Token für cosign (keyless) und die Attestation
+      attestations: write # Build-Provenance
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: docker/setup-buildx-action@v4.3.0
+
+      - name: An der GitHub Container Registry anmelden
+        uses: docker/login-action@v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tags und Labels bestimmen
+        id: meta
+        uses: docker/metadata-action@v6.2.0
+        with:
+          images: ${{ env.IMAGE }}
+          # Commit-SHA = unveränderlicher Tag für Upgrades des Nodes;
+          # `latest` dient einzig dem Erst-Import der Umgebung per Manifest.
+          tags: |
+            type=sha,format=long,prefix=
+            type=raw,value=latest
+
+      - name: Bauen (lokal, für den Probelauf)
+        uses: docker/build-push-action@v7.3.0
+        with:
+          context: tunnel
+          load: true
+          tags: wiemeinsch-tunnel:probe
+          cache-from: type=gha,scope=tunnel
+          cache-to: type=gha,scope=tunnel,mode=max
+
+      - name: Probelauf
+        # Vor dem Push: Das Binary startet auf der Basis, und die Basis ist
+        # eine Distribution, die Jelastic als Custom Container annimmt.
+        run: |
+          docker run --rm wiemeinsch-tunnel:probe version
+          docker run --rm --entrypoint cat wiemeinsch-tunnel:probe /etc/os-release \
+            | grep -qx 'ID=alpine' \
+            || { echo "::error::Basis ist nicht Alpine"; exit 1; }
+          uid="$(docker run --rm --entrypoint id wiemeinsch-tunnel:probe -u)"
+          [ "${uid}" != "0" ] || { echo "::error::Image läuft als root"; exit 1; }
+
+      - name: Pushen
+        id: push
+        uses: docker/build-push-action@v7.3.0
+        with:
+          context: tunnel
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=tunnel
+
+      - name: cosign installieren
+        uses: sigstore/cosign-installer@v4.1.2
+        with:
+          # Dieselbe Version wie in deploy.yml und redeploy.yml.
+          cosign-release: v3.0.6
+
+      - name: Image signieren (keyless, GitHub-OIDC)
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: cosign sign --yes "${IMAGE}@${DIGEST}"
+
+      - name: Signatur sofort gegenprüfen
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+          IDENTITY: ${{ github.server_url }}/${{ github.repository }}/.github/workflows/tunnel-image.yml@${{ github.ref }}
+        run: |
+          cosign verify "${IMAGE}@${DIGEST}" \
+            --certificate-identity "${IDENTITY}" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            > /dev/null
+          echo "Signatur gültig für ${IDENTITY}"
+
+      - name: Build-Provenance attestieren
+        uses: actions/attest@v4.2.2
+        with:
+          subject-name: ${{ env.IMAGE }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+          # Speicher-Datensätze gibt es nur für Organisations-Repos.
+          create-storage-record: false
