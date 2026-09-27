@@ -26,7 +26,7 @@ export function ConsentForm({
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <div className="mt-8 flex flex-col gap-4">
+    <div className="mt-5 flex flex-col gap-4">
       {error && (
         <p
           role="alert"

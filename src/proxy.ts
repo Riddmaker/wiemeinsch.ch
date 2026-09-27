@@ -1,6 +1,7 @@
 import createMiddleware from "next-intl/middleware";
-import type { NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { routing } from "./i18n/routing";
+import { consentGateTarget } from "./lib/consent-gate";
 import {
   buildContentSecurityPolicy,
   createNonce,
@@ -20,9 +21,10 @@ export const PAGE_CACHE_CONTROL =
   "private, no-cache, no-store, max-age=0, must-revalidate, no-transform";
 
 /**
- * Ein Durchgang, zwei Aufgaben (P13.2):
+ * Ein Durchgang, drei Aufgaben (P13.2):
  *   1. Locale-Routing (next-intl, seit P3).
  *   2. Security-Header inkl. Nonce-basierter CSP.
+ *   3. Einwilligungs-Gate für Angemeldete (27.09.2026, lib/consent-gate.ts).
  *
  * Reihenfolge ist wesentlich: Der Nonce muss VOR dem Rendern in den
  * REQUEST-Headern stehen, weil Next ihn beim Server-Rendering aus dem
@@ -32,21 +34,24 @@ export const PAGE_CACHE_CONTROL =
  * damit weiter — deshalb wird hier zuerst der Request bestückt und erst
  * danach die Middleware aufgerufen.
  */
-export default function proxy(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const context = securityContext();
   const nonce = createNonce();
   const csp = buildContentSecurityPolicy(nonce, context);
 
   request.headers.set("x-nonce", nonce);
   request.headers.set("content-security-policy", csp);
-  // Der Layout braucht den vollen Pfad, um Angemeldete auf ihre Profilsprache
+  // Das Layout braucht den vollen Pfad, um Angemeldete auf ihre Profilsprache
   // umzuleiten (E11) — Layouts bekommen ihn in Next nicht von sich aus.
   request.headers.set("x-pathname", request.nextUrl.pathname);
   // … samt Query: Ein geteilter Link wie `/fr?tab=consensus&seiten=3` soll
   // nach der Sprach-Umleitung dieselbe Ansicht zeigen, nicht die Startseite.
   request.headers.set("x-search", request.nextUrl.search);
 
-  const response = intlMiddleware(request);
+  const consentTarget = await consentGateTarget(request);
+  const response = consentTarget
+    ? NextResponse.redirect(new URL(consentTarget, request.url))
+    : intlMiddleware(request);
 
   // Auch Redirects (z.B. `/` → `/de`) tragen die Header — eine Antwort ohne
   // Schutz-Header gibt es nicht.

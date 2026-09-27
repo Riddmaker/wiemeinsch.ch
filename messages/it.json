@@ -579,7 +579,7 @@
     "metaTitle": "Protezione dei dati — wiemeinsch.ch",
     "title": "Protezione dei dati",
     "lead": "In breve: ciò che pubblichi qui e come voti sono pubblici, sotto un @handle casuale. Il tuo indirizzo e-mail e le tue indicazioni facoltative restano privati. Questa pagina spiega in modo completo che cosa facciamo con quali dati, chi li riceve e che cosa puoi fare. La base è la legge svizzera sulla protezione dei dati (LPD).",
-    "updated": "Versione del 25 settembre 2026",
+    "updated": "Versione del 27 settembre 2026",
     "responsible": {
       "title": "Responsabile",
       "body": "Il responsabile del trattamento dei tuoi dati è:",
@@ -611,7 +611,7 @@
     },
     "abroad": {
       "title": "Comunicazione all’estero",
-      "body": "Secondo il Consiglio federale, la Francia offre un livello di protezione dei dati adeguato. Gli Stati Uniti sono considerati adeguati solo per le imprese certificate secondo lo Swiss-U.S. Data Privacy Framework. Dove ciò non vale per Cloudflare o Google, ci basiamo sulle loro clausole contrattuali tipo. Le autorità statunitensi possono, in determinati casi, accedere ai dati senza che tu ne venga informato. Con il tuo consenso accetti espressamente questa comunicazione."
+      "body": "Secondo il Consiglio federale, la Francia offre un livello di protezione dei dati adeguato. Gli Stati Uniti sono considerati adeguati solo per le imprese certificate secondo lo Swiss-U.S. Data Privacy Framework. Dove ciò non vale per Cloudflare o Google, ci basiamo sulle loro clausole contrattuali tipo. Le autorità statunitensi possono, in determinati casi, accedere ai dati senza che tu ne venga informato."
     },
     "retention": {
       "title": "Per quanto tempo conserviamo i dati",
@@ -632,39 +632,42 @@
   },
   "consent": {
     "metaTitle": "Consenso — wiemeinsch.ch",
-    "title": "Prima di partecipare",
-    "lead": "wiemeinsch.ch è un backlog politico pubblico. Per poter partecipare ci serve il tuo consenso esplicito sui punti seguenti.",
-    "points": {
-      "votes": {
-        "title": "I tuoi voti sono pubblici",
-        "body": "Come voti sui ticket figura sul tuo profilo, insieme ai tuoi contributi. Può rivelare convinzioni politiche. Compare solo sotto il tuo @handle casuale, mai sotto il tuo nome o il tuo indirizzo e-mail."
-      },
-      "reuse": {
-        "title": "Ciò che è pubblico viene riutilizzato",
-        "body": "Noi e altri possiamo riutilizzare contributi e voti: come dati aperti, per la ricerca, nei media e come base per la politica e l’amministrazione."
-      },
-      "ai": {
-        "title": "L’IA verifica, traduce e analizza",
-        "body": "Mistral AI in Francia verifica che il tono dei tuoi testi resti oggettivo e li traduce. Possiamo inoltre analizzare con l’IA i contributi e i voti pubblici."
-      },
-      "demographics": {
-        "title": "Le indicazioni facoltative restano private",
-        "body": "Anno di nascita, genere, formazione, codice postale e professione sono facoltativi. Li analizziamo solo in forma aggregata per gruppi di almeno 20 persone e possiamo pubblicare tali analisi."
-      },
-      "email": {
-        "title": "Le nostre e-mail",
-        "body": "Ti scriviamo per l’accesso, sul tuo account e raramente su novità importanti. Dalle novità puoi disiscriverti in qualsiasi momento."
-      },
-      "abroad": {
-        "title": "I dati vanno anche all’estero",
-        "body": "Cloudflare (Stati Uniti) distribuisce il sito, Mistral (Francia) elabora i tuoi testi e Google (Stati Uniti) è coinvolto se accedi con Google."
+    "title": "Partecipi con un nome casuale",
+    "lead": "Su wiemeinsch.ch appari solo come <name>{handle}</name>. Il tuo nome, il tuo indirizzo e-mail e il tuo profilo Google non sono mai pubblici. Pubblici sono i tuoi contributi e i tuoi voti, collegati a questo nome casuale.",
+    "why": {
+      "title": "Perché chiediamo il tuo consenso espresso",
+      "body": "Chi vede come vota <name>{handle}</name> può dedurne un orientamento politico, anche senza sapere chi c’è dietro. La legge sulla protezione dei dati annovera le opinioni politiche tra i dati personali degni di particolare protezione, per questo ci serve il tuo consenso espresso. Non sei comunque del tutto invisibile: chi ti conosce bene potrebbe riconoscerti da ciò che scrivi."
+    },
+    "statement": "Acconsento che i miei contributi e i miei voti siano pubblici con il mio nome casuale, anche se lasciano intendere il mio orientamento politico. Possono essere riutilizzati: come dati aperti, per la ricerca, nei media, nella politica e nell’amministrazione e per analisi con l’IA. Inoltre l’IA traduce i miei contributi nelle altre due lingue nazionali.",
+    "accept": "Acconsenti e partecipa",
+    "decline": "Solo leggere",
+    "declineNote": "Con «Solo leggere» esci e continui a leggere come ospite. Il tuo account resta senza dati pubblici. Scrivici se dobbiamo cancellarlo.",
+    "facts": {
+      "title": "Buono a sapersi",
+      "items": {
+        "ai": {
+          "title": "Verifica e traduzione dei testi:",
+          "body": "Prima che il tuo testo appaia, Mistral AI (Francia) verifica che il tono sia oggettivo e lo traduce nelle altre lingue nazionali. Mistral riceve solo il testo, mai il tuo nome, il tuo indirizzo e-mail o il tuo nome casuale. Ciò che scrivi tu stesso nel testo viene trasmesso con esso. Mistral conserva i testi 30 giorni per individuare abusi e non li usa per addestrare i suoi modelli."
+        },
+        "demographics": {
+          "title": "Indicazioni facoltative:",
+          "body": "Anno di nascita, genere, formazione, codice postale e professione sono facoltativi e mai pubblici. Li analizziamo solo in forma aggregata, per gruppi di almeno 20 persone."
+        },
+        "email": {
+          "title": "E-mail:",
+          "body": "Ti scriviamo per l’accesso, sul tuo account e raramente su novità importanti. Dalle novità puoi disiscriverti."
+        },
+        "storage": {
+          "title": "Dove si trovano i tuoi dati:",
+          "body": "presso Infomaniak, in Svizzera. Cloudflare (Stati Uniti) distribuisce il sito, Google (Stati Uniti) è coinvolto solo se accedi con Google."
+        },
+        "withdraw": {
+          "title": "Revoca:",
+          "body": "in qualsiasi momento per e-mail. Chiudiamo allora il tuo account, e i tuoi contributi e voti restano senza legame con te."
+        }
       }
     },
-    "withdraw": "Puoi revocare il consenso in qualsiasi momento per e-mail. Chiudiamo allora il tuo account, e i tuoi contributi e voti pubblici restano senza legame con te.",
     "details": "Tutti i dettagli sono nella <link>dichiarazione sulla protezione dei dati</link>.",
-    "accept": "Acconsento",
-    "decline": "Rifiuta ed esci",
-    "declineNote": "Senza consenso puoi continuare a leggere come ospite. Il tuo account resta senza dati pubblici. Scrivici se dobbiamo cancellarlo.",
     "errors": {
       "outdated": "La dichiarazione sulla protezione dei dati è appena stata modificata. Ricarica la pagina e leggi la versione attuale.",
       "generic": "Non ha funzionato. Riprova tra un minuto."

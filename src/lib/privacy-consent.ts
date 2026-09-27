@@ -10,11 +10,15 @@ import { routing, type AppLocale } from "@/i18n/routing";
  * Satz unter dem Login-Formular eingeholt, sondern nach dem Login als
  * eigener Schritt mit Version und Zeitpunkt in der DB gespeichert.
  *
- * Ändert sich die Erklärung wesentlich, wird die Version erhöht: Alle
- * werden beim nächsten Seitenaufruf erneut gefragt. Redaktionelle
- * Korrekturen lassen die Version stehen.
+ * Ändert sich die Erklärung oder der Einwilligungstext wesentlich, wird die
+ * Version erhöht: Alle werden beim nächsten Seitenaufruf erneut gefragt.
+ * Redaktionelle Korrekturen lassen die Version stehen. 2026-09-27: neuer
+ * Einwilligungstext (ein Einwilligungssatz statt sechs Punkte, KI-Übersetzung
+ * darin genannt); die Bekanntgabe in die USA stützt sich nicht mehr auf die
+ * Einwilligung, sondern auf Data Privacy Framework und
+ * Standardvertragsklauseln (User-Entscheid).
  */
-export const PRIVACY_POLICY_VERSION = "2026-09-25";
+export const PRIVACY_POLICY_VERSION = "2026-09-27";
 
 export function hasCurrentConsent(version: string | null | undefined): boolean {
   return version === PRIVACY_POLICY_VERSION;

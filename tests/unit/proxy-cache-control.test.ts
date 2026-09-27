@@ -26,8 +26,8 @@ describe("proxy — Cache-Control", () => {
 
   it.each(["http://localhost:3000/de/impressum", "http://localhost:3000/"])(
     "%s trägt den Header",
-    (url) => {
-      const response = proxy(new NextRequest(url));
+    async (url) => {
+      const response = await proxy(new NextRequest(url));
       expect(response.headers.get("Cache-Control")).toBe(PAGE_CACHE_CONTROL);
     },
   );
