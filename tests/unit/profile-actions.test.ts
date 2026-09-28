@@ -38,11 +38,12 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import {
   acceptPrivacyPolicy,
+  rerollAvatar,
   setPreferredLocale,
   updateProfile,
 } from "@/actions/profile";
 import { PRIVACY_POLICY_VERSION } from "@/lib/privacy-consent";
-import { UnauthorizedError } from "@/lib/require-user";
+import { ConsentRequiredError, UnauthorizedError } from "@/lib/require-user";
 import {
   BIRTH_YEAR_MIN,
   currentBirthYearMax,
@@ -349,6 +350,50 @@ describe("Einwilligung und Guard-Optionen (25.09.2026)", () => {
       ok: false,
       error: "unauthorized",
     });
+    expect(prismaMock.user.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("Profilbild würfeln (27.09.2026)", () => {
+  beforeEach(() => {
+    requireUserMock.mockReset();
+    checkRateLimitMock.mockReset();
+    prismaMock.user.update.mockReset();
+    requireUserMock.mockResolvedValue({ id: "user-1" });
+    checkRateLimitMock.mockResolvedValue({ ok: true });
+    prismaMock.user.update.mockResolvedValue({ id: "user-1" });
+  });
+
+  it("verlangt die Einwilligung — das Bild ist öffentlich", async () => {
+    await rerollAvatar();
+    expect(requireUserMock).toHaveBeenCalledWith(undefined);
+  });
+
+  it("schreibt einen neuen Zufallswert nur beim eigenen User", async () => {
+    const first = await rerollAvatar();
+    const second = await rerollAvatar();
+    expect(first.ok && second.ok).toBe(true);
+    if (!first.ok || !second.ok) return;
+    expect(first.seed).toMatch(/^[A-Za-z0-9_-]{12}$/);
+    expect(first.seed).not.toBe(second.seed);
+    expect(prismaMock.user.update).toHaveBeenLastCalledWith({
+      where: { id: "user-1" },
+      data: { avatarSeed: second.seed },
+    });
+  });
+
+  it("ohne Session oder Einwilligung: unauthorized, nichts geschrieben", async () => {
+    requireUserMock.mockRejectedValue(new ConsentRequiredError());
+    expect(await rerollAvatar()).toEqual({ ok: false, error: "unauthorized" });
+    expect(prismaMock.user.update).not.toHaveBeenCalled();
+  });
+
+  it("Rate-Limit pro User", async () => {
+    checkRateLimitMock.mockResolvedValue({ ok: false });
+    expect(await rerollAvatar()).toEqual({ ok: false, error: "rate_limited" });
+    expect(checkRateLimitMock).toHaveBeenCalledWith(
+      expect.objectContaining({ scope: "avatar-reroll", identifier: "user-1" }),
+    );
     expect(prismaMock.user.update).not.toHaveBeenCalled();
   });
 });

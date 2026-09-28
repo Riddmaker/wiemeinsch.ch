@@ -1,5 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { Avatar } from "@/components/profile/Avatar";
+import { AvatarReroll } from "@/components/profile/AvatarReroll";
 import { NotificationPanel } from "@/components/profile/NotificationPanel";
 import { Link } from "@/i18n/navigation";
 import type { AppLocale } from "@/i18n/routing";
@@ -13,6 +15,7 @@ import {
   type ProfileVoteEntry,
 } from "@/lib/profile";
 import { dateFormatter } from "@/lib/format";
+import { avatarSeedOf } from "@/lib/identicon";
 
 /**
  * Öffentliches Profil (P11.4):
@@ -122,12 +125,25 @@ export default async function ProfilePage({
       className="mx-auto max-w-3xl px-4 py-10 sm:px-5 sm:py-14"
       data-testid="profile-page"
     >
-      <h1
-        className="font-serif text-[28px] font-bold leading-[1.3] sm:text-[32px]"
-        data-testid="profile-handle"
-      >
-        {profile.user.handle ? `@${profile.user.handle}` : t("anonymous")}
-      </h1>
+      <div className="flex items-center gap-4 sm:gap-5">
+        {isSelf ? (
+          <AvatarReroll
+            seed={avatarSeedOf(profile.user)}
+            className="h-16 w-16 sm:h-20 sm:w-20"
+          />
+        ) : (
+          <Avatar
+            seed={avatarSeedOf(profile.user)}
+            className="h-16 w-16 sm:h-20 sm:w-20"
+          />
+        )}
+        <h1
+          className="min-w-0 break-words font-serif text-[28px] font-bold leading-[1.3] sm:text-[32px]"
+          data-testid="profile-handle"
+        >
+          {profile.user.handle ? `@${profile.user.handle}` : t("anonymous")}
+        </h1>
+      </div>
       <p className="mt-3 font-mono text-[11.5px] uppercase tracking-[0.03em] text-meta">
         {t("memberSince", { date: dateFormat.format(profile.user.createdAt) })}
       </p>
@@ -140,7 +156,7 @@ export default async function ProfilePage({
           data-testid="profile-own-hint"
         >
           <p className="font-serif text-[15px] leading-relaxed">
-            {t("ownProfile")}
+            {t("ownProfile")} {t("avatar.hint")}
           </p>
           {openChangeRequests.total > 0 && (
             <div className="mt-2" data-testid="profile-open-change-requests">

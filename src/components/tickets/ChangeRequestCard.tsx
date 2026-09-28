@@ -3,8 +3,9 @@ import { ChangeRequestDecision } from "@/components/tickets/ChangeRequestDecisio
 import { ChangeRequestForm } from "@/components/tickets/ChangeRequestForm";
 import { ChangeRequestWithdraw } from "@/components/tickets/ChangeRequestWithdraw";
 import { ReportButton } from "@/components/moderation/ReportButton";
+import { Avatar } from "@/components/profile/Avatar";
+import { AuthorLink } from "@/components/profile/AuthorLink";
 import { DiffView } from "@/components/tickets/DiffView";
-import { Link } from "@/i18n/navigation";
 import type { AppLocale } from "@/i18n/routing";
 import {
   isActiveStatus,
@@ -172,7 +173,10 @@ export async function ChangeRequestCard({
             </span>
           )}
           {entry.authorHandle && (
-            <span>{t("by", { handle: entry.authorHandle })}</span>
+            <span className="inline-flex items-center gap-1.5">
+              <Avatar seed={entry.authorAvatarSeed} className="h-4 w-4" />
+              {t("by", { handle: entry.authorHandle })}
+            </span>
           )}
           <span>
             {t("submitted", { date: dateFormat.format(entry.createdAt) })}
@@ -210,12 +214,13 @@ export async function ChangeRequestCard({
         <div className="font-mono text-[11.5px] uppercase tracking-[0.03em] text-meta">
           {entry.authorHandle && (
             <>
-              <Link
-                href={`/profil/${entry.authorId}`}
-                className="underline underline-offset-2 hover:text-ink"
+              <AuthorLink
+                userId={entry.authorId}
+                handle={entry.authorHandle}
+                avatarSeed={entry.authorAvatarSeed}
               >
                 {t("by", { handle: entry.authorHandle })}
-              </Link>
+              </AuthorLink>
               {" · "}
             </>
           )}

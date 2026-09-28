@@ -119,6 +119,9 @@ test("Gast sieht Historie und Beiträge, aber keine Demografie", async ({
   // Der eigene Bereich (Einstellungen, offene Anträge) gehört nicht zur
   // öffentlichen Sicht.
   await expect(page.getByTestId("profile-own-hint")).toHaveCount(0);
+  // Fremdes Profilbild: nur Bild, kein «Neues Bild».
+  await expect(page.getByTestId("avatar").first()).toBeVisible();
+  await expect(page.getByTestId("avatar-reroll")).toHaveCount(0);
 
   await assertNoDemographics(page, `/de/profil/${OTHER_ID}`);
 });
@@ -223,6 +226,33 @@ test("Header verlinkt eingeloggt aufs eigene Profil", async ({ browser }) => {
   await page.getByTestId("header-profile").click();
   await expect(page).toHaveURL(new RegExp(`/de/profil/${AUTHOR_ID}$`));
   await expect(page.getByTestId("profile-settings-link")).toBeVisible();
+
+  await page.close();
+});
+
+test("Eigenes Profilbild: Klick würfelt ein neues, es bleibt nach dem Neuladen", async ({
+  browser,
+}) => {
+  chromiumOnly();
+  const page = await newPage(browser, authorState);
+
+  await page.goto(`/de/profil/${AUTHOR_ID}`);
+  const reroll = page.getByTestId("avatar-reroll");
+  await expect(reroll).toHaveAccessibleName("Neues Bild");
+  const seedOf = () =>
+    reroll.getByTestId("avatar").getAttribute("data-avatar-seed");
+  const before = await seedOf();
+
+  await reroll.click();
+  await expect.poll(seedOf).not.toBe(before);
+  const after = await seedOf();
+
+  // Gespeichert, nicht nur im Browser: auch der Header zeigt das neue Bild.
+  await page.reload();
+  expect(await seedOf()).toBe(after);
+  await expect(
+    page.getByTestId("header-profile").getByTestId("avatar"),
+  ).toHaveAttribute("data-avatar-seed", after!);
 
   await page.close();
 });

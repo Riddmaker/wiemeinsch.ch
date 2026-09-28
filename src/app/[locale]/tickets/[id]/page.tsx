@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { ReportButton } from "@/components/moderation/ReportButton";
+import { AuthorLink } from "@/components/profile/AuthorLink";
 import { StatementForm } from "@/components/statements/StatementForm";
 import { StatementList } from "@/components/statements/StatementList";
 import { ChangeRequestSection } from "@/components/tickets/ChangeRequestSection";
@@ -10,6 +11,7 @@ import { Link } from "@/i18n/navigation";
 import type { AppLocale } from "@/i18n/routing";
 import { loadChangeRequests } from "@/lib/change-requests";
 import { getDisplayLocale } from "@/lib/display-locale";
+import { avatarSeedOf } from "@/lib/identicon";
 import { toAppLocale } from "@/lib/locale";
 import { prisma } from "@/lib/prisma";
 import { regionName } from "@/lib/ticket-display";
@@ -47,7 +49,7 @@ export default async function TicketDetailPage({
       hashtags: { orderBy: { tag: "asc" } },
       canton: true,
       municipality: true,
-      author: { select: { handle: true } },
+      author: { select: { handle: true, avatarSeed: true } },
     },
   });
   if (!ticket || ticket.status !== "PUBLISHED") {
@@ -115,12 +117,16 @@ export default async function TicketDetailPage({
           {t("created", { date: dateFormat.format(ticket.createdAt) })}
         </span>
         {ticket.author.handle && (
-          <Link
-            href={`/profil/${ticket.authorId}`}
-            className="underline underline-offset-2 hover:text-ink"
+          <AuthorLink
+            userId={ticket.authorId}
+            handle={ticket.author.handle}
+            avatarSeed={avatarSeedOf({
+              id: ticket.authorId,
+              avatarSeed: ticket.author.avatarSeed,
+            })}
           >
             {t("by", { handle: ticket.author.handle })}
-          </Link>
+          </AuthorLink>
         )}
         <span>
           {t("original", {
@@ -149,11 +155,12 @@ export default async function TicketDetailPage({
         )}
         {/* Co-Autorschaft nach gemergtem Änderungsantrag (Styleguide Art. 6). */}
         {coAuthorships.map((entry) => (
-          <Link
+          <AuthorLink
             key={entry.id}
-            href={`/profil/${entry.authorId}`}
-            data-testid="co-author"
-            className="underline underline-offset-2 hover:text-ink"
+            userId={entry.authorId}
+            handle={entry.authorHandle}
+            avatarSeed={entry.authorAvatarSeed}
+            testId="co-author"
           >
             {/* E15: Die Attribution nennt auch, ob angepasst übernommen wurde. */}
             {t(entry.mergedWithEdits ? "coAuthorAdjusted" : "coAuthor", {
@@ -161,7 +168,7 @@ export default async function TicketDetailPage({
               number: entry.number,
               date: dateFormat.format(entry.decidedAt ?? entry.createdAt),
             })}
-          </Link>
+          </AuthorLink>
         ))}
         {/* Melden (P12.1) — stiller Link in der Meta-Zeile, kein Warn-Element. */}
         <ReportButton

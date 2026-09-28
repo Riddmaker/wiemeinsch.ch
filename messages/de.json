@@ -428,7 +428,15 @@
     "settingsLink": "Einstellungen bearbeiten",
     "openChangeRequests": "{count, plural, one {# offener Änderungsantrag wartet auf deinen Entscheid} other {# offene Änderungsanträge warten auf deinen Entscheid}}",
     "openChangeRequestsOnTicket": "{count, plural, one {# Antrag} other {# Anträge}}",
-    "anonymous": "Unbekannt"
+    "anonymous": "Unbekannt",
+    "avatar": {
+      "reroll": "Neues Bild",
+      "hint": "Dein Bild ist ein Zufallsmuster. Klick darauf für ein neues.",
+      "errors": {
+        "rateLimited": "Genug gewürfelt für den Moment. Versuch es in einer Viertelstunde wieder.",
+        "generic": "Das hat nicht geklappt. Versuch es in einer Minute noch einmal."
+      }
+    }
   },
   "settings": {
     "title": "Einstellungen",
@@ -595,7 +603,7 @@
     },
     "public": {
       "title": "Was öffentlich ist",
-      "body": "Öffentlich ist dein @handle mit deinem Profil: deine Tickets, Statements, Änderungsanträge und Co-Autorschaften und wie du über Tickets abgestimmt hast. Deine Stimmen zu Statements erscheinen nur in den Summen.\n\nAbstimmungen stehen nie unter deinem Namen oder deiner E-Mail-Adresse, sondern nur unter dem zufälligen @handle, den du nicht selbst wählst. Wer deinen @handle kennt oder dich an deinen Texten erkennt, kann dir deine Stimmen aber zuordnen. Schreib deshalb nichts, was du nicht öffentlich vertreten willst.\n\nÖffentliche Seiten kann jeder abrufen, auch ohne Konto. Suchmaschinen können sie aufnehmen, andere können sie kopieren. Was andere kopiert haben, können wir nicht zurückholen.\n\nNie öffentlich sind deine E-Mail-Adresse, deine freiwilligen Angaben, deine Meldungen und deine Einsprüche. Wer etwas gemeldet hat, sehen nur die Moderatorinnen und Moderatoren, nicht die gemeldete Person."
+      "body": "Öffentlich ist dein @handle mit deinem Profil: deine Tickets, Statements, Änderungsanträge und Co-Autorschaften und wie du über Tickets abgestimmt hast. Deine Stimmen zu Statements erscheinen nur in den Summen. Dein Profilbild ist ein zufälliges Muster, es enthält keine Daten über dich.\n\nAbstimmungen stehen nie unter deinem Namen oder deiner E-Mail-Adresse, sondern nur unter dem zufälligen @handle, den du nicht selbst wählst. Wer deinen @handle kennt oder dich an deinen Texten erkennt, kann dir deine Stimmen aber zuordnen. Schreib deshalb nichts, was du nicht öffentlich vertreten willst.\n\nÖffentliche Seiten kann jeder abrufen, auch ohne Konto. Suchmaschinen können sie aufnehmen, andere können sie kopieren. Was andere kopiert haben, können wir nicht zurückholen.\n\nNie öffentlich sind deine E-Mail-Adresse, deine freiwilligen Angaben, deine Meldungen und deine Einsprüche. Wer etwas gemeldet hat, sehen nur die Moderatorinnen und Moderatoren, nicht die gemeldete Person."
     },
     "reuse": {
       "title": "Wie Beiträge und Daten weiterverwendet werden",
