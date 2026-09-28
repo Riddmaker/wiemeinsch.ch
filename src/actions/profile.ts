@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { PRIVACY_POLICY_VERSION } from "@/lib/privacy-consent";
@@ -208,4 +209,44 @@ export async function acceptPrivacyPolicy(
 
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+/**
+ * «Neues Bild» auf dem eigenen Profil (27.09.2026): würfelt einen neuen
+ * Zufallswert für das Identicon (lib/identicon.ts). Braucht die
+ * Einwilligung, weil das Bild öffentlich ist. Der Wert entsteht hier, nie
+ * im Client — so bleibt es ein Zufallsbild und kein gewähltes Muster.
+ */
+export async function rerollAvatar(): Promise<
+  { ok: true; seed: string } | { ok: false; error: string }
+> {
+  let userId: string;
+  try {
+    ({ id: userId } = await requireUser());
+  } catch (e) {
+    if (e instanceof UnauthorizedError) {
+      return { ok: false, error: "unauthorized" };
+    }
+    throw e;
+  }
+
+  const limit = await checkRateLimit({
+    scope: "avatar-reroll",
+    identifier: userId,
+    limit: 30,
+    windowSeconds: 900,
+  });
+  if (!limit.ok) {
+    return { ok: false, error: "rate_limited" };
+  }
+
+  const seed = randomBytes(9).toString("base64url");
+  await prisma.user.update({
+    where: { id: userId },
+    data: { avatarSeed: seed },
+  });
+
+  // Das Bild steht auch im Header und neben jedem eigenen Beitrag.
+  revalidatePath("/", "layout");
+  return { ok: true, seed };
 }

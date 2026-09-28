@@ -428,7 +428,15 @@
     "settingsLink": "Einstellungen bearbeiten",
     "openChangeRequests": "{count, plural, one {# offener Änderungsantrag wartet auf deinen Entscheid} other {# offene Änderungsanträge warten auf deinen Entscheid}}",
     "openChangeRequestsOnTicket": "{count, plural, one {# Antrag} other {# Anträge}}",
-    "anonymous": "Unbekannt"
+    "anonymous": "Unbekannt",
+    "avatar": {
+      "reroll": "Neues Bild",
+      "hint": "Dein Bild ist ein Zufallsmuster. Klick darauf für ein neues.",
+      "errors": {
+        "rateLimited": "Genug gewürfelt für den Moment. Versuch es in einer Viertelstunde wieder.",
+        "generic": "Das hat nicht geklappt. Versuch es in einer Minute noch einmal."
+      }
+    }
   },
   "settings": {
     "title": "Einstellungen",

@@ -428,7 +428,15 @@
     "settingsLink": "Modifica le impostazioni",
     "openChangeRequests": "{count, plural, one {# richiesta di modifica attende la tua decisione} other {# richieste di modifica attendono la tua decisione}}",
     "openChangeRequestsOnTicket": "{count, plural, one {# proposta} other {# proposte}}",
-    "anonymous": "Sconosciuto"
+    "anonymous": "Sconosciuto",
+    "avatar": {
+      "reroll": "Nuova immagine",
+      "hint": "La tua immagine è un motivo casuale. Cliccaci sopra per averne una nuova.",
+      "errors": {
+        "rateLimited": "Basta così per il momento. Riprova tra un quarto d’ora.",
+        "generic": "Non ha funzionato. Riprova tra un minuto."
+      }
+    }
   },
   "settings": {
     "title": "Impostazioni",

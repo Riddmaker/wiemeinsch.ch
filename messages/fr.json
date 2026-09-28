@@ -428,7 +428,15 @@
     "settingsLink": "Modifier les paramètres",
     "openChangeRequests": "{count, plural, one {# demande de modification attend votre décision} other {# demandes de modification attendent votre décision}}",
     "openChangeRequestsOnTicket": "{count, plural, one {# demande} other {# demandes}}",
-    "anonymous": "Inconnu"
+    "anonymous": "Inconnu",
+    "avatar": {
+      "reroll": "Nouvelle image",
+      "hint": "Votre image est un motif aléatoire. Cliquez dessus pour en obtenir une nouvelle.",
+      "errors": {
+        "rateLimited": "Assez de tirages pour le moment. Réessayez dans un quart d’heure.",
+        "generic": "Cela n’a pas fonctionné. Réessayez dans une minute."
+      }
+    }
   },
   "settings": {
     "title": "Paramètres",
