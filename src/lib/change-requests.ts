@@ -1,4 +1,5 @@
 import type { AppLocale } from "@/i18n/routing";
+import { avatarSeedOf } from "@/lib/identicon";
 import { toAppLocale } from "@/lib/locale";
 import { prisma } from "@/lib/prisma";
 import { pickTranslation } from "@/lib/translations";
@@ -44,6 +45,7 @@ export type ChangeRequestEntry = {
   status: ChangeRequestStatus;
   authorId: string;
   authorHandle: string | null;
+  authorAvatarSeed: string;
   createdAt: Date;
   decidedAt: Date | null;
   /** E15: Grund und Zeitpunkt der Rückgabe — nur solange in Überarbeitung. */
@@ -143,7 +145,7 @@ export async function loadChangeRequests(opts: {
     where: { ticketId: opts.ticketId },
     include: {
       translations: true,
-      author: { select: { handle: true } },
+      author: { select: { handle: true, avatarSeed: true } },
     },
     orderBy: { createdAt: "asc" },
   });
@@ -190,6 +192,10 @@ export async function loadChangeRequests(opts: {
       status: row.status as ChangeRequestStatus,
       authorId: row.authorId,
       authorHandle: row.author.handle,
+      authorAvatarSeed: avatarSeedOf({
+        id: row.authorId,
+        avatarSeed: row.author.avatarSeed,
+      }),
       createdAt: row.createdAt,
       decidedAt: row.decidedAt,
       returnReason: row.returnReason,

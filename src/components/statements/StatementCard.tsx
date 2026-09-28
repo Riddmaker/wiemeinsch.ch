@@ -19,6 +19,7 @@ export type StatementCardData = {
   category: StatementCategory;
   authorId: string;
   authorHandle: string | null;
+  authorAvatarSeed: string;
   createdAt: Date;
   /** Anzuzeigende Fassung (Anzeige-Sprache oder Original-Fallback). */
   doc: unknown;
@@ -74,6 +75,7 @@ export async function StatementCard({
               <AuthorLink
                 userId={statement.authorId}
                 handle={statement.authorHandle}
+                avatarSeed={statement.authorAvatarSeed}
               />
               {" · "}
             </>

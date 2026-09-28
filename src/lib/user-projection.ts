@@ -12,6 +12,8 @@ import type { Prisma } from "@/generated/prisma/client";
 export const publicUserSelect = {
   id: true,
   handle: true,
+  // Zufallswert des Profilbilds (27.09.2026) — kein Bezug zur Person.
+  avatarSeed: true,
   createdAt: true,
 } as const satisfies Prisma.UserSelect;
 

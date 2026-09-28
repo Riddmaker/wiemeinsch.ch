@@ -105,6 +105,12 @@ model User {
 
   handle String? @unique // öffentlicher @handle (wird bei Registrierung gesetzt, P4)
 
+  // Profilbild (27.09.2026): ein Identicon, berechnet aus diesem Zufallswert
+  // (src/lib/identicon.ts) — nie ein Upload, nie Daten der Person. NULL =
+  // aus der User-Id berechnet, so hat jedes Konto ohne Nachtrag ein Bild.
+  // «Neues Bild» auf dem eigenen Profil setzt einen neuen Wert. Öffentlich.
+  avatarSeed String?
+
   // Benachrichtigungen (E14): EIN Zeitstempel statt einer Ereignistabelle.
   // Alles, was danach passiert ist, gilt als ungelesen; angezeigt werden
   // dann die aktuellen GESAMTZAHLEN, nicht Deltas — deshalb muss nichts

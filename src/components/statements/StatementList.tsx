@@ -4,6 +4,7 @@ import {
   type StatementCardData,
 } from "@/components/statements/StatementCard";
 import type { AppLocale } from "@/i18n/routing";
+import { avatarSeedOf } from "@/lib/identicon";
 import { toAppLocale } from "@/lib/locale";
 import { prisma } from "@/lib/prisma";
 import { pickTranslation } from "@/lib/translations";
@@ -33,7 +34,7 @@ export async function StatementList({
     where: { ticketId, status: "PUBLISHED" },
     include: {
       translations: true,
-      author: { select: { id: true, handle: true } },
+      author: { select: { id: true, handle: true, avatarSeed: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -62,6 +63,7 @@ export async function StatementList({
       category: statement.category as StatementCategory,
       authorId: statement.author.id,
       authorHandle: statement.author.handle,
+      authorAvatarSeed: avatarSeedOf(statement.author),
       createdAt: statement.createdAt,
       doc: version.content,
       originalLocale: toAppLocale(statement.originalLocale),

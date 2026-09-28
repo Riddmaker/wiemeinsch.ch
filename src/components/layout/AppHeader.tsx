@@ -1,8 +1,10 @@
 import { getServerSession } from "next-auth";
 import { getTranslations } from "next-intl/server";
 import { LogoutButton } from "@/components/layout/LogoutButton";
+import { Avatar } from "@/components/profile/Avatar";
 import { Link } from "@/i18n/navigation";
 import { authOptions } from "@/lib/auth";
+import { avatarSeedOf } from "@/lib/identicon";
 import { hasUnreadNotifications } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { LocaleSwitcher } from "./LocaleSwitcher";
@@ -20,7 +22,7 @@ export async function AppHeader() {
   const me = userId
     ? await prisma.user.findUnique({
         where: { id: userId },
-        select: { handle: true, isAdmin: true },
+        select: { handle: true, isAdmin: true, avatarSeed: true },
       })
     : null;
   // Roter Punkt statt Zahl (E14, User-Entscheid): Er soll auffallen und zum
@@ -81,9 +83,16 @@ export async function AppHeader() {
             <Link
               href={`/profil/${userId}`}
               data-testid="header-profile"
-              className="flex max-w-[18ch] items-start gap-1 font-mono text-[13px] font-bold text-ink underline-offset-[6px] hover:underline"
+              className="flex items-center gap-1.5 font-mono text-[13px] font-bold text-ink underline-offset-[6px] hover:underline"
             >
-              <span className="truncate">
+              <Avatar
+                seed={avatarSeedOf({
+                  id: userId,
+                  avatarSeed: me?.avatarSeed ?? null,
+                })}
+                className="h-5 w-5"
+              />
+              <span className="max-w-[18ch] truncate">
                 {me?.handle ? `@${me.handle}` : t("header.profile")}
               </span>
               {unread && (
@@ -91,7 +100,7 @@ export async function AppHeader() {
                   data-testid="header-unread-dot"
                   aria-label={t("header.unread")}
                   role="status"
-                  className="mt-[1px] inline-block h-[7px] w-[7px] shrink-0 rounded-full bg-contra"
+                  className="-ml-0.5 mb-2 inline-block h-[7px] w-[7px] shrink-0 rounded-full bg-contra"
                 />
               )}
             </Link>
