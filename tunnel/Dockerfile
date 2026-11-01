@@ -10,9 +10,9 @@
 # Beide Basen sind per Digest gepinnt; Dependabot hebt Tag und Digest
 # gemeinsam an (.github/dependabot.yml, Verzeichnis /tunnel).
 
-FROM cloudflare/cloudflared:2026.9.3@sha256:072c067d25ccbe61d46e18f0d0723255f2bb5304f7317caa95b27031520ff92c AS cloudflared
+FROM cloudflare/cloudflared:2026.10.3@sha256:faa8e0a1475f137c910be6025f43c8e4092fdd35461b31e19fd1390657a1ff39 AS cloudflared
 
-FROM alpine:3.24@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+FROM alpine:3.24@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a
 COPY --from=cloudflared /usr/local/bin/cloudflared /usr/local/bin/cloudflared
 # Dieselbe Non-Root-uid wie im offiziellen Image (distroless `nonroot`).
 USER 65532:65532
